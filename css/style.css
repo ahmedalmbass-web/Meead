@@ -1,0 +1,60 @@
+
+/* Meead - Global Styles */
+:root {
+  --primary: #173F35;
+  --primary-light: #245747;
+  --accent: #D7B878;
+  --background: #F6F5F0;
+  --surface: #FFFFFF;
+  --text: #202923;
+  --muted: #707870;
+  --border: #E5E7E0;
+  --radius: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Tahoma, Arial, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.container {
+  width: min(1120px, calc(100% - 32px));
+  margin-inline: auto;
+}
