@@ -1,15 +1,141 @@
 
 /* Meead - Main JavaScript */
-
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Meead is ready.");
-
   const searchForm = document.getElementById("meeadSearch");
   const searchInput = document.getElementById("searchInput");
+  const categoriesSection = document.getElementById("categories");
 
-  if (!searchForm || !searchInput) return;
+  const demoActivities = [
+    {
+      name: "عيادة الأمل الطبية",
+      category: "العيادات الطبية",
+      city: "صنعاء",
+      service: "استشارات طبية",
+      icon: "🩺"
+    },
+    {
+      name: "مركز ابتسامة للأسنان",
+      category: "عيادات الأسنان",
+      city: "صنعاء",
+      service: "فحص وتنظيف الأسنان",
+      icon: "🦷"
+    },
+    {
+      name: "صالون الأناقة",
+      category: "الصالونات والجمال",
+      city: "عدن",
+      service: "العناية والتجميل",
+      icon: "💇‍♀️"
+    },
+    {
+      name: "حلاقة الرجل الأنيق",
+      category: "الحلاقة الرجالية",
+      city: "صنعاء",
+      service: "حلاقة وعناية شخصية",
+      icon: "💈"
+    },
+    {
+      name: "نادي النشاط الرياضي",
+      category: "الرياضة واللياقة",
+      city: "تعز",
+      service: "تدريب ولياقة",
+      icon: "🏋️"
+    },
+    {
+      name: "عدسة للتصوير",
+      category: "التصوير والمناسبات",
+      city: "عدن",
+      service: "تصوير المناسبات",
+      icon: "📸"
+    }
+  ];
+
+  if (!searchForm || !searchInput || !categoriesSection) {
+    console.error("Meead: عناصر البحث غير موجودة.");
+    return;
+  }
+
+  const results = document.createElement("section");
+  results.id = "searchResults";
+  results.className = "container";
+  results.style.cssText =
+    "display:none;padding:25px 0 45px;scroll-margin-top:100px;";
+
+  categoriesSection.insertAdjacentElement("afterend", results);
+
+  function renderResults(items, query) {
+    results.style.display = "block";
+
+    const heading = document.createElement("h2");
+    heading.textContent = query
+      ? `نتائج البحث عن: ${query}`
+      : "الأنشطة المتاحة للتجربة";
+
+    heading.style.cssText =
+      "font-size:24px;margin:0 0 8px;color:#123c32;";
+
+    const note = document.createElement("p");
+    note.textContent =
+      "هذه بيانات تجريبية للعرض فقط، وليست أنشطة مسجلة فعليًا.";
+    note.style.cssText =
+      "color:#75817b;font-size:13px;margin:0 0 20px;";
+
+    const grid = document.createElement("div");
+    grid.style.cssText =
+      "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;";
+
+    if (items.length === 0) {
+      const empty = document.createElement("p");
+      empty.textContent =
+        "لم نجد نتائج مطابقة. جرّب اسم خدمة أو فئة أو مدينة أخرى.";
+      empty.style.cssText =
+        "background:white;padding:20px;border-radius:14px;color:#75817b;";
+      grid.appendChild(empty);
+    }
+
+    items.forEach((activity) => {
+      const card = document.createElement("article");
+      card.style.cssText =
+        "background:white;border:1px solid #e9e8df;border-radius:18px;padding:20px;";
+
+      const icon = document.createElement("div");
+      icon.textContent = activity.icon;
+      icon.style.cssText =
+        "font-size:30px;margin-bottom:10px;";
+
+      const name = document.createElement("h3");
+      name.textContent = activity.name;
+      name.style.cssText =
+        "font-size:17px;margin:0 0 8px;color:#123c32;";
+
+      const category = document.createElement("p");
+      category.textContent = activity.category;
+      category.style.cssText =
+        "margin:4px 0;color:#52645b;font-size:13px;";
+
+      const service = document.createElement("p");
+      service.textContent = `الخدمة: ${activity.service}`;
+      service.style.cssText =
+        "margin:4px 0;color:#52645b;font-size:13px;";
+
+      const city = document.createElement("p");
+      city.textContent = `📍 ${activity.city}`;
+      city.style.cssText =
+        "margin:8px 0 0;color:#75817b;font-size:13px;";
+
+      const badge = document.createElement("p");
+      badge.textContent = "بيانات تجريبية";
+      badge.style.cssText =
+        "display:inline-block;background:#f1efe5;color:#78632f;padding:4px 9px;border-radius:20px;font-size:11px;margin:12px 0 0;";
+
+      card.append(icon, name, category, service, city, badge);
+      grid.appendChild(card);
+    });
+
+    results.replaceChildren(heading, note, grid);
+  }
 
   searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -17,60 +143,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const query = searchInput.value.trim();
 
     if (!query) {
-      searchInput.focus();
       searchInput.setCustomValidity("اكتب اسم النشاط أو الخدمة أولًا.");
       searchInput.reportValidity();
+      searchInput.focus();
       return;
     }
 
     searchInput.setCustomValidity("");
 
-    const categoriesSection = document.getElementById("categories");
+    const terms = query.toLocaleLowerCase("ar").split(/\s+/);
 
-    if (categoriesSection) {
-      categoriesSection.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    }
+    const matches = demoActivities.filter((activity) => {
+      const searchableText = [
+        activity.name,
+        activity.category,
+        activity.city,
+        activity.service
+      ].join(" ").toLocaleLowerCase("ar");
 
-    const categoryCards = document.querySelectorAll(".category-card");
-    let matches = 0;
-
-    categoryCards.forEach((card) => {
-      const text = card.textContent
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
-
-      const searchTerms = query.toLowerCase().split(/\s+/);
-      const isMatch = searchTerms.every((term) => text.includes(term));
-
-      card.hidden = !isMatch;
-
-      if (isMatch) matches++;
+      return terms.every((term) => searchableText.includes(term));
     });
 
-    let message = document.getElementById("searchMessage");
-
-    if (!message && categoriesSection) {
-      message = document.createElement("p");
-      message.id = "searchMessage";
-      message.setAttribute("role", "status");
-      message.style.textAlign = "center";
-      message.style.margin = "0 0 20px";
-      categoriesSection.querySelector(".section-heading")
-        ?.insertAdjacentElement("afterend", message);
-    }
-
-    if (message) {
-      message.textContent = matches
-        ? `عدد الفئات المطابقة: ${matches}`
-        : `لم نجد فئة مطابقة لـ "${query}". جرّب كلمة أخرى.`;
-    }
+    renderResults(matches, query);
+    results.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   searchInput.addEventListener("input", () => {
     searchInput.setCustomValidity("");
   });
+
+  console.log("Meead search is ready.");
 });
