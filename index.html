@@ -4,260 +4,436 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#153D32">
-  <meta name="description" content="ميعاد — اكتشف أفضل الخدمات في مدينتك واحجز موعدك بسهولة.">
-  <title>ميعاد | وقتك يستحق الأفضل</title>
+  <meta name="theme-color" content="#102c26">
+  <meta name="description" content="ميعاد - منصة مجانية للبحث عن الخدمات وحجز المواعيد لدى العيادات والحلاقين والصالونات ومختلف الأنشطة.">
+  <title>ميعاد | موعدك يبدأ من هنا</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="js/main.js" defer></script>
+  <style>
+    :root {
+      --green: #123c32;
+      --green-dark: #0b2822;
+      --gold: #d8bd7c;
+      --cream: #f7f6f0;
+      --ink: #1b2b26;
+      --muted: #75817b;
+      --white: #fff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Cairo", sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.8;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    .container { width: min(1160px, 92%); margin-inline: auto; }
+    .site-header {
+      background: rgba(255,255,255,.96);
+      border-bottom: 1px solid #e9e8df;
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(14px);
+    }
+    .nav {
+      min-height: 78px; display: flex; align-items: center;
+      justify-content: space-between; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      width: 45px; height: 45px; border-radius: 15px;
+      display: grid; place-items: center; color: var(--gold);
+      background: var(--green); font-size: 25px; font-weight: 900;
+    }
+    .brand-name { font-size: 25px; font-weight: 900; line-height: 1.2; }
+    .brand-name small { display: block; font-size: 10px; letter-spacing: 3px; color: var(--muted); }
+    .nav-links { display: flex; align-items: center; gap: 25px; font-size: 14px; font-weight: 700; }
+    .nav-links a:hover { color: #a18039; }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+    .btn {
+      border: 0; cursor: pointer; border-radius: 12px;
+      padding: 11px 20px; display: inline-flex; align-items: center;
+      justify-content: center; gap: 8px; font-weight: 800;
+      transition: transform .2s, background .2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-primary:hover { background: var(--green-dark); }
+    .btn-outline { border: 1px solid #d9ddd5; background: white; }
+    .hero {
+      overflow: hidden; position: relative; color: white;
+      background: radial-gradient(ellipse at 10% 15%, #28584a 0, transparent 40%), linear-gradient(125deg, #0b2822, #174538 65%, #244b3c);
+      padding: 76px 0 82px;
+    }
+    .hero:after {
+      content: ""; position: absolute; width: 430px; height: 430px;
+      border: 1px solid rgba(216,189,124,.17); border-radius: 50%;
+      left: -160px; bottom: -250px; box-shadow: 0 0 0 55px rgba(216,189,124,.035), 0 0 0 110px rgba(216,189,124,.025);
+    }
+    .hero-grid {
+      position: relative; z-index: 1; display: grid;
+      grid-template-columns: 1.1fr .9fr; gap: 55px; align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 9px;
+      color: var(--gold); border: 1px solid rgba(216,189,124,.35);
+      background: rgba(255,255,255,.04); padding: 7px 14px;
+      border-radius: 100px; font-size: 12px; font-weight: 800;
+    }
+    .hero h1 { font-size: clamp(36px, 5vw, 60px); line-height: 1.35; margin: 22px 0 15px; font-weight: 900; }
+    .hero h1 span { color: var(--gold); }
+    .hero-copy { color: #d5e1da; font-size: 16px; max-width: 560px; margin: 0 0 28px; }
+    .hero-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-gold { background: var(--gold); color: #1b3027; }
+    .btn-glass { color: white; border: 1px solid #668276; background: rgba(255,255,255,.06); }
+    .hero-note { color: #bdcec5; font-size: 12px; margin-top: 17px; }
+    .hero-visual {
+      min-height: 360px; border: 1px solid rgba(255,255,255,.15);
+      border-radius: 30px; padding: 25px; background: rgba(255,255,255,.07);
+      backdrop-filter: blur(12px); position: relative;
+    }
+    .visual-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .visual-top strong { font-size: 17px; }
+    .live-pill { background: #d9eddf; color: #28613f; border-radius: 50px; padding: 4px 10px; font-size: 11px; font-weight: 800; }
+    .mock-search { display: flex; gap: 10px; margin: 22px 0; background: white; padding: 9px; border-radius: 14px; }
+    .mock-search span { flex: 1; color: #87918b; font-size: 12px; padding: 7px; }
+    .mock-search b { background: var(--gold); color: #20372c; padding: 7px 12px; border-radius: 9px; font-size: 12px; }
+    .mock-card {
+      display: flex; align-items: center; gap: 13px; padding: 14px;
+      margin-top: 11px; border-radius: 16px; background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .mock-icon { width: 48px; height: 48px; flex-shrink: 0; display: grid; place-items: center; border-radius: 14px; background: #e9dfc5; font-size: 24px; }
+    .mock-info { flex: 1; }
+    .mock-info strong { display: block; font-size: 13px; }
+    .mock-info small { color: #c2d2c9; font-size: 11px; }
+    .mock-arrow { color: var(--gold); font-size: 21px; }
+    .floating-note {
+      position: absolute; left: -22px; bottom: 23px;
+      background: white; color: var(--ink); border-radius: 15px;
+      padding: 12px 17px; box-shadow: 0 12px 35px #071c1770;
+      font-size: 12px; font-weight: 800;
+    }
+    .floating-note span { color: #41815c; }
+    .trust-strip { background: white; border-bottom: 1px solid #e8e8df; }
+    .trust-grid { display: grid; grid-template-columns: repeat(3,1fr); padding: 24px 0; gap: 15px; }
+    .trust-item { display: flex; justify-content: center; align-items: center; gap: 11px; font-size: 13px; font-weight: 800; }
+    .trust-item i { font-style: normal; font-size: 23px; }
+    .section { padding: 82px 0; }
+    .section-heading { text-align: center; max-width: 650px; margin: 0 auto 38px; }
+    .section-kicker { color: #997b39; font-size: 12px; font-weight: 900; letter-spacing: 1px; }
+    .section-heading h2 { font-size: clamp(27px,4vw,38px); line-height: 1.45; margin: 8px 0 12px; font-weight: 900; }
+    .section-heading p { color: var(--muted); margin: 0; font-size: 14px; }
+    .category-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 17px; }
+    .category-card {
+      text-align: center; padding: 26px 15px; background: white;
+      border: 1px solid #e9e8df; border-radius: 20px;
+      transition: .2s; cursor: pointer;
+    }
+    .category-card:hover { transform: translateY(-5px); border-color: var(--gold); box-shadow: 0 15px 35px #173f3510; }
+    .category-icon { margin: 0 auto 12px; display: grid; place-items: center; width: 65px; height: 65px; border-radius: 20px; background: #f1efe5; font-size: 30px; }
+    .category-card h3 { font-size: 15px; margin: 0 0 5px; }
+    .category-card p { color: var(--muted); font-size: 11px; margin: 0; }
+    .provider-banner {
+      display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 30px;
+      padding: 40px; border-radius: 25px; color: white;
+      background: linear-gradient(110deg, #163f34, #245743);
+    }
+    .provider-banner h2 { margin: 0 0 10px; font-size: 28px; }
+    .provider-banner p { margin: 0; color: #d0dfd5; font-size: 14px; max-width: 650px; }
+    .steps-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; }
+    .step-card { background: white; border: 1px solid #e9e8df; padding: 27px; border-radius: 20px; }
+    .step-number { width: 43px; height: 43px; display: grid; place-items: center; border-radius: 14px; background: var(--green); color: var(--gold); font-weight: 900; }
+    .step-card h3 { font-size: 17px; margin: 17px 0 7px; }
+    .step-card p { color: var(--muted); font-size: 13px; margin: 0; }
+    .closing-section { padding: 0 0 80px; }
+    .closing-inner { text-align: center; border-radius: 26px; padding: 50px 22px; background: #eeeadd; }
+    .closing-inner h2 { margin: 0 0 10px; font-size: 30px; }
+    .closing-inner p { color: var(--muted); margin: 0 auto 22px; max-width: 570px; font-size: 14px; }
+    .site-footer { background: #0b2822; color: white; padding: 48px 0 20px; }
+    .footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 35px; padding-bottom: 30px; }
+    .footer-about p { max-width: 360px; color: #b9c9c0; font-size: 13px; }
+    .footer-title { color: var(--gold); font-size: 14px; margin: 0 0 13px; }
+    .footer-links { display: grid; gap: 8px; color: #c7d5ce; font-size: 12px; }
+    .footer-bottom { border-top: 1px solid #ffffff20; padding-top: 18px; display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; color: #aebfb5; font-size: 11px; }
+    .mobile-menu-button { display: none; }
+    @media (max-width: 850px) {
+      .nav-links { gap: 13px; font-size: 12px; }
+      .nav-actions .btn { padding: 9px 12px; font-size: 12px; }
+      .hero-grid { gap: 30px; }
+      .category-grid { grid-template-columns: repeat(2,1fr); }
+      .hero-visual { padding: 18px; }
+      .provider-banner { padding: 28px; }
+    }
+    @media (max-width: 650px) {
+      .nav { min-height: 69px; flex-wrap: wrap; padding: 11px 0; }
+      .brand-name { font-size: 22px; }
+      .nav-links { display: none; width: 100%; order: 3; flex-direction: column; align-items: stretch; gap: 0; padding: 8px 0; }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 10px 5px; border-top: 1px solid #eee; }
+      .nav-actions { margin-inline-start: auto; }
+      .nav-actions .btn-outline { display: none; }
+      .nav-actions .btn { padding: 8px 11px; font-size: 11px; }
+      .mobile-menu-button { display: inline-flex; border: 1px solid #e4e5dc; background: white; border-radius: 10px; padding: 8px 11px; cursor: pointer; }
+      .hero { padding: 52px 0 60px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 39px; }
+      .hero-copy { font-size: 14px; }
+      .hero-visual { min-height: 0; }
+      .floating-note { left: 8px; bottom: -18px; }
+      .trust-grid { grid-template-columns: 1fr; gap: 14px; padding: 20px 0; }
+      .trust-item { justify-content: flex-start; }
+      .section { padding: 60px 0; }
+      .category-grid { gap: 11px; }
+      .category-card { padding: 20px 9px; }
+      .provider-banner { grid-template-columns: 1fr; padding: 26px 22px; }
+      .provider-banner h2 { font-size: 23px; }
+      .provider-banner .btn { justify-self: start; }
+      .steps-grid { grid-template-columns: 1fr; gap: 13px; }
+      .step-card { padding: 22px; }
+      .closing-inner { padding: 37px 18px; }
+      .closing-inner h2 { font-size: 25px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 25px; }
+      .footer-about { grid-column: 1 / -1; }
+      .footer-bottom { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
 </head>
 <body>
-
   <header class="site-header">
     <div class="container nav">
-      <a class="brand" href="#" aria-label="ميعاد - الرئيسية">
-        <span class="brand-icon">م</span>
-        <span>ميعاد<small>MEEAD</small></span>
+      <a class="brand" href="#home" aria-label="ميعاد - الصفحة الرئيسية">
+        <span class="brand-mark">م</span>
+        <span class="brand-name">ميعاد<small>MEEAD</small></span>
       </a>
-
-      <nav class="nav-links" aria-label="التنقل الرئيسي">
-        <a href="#categories">اكتشف الخدمات</a>
+      <nav class="nav-links" id="mainNav" aria-label="القائمة الرئيسية">
+        <a href="#home">الرئيسية</a>
+        <a href="#categories">استكشف الخدمات</a>
         <a href="#how">كيف تعمل المنصة؟</a>
-        <a href="#providers">لمقدمي الخدمات</a>
+        <a href="#providers">أصحاب الأنشطة</a>
       </nav>
-
       <div class="nav-actions">
-        <a class="login-link" href="#login">تسجيل الدخول</a>
-        <a class="btn btn-dark nav-cta" href="#providers">أضف نشاطك <span>↗</span></a>
+        <a class="btn btn-outline" href="#providers">أضف نشاطك</a>
+        <a class="btn btn-primary" href="#categories">احجز موعدك</a>
+        <button class="mobile-menu-button" id="menuToggle" aria-label="فتح القائمة" aria-expanded="false">☰</button>
       </div>
     </div>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="hero-glow"></div>
+    <section class="hero" id="home">
       <div class="container hero-grid">
-        <div class="hero-content">
-          <span class="eyebrow"><span class="live-dot"></span> تجربتك القادمة تبدأ من هنا</span>
-
-          <h1>وقتك ثمين.<br>خلّ <span>ميعاد</span> يرتّبه لك.</h1>
-
-          <p class="hero-description">
-            اكتشف الخدمات التي تحتاجها، واختر المكان والموعد المناسبين لك.
-            كل ذلك في تجربة واحدة سهلة.
-          </p>
-
-          <div class="hero-actions">
+        <div>
+          <span class="eyebrow">✦ منصتك للمواعيد بكل سهولة</span>
+          <h1>موعدك القادم<br>يبدأ من <span>ميعاد.</span></h1>
+          <p class="hero-copy">ابحث عن الخدمة التي تحتاجها، اكتشف الأنشطة المناسبة لك، واحجز موعدك بكل سهولة. ولأصحاب الأنشطة، نظّموا مواعيدكم ووصلوا إلى عملاء جدد من مكان واحد.</p>
+          <div class="hero-buttons">
             <a href="#categories" class="btn btn-gold">اكتشف الخدمات <span>←</span></a>
-            <a href="#how" class="text-link">كيف تعمل ميعاد؟ <span>↙</span></a>
+            <a href="#providers" class="btn btn-glass">أنا صاحب نشاط</a>
           </div>
-
-          <div class="hero-proof">
-            <div class="proof-icon">✓</div>
-            <p>ابحث، اختر، واحجز<br><strong>بخطوات واضحة وبسيطة</strong></p>
-          </div>
+          <p class="hero-note">✦ منصة مجانية للجميع، هدفها تسهيل الوصول إلى الخدمات وتنظيم المواعيد.</p>
         </div>
 
-        <div class="hero-visual" aria-label="مساحة عرض للخدمات">
-          <div class="visual-orbit orbit-one"></div>
-          <div class="visual-orbit orbit-two"></div>
-
-          <div class="visual-center">
-            <span class="center-symbol">م</span>
-            <span class="center-name">ميعاد</span>
-            <span class="center-caption">وقتك يستحق الأفضل</span>
+        <div class="hero-visual" aria-label="معاينة توضيحية للبحث عن الخدمات">
+          <div class="visual-top">
+            <strong>اكتشف ما تحتاجه</strong>
+            <span class="live-pill">بخطوات بسيطة</span>
           </div>
-
-          <div class="float-card float-top">
-            <span class="float-icon">✳</span>
-            <div><strong>خدمات متنوعة</strong><small>خيارات تناسب احتياجك</small></div>
+          <div class="mock-search">
+            <span>🔎 ابحث عن عيادة، صالون، خدمة...</span>
+            <b>بحث</b>
           </div>
-
-          <div class="float-card float-bottom">
-            <span class="calendar-icon">▦</span>
-            <div><strong>موعدك على كيفك</strong><small>اختر الوقت الأنسب لك</small></div>
+          <div class="mock-card">
+            <div class="mock-icon">🩺</div>
+            <div class="mock-info"><strong>العيادات والمراكز الطبية</strong><small>ابحث عن الخدمة المناسبة لك</small></div>
+            <span class="mock-arrow">←</span>
           </div>
-
-          <div class="visual-tag">اكتشف · اختر · احجز</div>
+          <div class="mock-card">
+            <div class="mock-icon">✂️</div>
+            <div class="mock-info"><strong>الحلاقة والعناية الشخصية</strong><small>اكتشف الأنشطة القريبة منك</small></div>
+            <span class="mock-arrow">←</span>
+          </div>
+          <div class="mock-card">
+            <div class="mock-icon">✨</div>
+            <div class="mock-info"><strong>الصالونات والجمال</strong><small>اختر موعدك بسهولة</small></div>
+            <span class="mock-arrow">←</span>
+          </div>
+          <div class="floating-note">✦ تجربة سهلة <span>من البداية للنهاية</span></div>
         </div>
-      </div>
-
-      <div class="container search-wrap">
-        <div class="search-panel">
-          <div class="search-field">
-            <span class="field-icon">⌕</span>
-            <label for="service-search">
-              <span>ماذا تبحث عنه؟</span>
-              <input id="service-search" type="search" placeholder="طبيب، حلاق، صيانة سيارة...">
-            </label>
-          </div>
-
-          <div class="search-divider"></div>
-
-          <div class="search-field location-field">
-            <span class="field-icon">⌖</span>
-            <label for="city-search">
-              <span>المدينة</span>
-              <select id="city-search">
-                <option value="">كل المدن</option>
-                <option value="صنعاء">صنعاء</option>
-                <option value="عدن">عدن</option>
-                <option value="تعز">تعز</option>
-                <option value="إب">إب</option>
-                <option value="الحديدة">الحديدة</option>
-                <option value="حضرموت">حضرموت</option>
-              </select>
-            </label>
-          </div>
-
-          <button class="btn btn-dark search-button" id="search-button" type="button">
-            ابحث الآن <span>←</span>
-          </button>
-        </div>
-        <p class="search-note">ابدأ بالبحث عن الخدمة التي تحتاجها، ودع الباقي لميعاد.</p>
       </div>
     </section>
 
-    <section class="section categories-section" id="categories">
+    <section class="trust-strip" aria-label="مميزات ميعاد">
+      <div class="container trust-grid">
+        <div class="trust-item"><i>🎯</i><span>ابحث عن الخدمة التي تناسبك</span></div>
+        <div class="trust-item"><i>📅</i><span>نظّم مواعيدك بوضوح</span></div>
+        <div class="trust-item"><i>🤝</i><span>مجانية للعملاء وأصحاب الأنشطة</span></div>
+      </div>
+    </section>
+
+    <section class="section" id="categories">
       <div class="container">
         <div class="section-heading">
-          <div>
-            <span class="section-kicker">اكتشف عالم الخدمات</span>
-            <h2>كل ما تحتاجه، <span>في مكان واحد.</span></h2>
-            <p>اختر التصنيف الذي يناسبك واكتشف الخدمات المتاحة.</p>
-          </div>
-          <span class="section-index">01 / EXPLORE</span>
+          <span class="section-kicker">استكشف ميعاد</span>
+          <h2>ماذا تريد أن تحجز اليوم؟</h2>
+          <p>مكان واحد يجمع أنواعًا متعددة من الخدمات، لتصل إلى ما تحتاجه دون عناء البحث الطويل.</p>
         </div>
-
         <div class="category-grid">
-          <a class="category-card" href="#providers" data-category="medical">
-            <span class="category-number">01</span>
-            <span class="category-icon medical-icon">✚</span>
-            <h3>العيادات والصحة</h3>
-            <p>مواعيد الأطباء والخدمات الصحية</p>
-            <span class="category-arrow">↙</span>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">🩺</div>
+            <h3>العيادات الطبية</h3>
+            <p>عيادات ومراكز صحية</p>
           </a>
-
-          <a class="category-card" href="#providers" data-category="beauty">
-            <span class="category-number">02</span>
-            <span class="category-icon beauty-icon">✳</span>
-            <h3>الجمال والعناية</h3>
-            <p>الحلاقون وصالونات التجميل</p>
-            <span class="category-arrow">↙</span>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">💈</div>
+            <h3>الحلاقة الرجالية</h3>
+            <p>حلاقة وعناية شخصية</p>
           </a>
-
-          <a class="category-card" href="#providers" data-category="automotive">
-            <span class="category-number">03</span>
-            <span class="category-icon automotive-icon">◇</span>
-            <h3>السيارات والصيانة</h3>
-            <p>الصيانة والفحص والخدمات</p>
-            <span class="category-arrow">↙</span>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">💇‍♀️</div>
+            <h3>الصالونات والجمال</h3>
+            <p>تجميل وعناية</p>
           </a>
-
-          <a class="category-card" href="#providers" data-category="events">
-            <span class="category-number">04</span>
-            <span class="category-icon events-icon">✧</span>
-            <h3>المناسبات والتصوير</h3>
-            <p>المصورون والقاعات والجلسات</p>
-            <span class="category-arrow">↙</span>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">🦷</div>
+            <h3>عيادات الأسنان</h3>
+            <p>خدمات طب الأسنان</p>
           </a>
-
-          <a class="category-card" href="#providers" data-category="education">
-            <span class="category-number">05</span>
-            <span class="category-icon education-icon">⌘</span>
-            <h3>التعليم والتدريب</h3>
-            <p>الدروس والدورات والتدريب</p>
-            <span class="category-arrow">↙</span>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">🏋️</div>
+            <h3>الرياضة واللياقة</h3>
+            <p>نوادٍ ومدربون</p>
           </a>
-
-          <a class="category-card" href="#providers" data-category="other">
-            <span class="category-number">06</span>
-            <span class="category-icon other-icon">＋</span>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">📸</div>
+            <h3>التصوير والمناسبات</h3>
+            <p>مصورون وخدمات مناسبات</p>
+          </a>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">🛠️</div>
+            <h3>الخدمات المهنية</h3>
+            <p>خدمات وحرف متنوعة</p>
+          </a>
+          <a class="category-card" href="#providers">
+            <div class="category-icon">＋</div>
             <h3>خدمات أخرى</h3>
-            <p>اكتشف المزيد من الخدمات</p>
-            <span class="category-arrow">↙</span>
+            <p>أنشطة متنوعة باستمرار</p>
           </a>
         </div>
       </div>
     </section>
 
-    <section class="provider-banner" id="providers">
-      <div class="container provider-banner-inner">
-        <div class="provider-copy">
-          <span class="section-kicker">هل تقدم خدمة؟</span>
-          <h2>خدماتك تستحق<br>أن يكتشفها <span>المزيد.</span></h2>
-          <p>اجمع خدماتك ومواعيدك في مكان واحد، وسهّل على عملائك الوصول إليك وتنظيم حجوزاتهم.</p>
-          <a class="btn btn-gold" href="#login">اكتشف مزايا ميعاد <span>←</span></a>
-        </div>
-        <div class="provider-art" aria-hidden="true">
-          <div class="art-ring"></div>
-          <div class="art-card">
-            <span class="art-logo">م</span>
-            <span class="art-line line-long"></span>
-            <span class="art-line line-short"></span>
-            <span class="art-chip">إدارة أسهل</span>
-            <span class="art-spark">✳</span>
+    <section class="section" id="providers" style="padding-top:0">
+      <div class="container">
+        <div class="provider-banner">
+          <div>
+            <h2>عندك نشاط؟ خلّ عملاءك يوصلوا إليك.</h2>
+            <p>أنشئ صفحة لنشاطك، عرّف الناس بخدماتك، وسهّل عليهم طلب المواعيد. ميعاد مصممة لتكون مساحة مجانية تساعد أصحاب الأنشطة على تنظيم العمل والوصول إلى العملاء.</p>
           </div>
-          <span class="art-caption">YOUR BUSINESS, SIMPLIFIED.</span>
+          <a class="btn btn-gold" href="#how">اكتشف كيف تعمل ←</a>
         </div>
       </div>
     </section>
 
-    <section class="section how-section" id="how">
+    <section class="section" id="how">
       <div class="container">
         <div class="section-heading">
-          <div>
-            <span class="section-kicker">تجربة أبسط من أي وقت</span>
-            <h2>ثلاث خطوات، <span>ويصبح موعدك أقرب.</span></h2>
-          </div>
-          <span class="section-index">02 / HOW IT WORKS</span>
+          <span class="section-kicker">بكل بساطة</span>
+          <h2>ثلاث خطوات أقرب إلى موعدك</h2>
+          <p>نريد أن تكون تجربة البحث والحجز واضحة ومريحة، دون تعقيد أو خطوات غير ضرورية.</p>
         </div>
-
         <div class="steps-grid">
           <article class="step-card">
-            <span class="step-number">01</span>
-            <span class="step-icon">⌕</span>
-            <h3>ابحث عن خدمتك</h3>
-            <p>حدد الخدمة والمدينة التي تناسبك.</p>
+            <div class="step-number">١</div>
+            <h3>ابحث واكتشف</h3>
+            <p>اختر نوع الخدمة أو النشاط الذي تبحث عنه، واستكشف الخيارات المتاحة على المنصة.</p>
           </article>
           <article class="step-card">
-            <span class="step-number">02</span>
-            <span class="step-icon">▦</span>
-            <h3>اختر ما يناسبك</h3>
-            <p>تعرّف على مقدم الخدمة وتفاصيله.</p>
+            <div class="step-number">٢</div>
+            <h3>اختر الموعد المناسب</h3>
+            <p>اطّلع على معلومات النشاط ومواعيده المتاحة، ثم اختر الوقت الأنسب لك.</p>
           </article>
           <article class="step-card">
-            <span class="step-number">03</span>
-            <span class="step-icon">✓</span>
-            <h3>أكمل حجزك</h3>
-            <p>اختر الموعد وتابع حالة حجزك.</p>
+            <div class="step-number">٣</div>
+            <h3>تابع حجزك</h3>
+            <p>احتفظ بتفاصيل موعدك وتابع حالة الحجز وفقًا للميزات المتاحة في المنصة.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="closing-section" id="login">
-      <div class="container closing-inner">
-        <span class="closing-mark">م</span>
-        <h2>موعد أفضل يبدأ<br>باختيار <span>أفضل.</span></h2>
-        <p>ميعاد يجمع احتياجاتك وخياراتك في تجربة واحدة.</p>
-        <a class="btn btn-gold" href="#categories">ابدأ اكتشاف الخدمات <span>←</span></a>
+    <section class="closing-section">
+      <div class="container">
+        <div class="closing-inner">
+          <h2>كل موعد له بداية، وبدايتك من ميعاد.</h2>
+          <p>نهدف إلى بناء منصة مجانية تجمع العملاء وأصحاب الأنشطة في تجربة واحدة سهلة وواضحة.</p>
+          <a href="#categories" class="btn btn-primary">ابدأ الاستكشاف ←</a>
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-inner">
-      <a class="brand footer-brand" href="#">
-        <span class="brand-icon">م</span>
-        <span>ميعاد<small>MEEAD</small></span>
-      </a>
-      <p>وقتك يستحق الأفضل.</p>
-      <span class="footer-copy">© <span id="current-year">2026</span> Meead</span>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <a class="brand" href="#home">
+            <span class="brand-mark">م</span>
+            <span class="brand-name">ميعاد<small>MEEAD</small></span>
+          </a>
+          <p>منصة تهدف إلى تسهيل حجز المواعيد وربط العملاء بأصحاب الأنشطة والخدمات، مع الالتزام بأن تبقى مجانية للجميع.</p>
+        </div>
+        <div>
+          <h3 class="footer-title">روابط سريعة</h3>
+          <div class="footer-links">
+            <a href="#home">الرئيسية</a>
+            <a href="#categories">استكشف الخدمات</a>
+            <a href="#how">كيف تعمل المنصة؟</a>
+          </div>
+        </div>
+        <div>
+          <h3 class="footer-title">لأصحاب الأنشطة</h3>
+          <div class="footer-links">
+            <a href="#providers">التعريف بالمنصة</a>
+            <a href="#how">طريقة العمل</a>
+            <a href="#providers">الانضمام مستقبلًا</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="year"></span> ميعاد Meead — جميع الحقوق محفوظة.</span>
+        <span>منصة مجانية للجميع 🤍</span>
+      </div>
     </div>
   </footer>
 
+  <script>
+    const menuToggle = document.getElementById("menuToggle");
+    const mainNav = document.getElementById("mainNav");
+
+    menuToggle.addEventListener("click", () => {
+      const isOpen = mainNav.classList.toggle("open");
+      menuToggle.setAttribute("aria-expanded", String(isOpen));
+      menuToggle.setAttribute("aria-label", isOpen ? "إغلاق القائمة" : "فتح القائمة");
+    });
+
+    mainNav.querySelectorAll("a").forEach(link => {
+      link.addEventListener("click", () => {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+      });
+    });
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
