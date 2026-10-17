@@ -183,22 +183,28 @@ document.addEventListener("DOMContentLoaded", () => {
     searchProviders(query);
   });
 
-  document.querySelectorAll(".category-card").forEach((card) => {
-    card.addEventListener("click", (event) => {
-      event.preventDefault();
+  const categorySearchTerms = {
+  "العيادات الطبية": "عيادة",
+  "عيادات الأسنان": "عيادة",
+  "الحلاقة الرجالية": "حلاقة",
+  "الصالونات والجمال": "صالون",
+  "الرياضة واللياقة": "الرياضة واللياقة",
+  "التصوير والمناسبات": "التصوير والمناسبات",
+  "الخدمات المهنية": "الخدمات المهنية",
+  "خدمات أخرى": "أخرى"
+};
 
-      const heading = card.querySelector("h3");
-      if (!heading) return;
+document.querySelectorAll(".category-card").forEach((card) => {
+  card.addEventListener("click", (event) => {
+    event.preventDefault();
 
-      searchInput.value = heading.textContent.trim();
-      searchInput.setCustomValidity("");
-      searchForm.requestSubmit();
-    });
-  });
+    const heading = card.querySelector("h3");
+    if (!heading) return;
 
-  searchInput.addEventListener("input", () => {
+    const category = heading.textContent.trim();
+
+    searchInput.value = categorySearchTerms[category] || category;
     searchInput.setCustomValidity("");
+    searchProviders(searchInput.value.trim());
   });
-
-  console.log("Meead API search is ready.");
 });
