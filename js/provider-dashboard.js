@@ -8,13 +8,28 @@ document.addEventListener("DOMContentLoaded", () => {
   );
   const message = document.getElementById("providerDashboardMessage");
   const list = document.getElementById("providerList");
-  const form = document.getElementById("providerForm");
-  const formStatus = document.getElementById("providerFormStatus");
+  const providerForm = document.getElementById("providerForm");
+  const providerStatus = document.getElementById("providerFormStatus");
 
-  if (!dashboard || !openLink || !message || !list || !form) return;
+  const serviceManagement = document.getElementById("serviceManagement");
+  const providerSelect = document.getElementById("serviceProviderSelect");
+  const serviceForm = document.getElementById("serviceForm");
+  const serviceStatus = document.getElementById("serviceFormStatus");
+
+  if (
+    !dashboard || !openLink || !message || !list ||
+    !providerForm || !serviceManagement || !providerSelect ||
+    !serviceForm || !serviceStatus
+  ) {
+    console.error("Meead: بعض عناصر إدارة النشاط أو الخدمات غير موجودة.");
+    return;
+  }
 
   const auth = window.MeeadAuth;
-  const API_URL = "/.netlify/functions/provider-manage";
+  const PROVIDER_API = "/.netlify/functions/provider-manage";
+  const SERVICE_API = "/.netlify/functions/services";
+
+  let providers = [];
 
   async function request(url, options = {}) {
     const token = auth?.getToken();
@@ -30,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     let data;
+
     try {
       data = await response.json();
     } catch {
@@ -47,13 +63,20 @@ document.addEventListener("DOMContentLoaded", () => {
     message.textContent = text;
   }
 
-  function renderProviders(providers) {
+  function renderProviders() {
     list.replaceChildren();
+    providerSelect.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "اختر النشاط";
+    providerSelect.appendChild(placeholder);
 
     if (!providers.length) {
       const empty = document.createElement("p");
-      empty.textContent = "لم تضف أي نشاط بعد. يمكنك البدء بالنموذج أدناه.";
+      empty.textContent = "لم تضف أي نشاط بعد. أضف نشاطك من النموذج أدناه.";
       list.appendChild(empty);
+      serviceManagement.hidden = true;
       return;
     }
 
@@ -62,18 +85,36 @@ document.addEventListener("DOMContentLoaded", () => {
       const title = document.createElement("h3");
       const details = document.createElement("p");
       const status = document.createElement("p");
+      const chooseButton = document.createElement("button");
 
       title.textContent = provider.business_name;
-      details.textContent =
-        `${provider.category} — ${provider.city}`;
+      details.textContent = `${provider.category} — ${provider.city}`;
 
       status.textContent = Number(provider.is_published) === 1
         ? "حالة النشاط: منشور"
         : "حالة النشاط: غير منشور، ولن يظهر للعملاء بعد";
 
-      card.append(title, details, status);
+      chooseButton.type = "button";
+      chooseButton.textContent = "إضافة خدمات لهذا النشاط";
+      chooseButton.addEventListener("click", () => {
+        providerSelect.value = String(provider.id);
+        serviceManagement.hidden = false;
+        serviceManagement.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      });
+
+      card.append(title, details, status, chooseButton);
       list.appendChild(card);
+
+      const option = document.createElement("option");
+      option.value = String(provider.id);
+      option.textContent = `${provider.business_name} — ${provider.city}`;
+      providerSelect.appendChild(option);
     });
+
+    serviceManagement.hidden = false;
   }
 
   async function loadProviders() {
@@ -81,9 +122,10 @@ document.addEventListener("DOMContentLoaded", () => {
     list.replaceChildren();
 
     try {
-      const data = await request(API_URL);
-      renderProviders(data.providers || []);
-      showMessage("يمكنك إدارة أنشطتك من هذه الصفحة.");
+      const data = await request(PROVIDER_API);
+      providers = Array.isArray(data.providers) ? data.providers : [];
+      renderProviders();
+      showMessage("يمكنك إدارة أنشطتك وإضافة خدماتها من هنا.");
     } catch (error) {
       showMessage(error.message || "تعذر تحميل الأنشطة.");
     }
@@ -91,27 +133,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function openDashboard() {
     dashboard.hidden = false;
-    dashboard.scrollIntoView({ behavior: "smooth", block: "start" });
+    dashboard.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
 
     const user = auth?.getUser();
 
     if (!auth?.isLoggedIn() || !user) {
-      form.hidden = true;
-      showMessage("سجّل الدخول أولًا، ثم افتح إدارة نشاطي مجددًا.");
+      providerForm.hidden = true;
+      serviceManagement.hidden = true;
       list.replaceChildren();
-
+      showMessage("سجّل الدخول أولًا، ثم افتح إدارة نشاطي مجددًا.");
       document.getElementById("loginBtn")?.click();
       return;
     }
 
     if (user.role !== "provider") {
-      form.hidden = true;
+      providerForm.hidden = true;
+      serviceManagement.hidden = true;
       list.replaceChildren();
-      showMessage("هذه الصفحة مخصصة لحساب صاحب نشاط. سجّل الدخول بحساب صاحب نشاط للمتابعة.");
+      showMessage("هذه الصفحة مخصصة لحساب صاحب نشاط.");
       return;
     }
 
-    form.hidden = false;
+    providerForm.hidden = false;
     await loadProviders();
   }
 
@@ -120,39 +166,95 @@ document.addEventListener("DOMContentLoaded", () => {
     openDashboard();
   });
 
-  form.addEventListener("submit", async (event) => {
+  providerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    formStatus.textContent = "";
 
-    const submitButton = form.querySelector('[type="submit"]');
+    const submitButton = providerForm.querySelector('[type="submit"]');
     submitButton.disabled = true;
-    formStatus.textContent = "جارٍ حفظ النشاط...";
+    providerStatus.textContent = "جارٍ حفظ النشاط...";
 
     const payload = {
-      business_name: form.elements.business_name.value.trim(),
-      category: form.elements.category.value.trim(),
-      city: form.elements.city.value.trim(),
-      address: form.elements.address.value.trim(),
-      phone: form.elements.phone.value.trim(),
-      description: form.elements.description.value.trim()
+      business_name: providerForm.elements.business_name.value.trim(),
+      category: providerForm.elements.category.value.trim(),
+      city: providerForm.elements.city.value.trim(),
+      address: providerForm.elements.address.value.trim(),
+      phone: providerForm.elements.phone.value.trim(),
+      description: providerForm.elements.description.value.trim()
     };
 
     try {
-      const data = await request(API_URL, {
+      const data = await request(PROVIDER_API, {
         method: "POST",
         body: JSON.stringify(payload)
       });
 
-      form.reset();
-      formStatus.textContent =
+      providerForm.reset();
+      providerStatus.textContent =
         data.message || "تم حفظ النشاط بنجاح.";
 
       await loadProviders();
+
+      if (data.provider?.id) {
+        providerSelect.value = String(data.provider.id);
+      }
     } catch (error) {
-      formStatus.textContent =
-        error.message || "تعذر حفظ النشاط. حاول مجددًا.";
+      providerStatus.textContent =
+        error.message || "تعذر حفظ النشاط.";
     } finally {
       submitButton.disabled = false;
+    }
+  });
+
+  providerSelect.addEventListener("change", () => {
+    serviceStatus.textContent = "";
+  });
+
+  serviceForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const providerId = Number(providerSelect.value);
+
+    if (!Number.isSafeInteger(providerId) || providerId < 1) {
+      serviceStatus.textContent = "اختر النشاط أولًا.";
+      return;
+    }
+
+    const submitButton = serviceForm.querySelector('[type="submit"]');
+    submitButton.disabled = true;
+    serviceStatus.textContent = "جارٍ حفظ الخدمة...";
+
+    const payload = {
+      provider_id: providerId,
+      name: serviceForm.elements.name.value.trim(),
+      description: serviceForm.elements.description.value.trim(),
+      duration_minutes: Number(serviceForm.elements.duration_minutes.value),
+      price: Number(serviceForm.elements.price.value),
+      currency: serviceForm.elements.currency.value
+    };
+
+    try {
+      const data = await request(SERVICE_API, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      serviceForm.reset();
+      serviceStatus.textContent =
+        data.message || "تمت إضافة الخدمة بنجاح.";
+    } catch (error) {
+      serviceStatus.textContent =
+        error.message || "تعذر حفظ الخدمة.";
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  window.addEventListener("meead:auth-change", () => {
+    if (auth?.getUser()?.role !== "provider") {
+      dashboard.hidden = true;
+      providers = [];
+      list.replaceChildren();
+      serviceManagement.hidden = true;
     }
   });
 });
