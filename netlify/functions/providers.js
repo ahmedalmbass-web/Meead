@@ -75,8 +75,14 @@ exports.handler = async (event) => {
           p.address,
           p.description,
           p.phone,
-          p.image_url,
-          p.created_at
+p.image_url,
+p.created_at,
+(
+  SELECT GROUP_CONCAT(s.name, '، ')
+  FROM services s
+  WHERE s.provider_id = p.id
+    AND s.is_active = 1
+) AS services
         FROM providers p
         WHERE ${conditions.join(" AND ")}
         ORDER BY p.business_name COLLATE NOCASE
@@ -94,6 +100,7 @@ exports.handler = async (event) => {
       description: row.description,
       phone: row.phone,
       image_url: row.image_url,
+      services: row.services || "",
       created_at: row.created_at,
     }));
 
