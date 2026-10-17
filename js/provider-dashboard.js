@@ -74,7 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!providers.length) {
       const empty = document.createElement("p");
-      empty.textContent = "لم تضف أي نشاط بعد. أضف نشاطك من النموذج أدناه.";
+      empty.textContent =
+        "لم تضف أي نشاط بعد. أضف نشاطك من النموذج أدناه.";
       list.appendChild(empty);
       serviceManagement.hidden = true;
       return;
@@ -90,9 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
       title.textContent = provider.business_name;
       details.textContent = `${provider.category} — ${provider.city}`;
 
-      status.textContent = Number(provider.is_published) === 1
-        ? "حالة النشاط: منشور"
-        : "حالة النشاط: غير منشور، ولن يظهر للعملاء بعد";
+      const published = Number(provider.is_published) === 1;
+
+      status.textContent = published
+        ? "حالة النشاط: منشور ويظهر للعملاء"
+        : "حالة النشاط: غير منشور";
 
       chooseButton.type = "button";
       chooseButton.textContent = "إضافة خدمات لهذا النشاط";
@@ -106,6 +109,40 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       card.append(title, details, status, chooseButton);
+
+      if (!published) {
+        const publishButton = document.createElement("button");
+        const publishStatus = document.createElement("p");
+
+        publishButton.type = "button";
+        publishButton.textContent = "نشر النشاط";
+        publishButton.addEventListener("click", async () => {
+          publishButton.disabled = true;
+          publishStatus.textContent = "جارٍ نشر النشاط...";
+
+          try {
+            const data = await request(PROVIDER_API, {
+              method: "POST",
+              body: JSON.stringify({
+                action: "publish",
+                provider_id: Number(provider.id)
+              })
+            });
+
+            publishStatus.textContent =
+              data.message || "تم نشر النشاط بنجاح.";
+
+            await loadProviders();
+          } catch (error) {
+            publishStatus.textContent =
+              error.message || "تعذر نشر النشاط.";
+            publishButton.disabled = false;
+          }
+        });
+
+        card.append(publishButton, publishStatus);
+      }
+
       list.appendChild(card);
 
       const option = document.createElement("option");
@@ -125,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await request(PROVIDER_API);
       providers = Array.isArray(data.providers) ? data.providers : [];
       renderProviders();
-      showMessage("يمكنك إدارة أنشطتك وإضافة خدماتها من هنا.");
+      showMessage("يمكنك إدارة أنشطتك وإضافة خدماتها ونشرها من هنا.");
     } catch (error) {
       showMessage(error.message || "تعذر تحميل الأنشطة.");
     }
@@ -227,7 +264,9 @@ document.addEventListener("DOMContentLoaded", () => {
       provider_id: providerId,
       name: serviceForm.elements.name.value.trim(),
       description: serviceForm.elements.description.value.trim(),
-      duration_minutes: Number(serviceForm.elements.duration_minutes.value),
+      duration_minutes: Number(
+        serviceForm.elements.duration_minutes.value
+      ),
       price: Number(serviceForm.elements.price.value),
       currency: serviceForm.elements.currency.value
     };
