@@ -168,9 +168,23 @@ document.addEventListener("DOMContentLoaded", () => {
     results.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
+    document.querySelectorAll(".category-card").forEach((card) => {
+    card.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      const heading = card.querySelector("h3");
+      if (!heading) return;
+
+      const categoryName = heading.textContent.trim();
+
+      searchInput.value = categoryName;
+      searchInput.setCustomValidity("");
+      searchForm.requestSubmit();
+    });
+  });
+
   searchInput.addEventListener("input", () => {
     searchInput.setCustomValidity("");
   });
 
   console.log("Meead search is ready.");
-});
