@@ -77,6 +77,62 @@ exports.handler = async (event) => {
       return response(400, { message: "بيانات الطلب غير صالحة" });
     }
 
+    // نشر نشاط موجود يملكه المستخدم
+    if (body.action === "publish") {
+      const providerId = Number(body.provider_id);
+
+      if (!Number.isSafeInteger(providerId) || providerId < 1) {
+        return response(400, { message: "معرّف النشاط غير صالح" });
+      }
+
+      const ownedProvider = await db.execute({
+        sql: `SELECT id, is_published
+              FROM providers
+              WHERE id = ? AND owner_user_id = ?
+              LIMIT 1`,
+        args: [providerId, Number(user.id)],
+      });
+
+      const provider = ownedProvider.rows[0];
+
+      if (!provider) {
+        return response(404, { message: "النشاط غير موجود أو لا تملكه" });
+      }
+
+      if (Number(provider.is_published) === 1) {
+        return response(200, { message: "النشاط منشور بالفعل" });
+      }
+
+      const serviceCount = await db.execute({
+        sql: `SELECT COUNT(*) AS total
+              FROM services
+              WHERE provider_id = ? AND is_active = 1`,
+        args: [providerId],
+      });
+
+      if (Number(serviceCount.rows[0]?.total || 0) < 1) {
+        return response(400, {
+          message: "أضف خدمة نشطة واحدة على الأقل قبل نشر النشاط",
+        });
+      }
+
+      await db.execute({
+        sql: `UPDATE providers
+              SET is_published = 1
+              WHERE id = ? AND owner_user_id = ?`,
+        args: [providerId, Number(user.id)],
+      });
+
+      return response(200, {
+        message: "تم نشر النشاط بنجاح، وأصبح متاحًا للعملاء",
+        provider: {
+          id: providerId,
+          is_published: 1,
+        },
+      });
+    }
+
+    // إضافة نشاط جديد
     const businessName = String(body.business_name || "").trim();
     const category = String(body.category || "").trim();
     const city = String(body.city || "").trim();
@@ -114,7 +170,7 @@ exports.handler = async (event) => {
     });
 
     return response(201, {
-      message: "تم تسجيل النشاط، وهو غير منشور حتى استكمال إعداده",
+      message: "تم تسجيل النشاط، أضف خدماته ثم انشره",
       provider: {
         id: Number(result.lastInsertRowid),
         business_name: businessName,
@@ -125,6 +181,8 @@ exports.handler = async (event) => {
     });
   } catch (error) {
     console.error("Provider management error:", error.message);
-    return response(500, { message: "تعذر تنفيذ الطلب حاليًا" });
+    return response(500, {
+      message: "تعذر تنفيذ الطلب حاليًا",
+    });
   }
 };
