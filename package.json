@@ -1,0 +1,15 @@
+
+{
+  "name": "meead",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Meead appointment booking platform",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.15",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
