@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#173F35">
+  <title>لوحة الإدارة | ميعاد</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Cairo, sans-serif;
+      background: #F6F5F0;
+      color: #202923;
+    }
+    header {
+      background: #173F35;
+      color: white;
+      padding: 24px 18px;
+    }
+    header h1 { margin: 0 0 5px; font-size: 25px; }
+    header p { margin: 0; color: #e1e7df; font-size: 14px; }
+    main { max-width: 1000px; margin: auto; padding: 20px 14px; }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    button, .back {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 15px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    button { background: #173F35; color: white; }
+    .back { background: #e8e8df; color: #173F35; }
+    #message {
+      padding: 14px;
+      border-radius: 12px;
+      background: white;
+      margin-bottom: 18px;
+      line-height: 1.8;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e9e7df;
+      border-radius: 15px;
+      padding: 17px;
+      box-shadow: 0 3px 12px #173f350a;
+    }
+    .card .label { font-size: 13px; color: #68736b; }
+    .card .number {
+      display: block;
+      font-size: 29px;
+      font-weight: 800;
+      color: #173F35;
+      margin-top: 7px;
+      overflow-wrap: anywhere;
+    }
+    .section-title { margin: 25px 0 12px; font-size: 19px; }
+    .error { color: #a32626; }
+    .success { color: #17633e; }
+    footer { text-align: center; padding: 25px 12px; color: #68736b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ميعاد | لوحة الإدارة</h1>
+    <p>نظرة عامة على المنصة وأرقامها</p>
+  </header>
+
+  <main>
+    <div class="top">
+      <strong>إحصائيات المنصة</strong>
+      <div>
+        <button id="refreshBtn" type="button">تحديث الإحصائيات</button>
+        <a class="back" href="index.html">العودة للموقع</a>
+      </div>
+    </div>
+
+    <div id="message" role="status" aria-live="polite">جارٍ التحقق من صلاحية المدير وتحميل الإحصائيات...</div>
+    <div id="dashboard" hidden>
+      <h2 class="section-title">المستخدمون</h2>
+      <div class="grid">
+        <div class="card"><span class="label">إجمالي الحسابات</span><strong class="number" id="usersTotal">—</strong></div>
+        <div class="card"><span class="label">العملاء</span><strong class="number" id="customers">—</strong></div>
+        <div class="card"><span class="label">حسابات أصحاب الأنشطة</span><strong class="number" id="providerAccounts">—</strong></div>
+        <div class="card"><span class="label">المديرون</span><strong class="number" id="admins">—</strong></div>
+      </div>
+
+      <h2 class="section-title">الأنشطة التجارية</h2>
+      <div class="grid">
+        <div class="card"><span class="label">إجمالي الأنشطة</span><strong class="number" id="providersTotal">—</strong></div>
+        <div class="card"><span class="label">الأنشطة المنشورة</span><strong class="number" id="published">—</strong></div>
+        <div class="card"><span class="label">الأنشطة غير المنشورة</span><strong class="number" id="unpublished">—</strong></div>
+        <div class="card"><span class="label">إجمالي الخدمات</span><strong class="number" id="servicesTotal">—</strong></div>
+      </div>
+
+      <h2 class="section-title">الحجوزات</h2>
+      <div class="grid">
+        <div class="card"><span class="label">إجمالي الحجوزات</span><strong class="number" id="bookingsTotal">—</strong></div>
+        <div class="card"><span class="label">قيد الانتظار</span><strong class="number" id="pending">—</strong></div>
+        <div class="card"><span class="label">المؤكدة</span><strong class="number" id="confirmed">—</strong></div>
+        <div class="card"><span class="label">الملغاة</span><strong class="number" id="cancelled">—</strong></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>ميعاد — إدارة المنصة</footer>
+
+  <script>
+    "use strict";
+
+    const message = document.getElementById("message");
+    const dashboard = document.getElementById("dashboard");
+
+    async function loadStats() {
+      message.className = "";
+      message.textContent = "جارٍ تحميل الإحصائيات...";
+      dashboard.hidden = true;
+
+      const token = localStorage.getItem("meead_token");
+
+      if (!token) {
+        message.className = "error";
+        message.textContent = "لم نعثر على جلسة دخول في هذا التبويب. افتح الموقع وسجّل الدخول أولًا، ثم ارجع إلى هذه الصفحة في نفس المتصفح.";
+        return;
+      }
+
+      try {
+        const response = await fetch("/.netlify/functions/admin-stats", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("انتهت جلسة الدخول أو أن رمز الدخول غير صالح. سجّل الخروج ثم ادخل مجددًا.");
+          }
+          if (response.status === 403) {
+            throw new Error("الحساب الحالي ليس مديرًا. تحقق من دور الحساب في قاعدة البيانات، ثم سجّل الخروج وادخل مجددًا.");
+          }
+          throw new Error(data.message || "تعذر تحميل الإحصائيات.");
+        }
+
+        const s = data.stats;
+        const values = {
+          usersTotal: s.users.total,
+          customers: s.users.customers,
+          providerAccounts: s.users.providerAccounts,
+          admins: s.users.admins,
+          providersTotal: s.providers.total,
+          published: s.providers.published,
+          unpublished: s.providers.unpublished,
+          servicesTotal: s.services.total,
+          bookingsTotal: s.bookings.total,
+          pending: s.bookings.pending,
+          confirmed: s.bookings.confirmed,
+          cancelled: s.bookings.cancelled
+        };
+
+        for (const [id, value] of Object.entries(values)) {
+          document.getElementById(id).textContent =
+            Number(value).toLocaleString("ar");
+        }
+
+        dashboard.hidden = false;
+        message.className = "success";
+        message.textContent = "تم تحميل الإحصائيات بنجاح.";
+      } catch (error) {
+        message.className = "error";
+        message.textContent = error.message || "تعذر الاتصال بالخادم. حاول مرة أخرى.";
+      }
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click", loadStats);
+    loadStats();
+  </script>
+</body>
+</html>
