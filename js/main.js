@@ -44,11 +44,26 @@ document.addEventListener("DOMContentLoaded", () => {
       icon: "🏋️"
     },
     {
+        {
       name: "عدسة للتصوير",
       category: "التصوير والمناسبات",
       city: "عدن",
       service: "تصوير المناسبات",
       icon: "📸"
+    },
+    {
+      name: "مركز الخدمات المهنية",
+      category: "الخدمات المهنية",
+      city: "صنعاء",
+      service: "خدمات مهنية متنوعة",
+      icon: "🛠️"
+    },
+    {
+      name: "مركز الخدمات المتنوعة",
+      category: "خدمات أخرى",
+      city: "تعز",
+      service: "خدمات متنوعة",
+      icon: "＋"
     }
   ];
 
