@@ -517,6 +517,56 @@
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 
+  
+<section id="account" hidden role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+  <div class="account-panel">
+    <button type="button" id="closeAccount" aria-label="إغلاق">✕</button>
+
+    <h2 id="accountTitle">مرحبًا بك في ميعاد</h2>
+    <p id="accountMessage">سجّل دخولك لمتابعة حجوزاتك.</p>
+
+    <div class="account-tabs">
+      <button type="button" id="showLogin">تسجيل الدخول</button>
+      <button type="button" id="showRegister">إنشاء حساب</button>
+    </div>
+
+    <form id="loginForm">
+      <label for="loginEmail">البريد الإلكتروني</label>
+      <input id="loginEmail" name="email" type="email" autocomplete="email" required>
+
+      <label for="loginPassword">كلمة المرور</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+
+      <button type="submit">دخول</button>
+    </form>
+
+    <form id="registerForm" hidden>
+      <label for="registerName">الاسم الكامل</label>
+      <input id="registerName" name="name" autocomplete="name" required maxlength="100">
+
+      <label for="registerEmail">البريد الإلكتروني</label>
+      <input id="registerEmail" name="email" type="email" autocomplete="email" required>
+
+      <label for="registerPhone">رقم الهاتف</label>
+      <input id="registerPhone" name="phone" type="tel" autocomplete="tel">
+
+      <label for="registerPassword">كلمة المرور (8 أحرف على الأقل)</label>
+      <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
+
+      <label for="registerRole">نوع الحساب</label>
+      <select id="registerRole" name="role" required>
+        <option value="customer">عميل — أريد حجز موعد</option>
+        <option value="provider">صاحب نشاط — أريد عرض خدماتي</option>
+      </select>
+
+      <button type="submit">إنشاء الحساب</button>
+    </form>
+
+    <p id="accountStatus" role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+
   <script src="js/main.js" defer></script>
   <script src="js/auth.js"></script>
 </body>
