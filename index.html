@@ -433,6 +433,68 @@
       </p>
 
       <div id="providerList"></div>
+      
+<div id="serviceManagement" hidden>
+  <h3>إضافة خدمات النشاط</h3>
+  <p>اختر النشاط الذي تريد إضافة خدمة إليه.</p>
+
+  <label for="serviceProviderSelect">النشاط</label>
+  <select id="serviceProviderSelect" required>
+    <option value="">اختر النشاط</option>
+  </select>
+
+  <form id="serviceForm">
+    <label for="serviceName">اسم الخدمة</label>
+    <input
+      id="serviceName"
+      name="name"
+      required
+      minlength="2"
+      maxlength="150"
+    >
+
+    <label for="serviceDescription">وصف الخدمة</label>
+    <textarea
+      id="serviceDescription"
+      name="description"
+      maxlength="1000"
+    ></textarea>
+
+    <label for="serviceDuration">مدة الخدمة بالدقائق</label>
+    <input
+      id="serviceDuration"
+      name="duration_minutes"
+      type="number"
+      min="5"
+      max="1440"
+      step="1"
+      value="30"
+      required
+    >
+
+    <label for="servicePrice">السعر</label>
+    <input
+      id="servicePrice"
+      name="price"
+      type="number"
+      min="0"
+      max="1000000000"
+      step="0.01"
+      required
+    >
+
+    <label for="serviceCurrency">العملة</label>
+    <select id="serviceCurrency" name="currency" required>
+      <option value="YER">ريال يمني</option>
+      <option value="SAR">ريال سعودي</option>
+      <option value="USD">دولار أمريكي</option>
+    </select>
+
+    <button type="submit">حفظ الخدمة</button>
+    <p id="serviceFormStatus" role="status" aria-live="polite"></p>
+  </form>
+</div>
+
 
       <form id="providerForm">
         <h3>إضافة نشاط جديد</h3>
