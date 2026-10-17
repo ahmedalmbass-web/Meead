@@ -413,17 +413,64 @@
       </div>
     </section>
 
-    <section class="section" id="providers" style="padding-top:0">
-      <div class="container">
-        <div class="provider-banner">
-          <div>
-            <h2>عندك نشاط؟ خلّ عملاءك يوصلوا إليك.</h2>
-            <p>أنشئ صفحة لنشاطك، عرّف الناس بخدماتك، وسهّل عليهم طلب المواعيد. ميعاد مصممة لتكون مساحة مجانية تساعد أصحاب الأنشطة على تنظيم العمل والوصول إلى العملاء.</p>
-          </div>
-          <a class="btn btn-gold" href="#how">اكتشف كيف تعمل ←</a>
-        </div>
+    
+<section class="section" id="providers" style="padding-top:0">
+  <div class="container">
+    <div class="provider-banner">
+      <div>
+        <h2>عندك نشاط؟ خلّ عملاءك يوصلوا إليك.</h2>
+        <p>أنشئ صفحة لنشاطك، أضف خدماتك وأسعارك، وحدد أوقات استقبال الحجوزات من مكان واحد.</p>
       </div>
-    </section>
+      <a class="btn btn-gold" href="#providerDashboard">
+        إدارة نشاطي ←
+      </a>
+    </div>
+
+    <div id="providerDashboard" hidden>
+      <h2>إدارة نشاطي</h2>
+      <p id="providerDashboardMessage">
+        سجّل الدخول بحساب صاحب نشاط للبدء.
+      </p>
+
+      <div id="providerList"></div>
+
+      <form id="providerForm">
+        <h3>إضافة نشاط جديد</h3>
+
+        <label for="businessName">اسم النشاط</label>
+        <input id="businessName" name="business_name"
+          required minlength="2" maxlength="150">
+
+        <label for="businessCategory">نوع النشاط</label>
+        <select id="businessCategory" name="category" required>
+          <option value="">اختر نوع النشاط</option>
+          <option value="عيادة">عيادة</option>
+          <option value="حلاقة">حلاقة</option>
+          <option value="صالون">صالون تجميل</option>
+          <option value="أخرى">نشاط آخر</option>
+        </select>
+
+        <label for="businessCity">المدينة</label>
+        <input id="businessCity" name="city"
+          required minlength="2" maxlength="100">
+
+        <label for="businessAddress">العنوان</label>
+        <input id="businessAddress" name="address" maxlength="250">
+
+        <label for="businessPhone">رقم التواصل</label>
+        <input id="businessPhone" name="phone" type="tel" maxlength="30">
+
+        <label for="businessDescription">وصف النشاط</label>
+        <textarea id="businessDescription" name="description"
+          maxlength="2000"></textarea>
+
+        <button type="submit">حفظ النشاط</button>
+        <p id="providerFormStatus" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
 
     <section class="section" id="how">
       <div class="container">
