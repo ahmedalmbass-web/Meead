@@ -1463,3 +1463,132 @@ img {
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* Meead Account Dialog */
+#account:not([hidden]) {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  overflow-y: auto;
+  background: rgba(11, 40, 34, 0.72);
+}
+
+#account .account-panel {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  padding: 28px 22px;
+  border: 1px solid #e9e4d4;
+  border-radius: 22px;
+  background: #f7f6f0;
+  color: #1b2b26;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.22);
+}
+
+#account #closeAccount {
+  display: block;
+  margin-inline-start: auto;
+  margin-bottom: 12px;
+  border: 0;
+  background: transparent;
+  color: #123c32;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+#account h2 {
+  margin: 0 0 10px;
+  color: #123c32;
+  font-size: 25px;
+  text-align: center;
+}
+
+#account #accountMessage {
+  margin: 0 0 20px;
+  color: #75817b;
+  text-align: center;
+  font-size: 14px;
+}
+
+#account .account-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#account .account-tabs button {
+  flex: 1;
+  padding: 11px 8px;
+  border: 1px solid #d8bd7c;
+  border-radius: 10px;
+  background: #fff;
+  color: #123c32;
+  cursor: pointer;
+}
+
+#account form label {
+  display: block;
+  margin: 13px 0 6px;
+  color: #123c32;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#account form input,
+#account form select {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #d9ded8;
+  border-radius: 10px;
+  background: #fff;
+  color: #1b2b26;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+#account form input:focus,
+#account form select:focus {
+  outline: 2px solid #d8bd7c;
+  outline-offset: 2px;
+}
+
+#account form button[type="submit"] {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 20px;
+  border: 0;
+  border-radius: 11px;
+  background: #123c32;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#account #accountStatus {
+  margin: 14px 0 0;
+  color: #123c32;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  #account {
+    align-items: flex-start;
+  }
+
+  #account .account-panel {
+    margin: auto 0;
+    padding: 22px 16px;
+  }
+}
+
