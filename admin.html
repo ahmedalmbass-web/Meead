@@ -200,6 +200,109 @@
     }
 
     document.getElementById("refreshBtn").addEventListener("click", loadStats);
+    
+    const loadUsersBtn = document.getElementById("loadUsersBtn");
+    const usersMessage = document.getElementById("usersMessage");
+    const usersList = document.getElementById("usersList");
+
+    loadUsersBtn.addEventListener("click", async () => {
+      const token = localStorage.getItem("meead_token");
+
+      if (!token) {
+        usersMessage.textContent = "سجّل الدخول أولًا.";
+        return;
+      }
+
+      loadUsersBtn.disabled = true;
+      usersMessage.textContent = "جارٍ تحميل المستخدمين...";
+      usersList.replaceChildren();
+
+      try {
+        const response = await fetch("/.netlify/functions/admin-users", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "تعذر تحميل المستخدمين.");
+        }
+
+        if (!Array.isArray(data.users)) {
+          throw new Error("استجابة المستخدمين غير صالحة.");
+        }
+
+        if (data.users.length === 0) {
+          usersMessage.textContent = "لا توجد حسابات مسجلة.";
+          return;
+        }
+
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+
+        ["رقم الحساب", "الاسم", "البريد الإلكتروني", "الهاتف", "نوع الحساب"]
+          .forEach((label) => {
+            const th = document.createElement("th");
+            th.textContent = label;
+            th.style.padding = "10px";
+            th.style.textAlign = "right";
+            th.style.borderBottom = "1px solid #e9e7df";
+            headerRow.appendChild(th);
+          });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+
+        data.users.forEach((user) => {
+          const row = document.createElement("tr");
+
+          const roleLabels = {
+            customer: "عميل",
+            provider: "صاحب نشاط",
+            admin: "مدير"
+          };
+
+          [
+            user.id,
+            user.name,
+            user.email,
+            user.phone || "—",
+            roleLabels[user.role] || "غير معروف"
+          ].forEach((value) => {
+            const td = document.createElement("td");
+            td.textContent = String(value ?? "—");
+            td.style.padding = "10px";
+            td.style.borderBottom = "1px solid #e9e7df";
+            row.appendChild(td);
+          });
+
+          tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+
+        usersList.appendChild(table);
+        usersMessage.textContent =
+          `تم تحميل ${data.users.length} حسابًا (الحد الأقصى 200).`;
+      } catch (error) {
+        usersMessage.textContent =
+          error.message || "حدث خطأ أثناء تحميل المستخدمين.";
+      } finally {
+        loadUsersBtn.disabled = false;
+      }
+    });
+
     loadStats();
   </script>
 </body>
