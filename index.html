@@ -507,12 +507,23 @@
   </section>
 </div>
 
+<section id="providerBookings" hidden
+  style="margin:25px 0;padding:20px;background:#fff;border:1px solid #e7e7df;border-radius:16px;">
 
+  <h3 style="color:#173F35;">الحجوزات الواردة</h3>
+  <p>راجع طلبات العملاء وأكّد المواعيد المناسبة أو ألغِ الطلبات التي لا يمكن قبولها.</p>
 
+  <button type="button" id="refreshProviderBookings"
+    style="background:#173F35;color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;">
+    تحديث الحجوزات
+  </button>
 
+  <p id="providerBookingsStatus" role="status" aria-live="polite"></p>
+  <div id="providerBookingsList"></div>
 
+</section>
 
-      <form id="providerForm">
+<form id="providerForm">
         <h3>إضافة نشاط جديد</h3>
 
         <label for="businessName">اسم النشاط</label>
