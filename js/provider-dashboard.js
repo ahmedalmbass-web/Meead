@@ -100,13 +100,16 @@ document.addEventListener("DOMContentLoaded", () => {
       chooseButton.type = "button";
       chooseButton.textContent = "إضافة خدمات لهذا النشاط";
       chooseButton.addEventListener("click", () => {
-        providerSelect.value = String(provider.id);
-        serviceManagement.hidden = false;
-        serviceManagement.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
-      });
+  providerSelect.value = String(provider.id);
+  serviceManagement.hidden = false;
+
+  loadAvailability();
+
+  serviceManagement.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+});
 
       card.append(title, details, status, chooseButton);
 
