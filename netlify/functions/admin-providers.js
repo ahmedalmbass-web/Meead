@@ -29,7 +29,11 @@ exports.handler = async (event) => {
 
   const token = verifyToken(event);
 
-  if (!token || !Number.isSafeInteger(Number(token.sub))) {
+  if (
+  !token ||
+  !Number.isSafeInteger(Number(token.sub)) ||
+  Number(token.sub) <= 0
+) {
     return response(401, { message: "سجّل الدخول مجددًا" });
   }
 
