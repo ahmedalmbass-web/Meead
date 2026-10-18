@@ -68,7 +68,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (logoutBtn) logoutBtn.hidden = !loggedIn;
 
     if (bookingsBtn) {
-      bookingsBtn.hidden = !loggedIn || user?.role !== "customer";
+  console.log("Meead account check:", {
+    loggedIn,
+    role: user?.role
+  });
+
+  bookingsBtn.hidden = !loggedIn || user?.role !== "customer";
     }
 
     if (loggedIn && user) {
