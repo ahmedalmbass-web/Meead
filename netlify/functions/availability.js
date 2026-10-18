@@ -43,9 +43,19 @@ exports.handler = async (event) => {
     const userId = Number(token.sub);
     const params = event.queryStringParameters || {};
 
+    let body = {};
+
+    if (event.httpMethod === "POST") {
+      try {
+        body = JSON.parse(event.body || "{}");
+      } catch {
+        return response(400, { message: "بيانات الطلب غير صالحة" });
+      }
+    }
+
     const providerId = Number(
       event.httpMethod === "POST"
-        ? JSON.parse(event.body || "{}").provider_id
+        ? body.provider_id
         : params.providerId
     );
 
@@ -78,22 +88,35 @@ exports.handler = async (event) => {
       return response(200, { availability: result.rows });
     }
 
-    let body;
-
-    try {
-      body = JSON.parse(event.body || "{}");
-    } catch {
-      return response(400, { message: "بيانات الطلب غير صالحة" });
-    }
-
     const weekday = Number(body.weekday);
-    const startTime = body.start_time;
-    const endTime = body.end_time;
 
     if (
       !Number.isInteger(weekday) ||
       weekday < 0 ||
-      weekday > 6 ||
+      weekday > 6
+    ) {
+      return response(400, { message: "يوم العمل غير صالح" });
+    }
+
+    if (body.action === "disable") {
+      await db.execute({
+        sql: `UPDATE availability
+              SET is_active = 0
+              WHERE provider_id = ? AND weekday = ?`,
+        args: [providerId, weekday],
+      });
+
+      return response(200, {
+        message: "تم إغلاق يوم العمل",
+        provider_id: providerId,
+        weekday,
+      });
+    }
+
+    const startTime = body.start_time;
+    const endTime = body.end_time;
+
+    if (
       !validTime(startTime) ||
       !validTime(endTime) ||
       startTime >= endTime
@@ -103,7 +126,7 @@ exports.handler = async (event) => {
       });
     }
 
-    const result = await db.execute({
+    await db.execute({
       sql: `INSERT INTO availability
             (provider_id, weekday, start_time, end_time, is_active)
             VALUES (?, ?, ?, ?, 1)
