@@ -420,6 +420,128 @@
       }
     });
 
+    
+    const loadBookingsBtn = document.getElementById("loadBookingsBtn");
+    const bookingsMessage = document.getElementById("bookingsMessage");
+    const bookingsList = document.getElementById("bookingsList");
+
+    loadBookingsBtn.addEventListener("click", async () => {
+      const token = localStorage.getItem("meead_token");
+
+      if (!token) {
+        bookingsMessage.textContent = "سجّل الدخول أولًا.";
+        return;
+      }
+
+      loadBookingsBtn.disabled = true;
+      bookingsMessage.textContent = "جارٍ تحميل الحجوزات...";
+      bookingsList.replaceChildren();
+
+      try {
+        const response = await fetch("/.netlify/functions/admin-bookings", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "تعذر تحميل الحجوزات.");
+        }
+
+        if (!Array.isArray(data.bookings)) {
+          throw new Error("استجابة الحجوزات غير صالحة.");
+        }
+
+        if (data.bookings.length === 0) {
+          bookingsMessage.textContent = "لا توجد حجوزات مسجلة.";
+          return;
+        }
+
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+
+        [
+          "رقم الحجز",
+          "العميل",
+          "النشاط التجاري",
+          "الخدمة",
+          "التاريخ",
+          "وقت البداية",
+          "وقت النهاية",
+          "الحالة",
+          "السعر"
+        ].forEach((label) => {
+          const th = document.createElement("th");
+          th.textContent = label;
+          th.style.padding = "10px";
+          th.style.textAlign = "right";
+          th.style.borderBottom = "1px solid #e9e7df";
+          headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+
+        const statusLabels = {
+          pending: "قيد الانتظار",
+          confirmed: "مؤكد",
+          cancelled: "ملغي",
+          completed: "مكتمل"
+        };
+
+        data.bookings.forEach((booking) => {
+          const row = document.createElement("tr");
+
+          const price = booking.price == null
+            ? "—"
+            : `${booking.price} ${booking.currency || ""}`.trim();
+
+          [
+            booking.id,
+            booking.customer_name,
+            booking.business_name,
+            booking.service_name,
+            booking.appointment_date,
+            booking.start_time,
+            booking.end_time,
+            statusLabels[booking.status] || booking.status || "—",
+            price
+          ].forEach((value) => {
+            const td = document.createElement("td");
+            td.textContent = String(value ?? "—");
+            td.style.padding = "10px";
+            td.style.borderBottom = "1px solid #e9e7df";
+            row.appendChild(td);
+          });
+
+          tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        bookingsList.appendChild(table);
+
+        bookingsMessage.textContent =
+          `تم تحميل ${data.bookings.length} حجزًا (الحد الأقصى 200).`;
+      } catch (error) {
+        bookingsMessage.textContent =
+          error.message || "حدث خطأ أثناء تحميل الحجوزات.";
+      } finally {
+        loadBookingsBtn.disabled = false;
+      }
+    });
+
+
 
     loadStats();
   </script>
