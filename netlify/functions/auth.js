@@ -146,8 +146,12 @@ exports.handler = async (event) => {
     if (event.httpMethod === "GET" && action === "me") {
       const payload = verifyToken(event);
 
-      if (!payload) {
-        return response(401, { message: "يلزم تسجيل الدخول مجددًا" });
+      if (
+  !payload ||
+  !Number.isSafeInteger(Number(payload.sub)) ||
+  Number(payload.sub) <= 0
+) {
+  return response(401, { message: "يلزم تسجيل الدخول مجددًا" });
       }
 
       const result = await db.execute({
