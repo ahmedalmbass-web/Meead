@@ -1592,3 +1592,314 @@ img {
   }
 }
 
+
+/* ===== Meead: تحسين البحث ومعاينة الخدمات ===== */
+body .hero .hero-visual .visual-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+body .hero .hero-visual .visual-top strong {
+  color: #fff;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+body .hero .hero-visual .visual-top .live-pill {
+  white-space: nowrap;
+}
+
+#meeadSearch.mock-search {
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #e8e4d8;
+  box-shadow: 0 8px 24px #071c171c;
+}
+
+#meeadSearch.mock-search input {
+  min-height: 44px;
+  border-radius: 9px;
+}
+
+#meeadSearch.mock-search button {
+  min-height: 44px;
+  padding-inline: 20px;
+  transition: background .2s, transform .2s;
+}
+
+#meeadSearch.mock-search button:hover {
+  transform: translateY(-1px);
+}
+
+/* ===== لوحة صاحب النشاط ===== */
+#providerDashboard {
+  margin-top: 28px;
+  padding: clamp(16px, 3vw, 30px);
+  border: 1px solid #e7e8df;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 40px #1834280c;
+}
+
+#providerDashboard > h2 {
+  margin-top: 0;
+  color: #123c32;
+  font-size: clamp(24px, 4vw, 32px);
+}
+
+#providerDashboard > p {
+  color: #75817b;
+}
+
+#providerList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 16px;
+  margin-block: 22px;
+}
+
+#providerList article {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e7e8df;
+  border-radius: 16px;
+  background: #fafaf6;
+}
+
+#providerDashboard #serviceManagement,
+#providerDashboard #providerBookings,
+#providerDashboard #providerForm {
+  margin-top: 24px;
+  padding: clamp(15px, 3vw, 24px);
+  border: 1px solid #e7e8df;
+  border-radius: 18px;
+  background: #fff;
+}
+
+#providerDashboard h3 {
+  margin-top: 0;
+  color: #123c32;
+  font-size: 20px;
+}
+
+#providerDashboard #serviceManagement > p,
+#providerDashboard #providerBookings > p {
+  color: #75817b;
+  font-size: 14px;
+}
+
+/* ===== نماذج النشاط والخدمات ===== */
+#providerDashboard #providerForm,
+#providerDashboard #serviceForm {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+#providerDashboard #providerForm h3,
+#providerDashboard #serviceForm > p {
+  grid-column: 1 / -1;
+}
+
+#providerDashboard #providerForm label,
+#providerDashboard #serviceForm label,
+#providerDashboard #serviceManagement > label {
+  display: block;
+  margin-top: 8px;
+  color: #29483b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#providerDashboard #providerForm input,
+#providerDashboard #providerForm select,
+#providerDashboard #providerForm textarea,
+#providerDashboard #serviceForm input,
+#providerDashboard #serviceForm select,
+#providerDashboard #serviceForm textarea,
+#providerDashboard #serviceManagement > select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid #dfe4dc;
+  border-radius: 11px;
+  background: #fcfcf9;
+  color: #202b25;
+}
+
+#providerDashboard textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+#providerDashboard input:focus,
+#providerDashboard select:focus,
+#providerDashboard textarea:focus {
+  border-color: #b99b5c;
+  outline: 2px solid #d8bd7c55;
+  outline-offset: 1px;
+}
+
+#providerDashboard button {
+  min-height: 43px;
+  padding: 10px 15px;
+  border: 0;
+  border-radius: 10px;
+  background: #153d32;
+  color: #fff;
+  font-weight: 700;
+}
+
+#providerDashboard button:hover {
+  background: #245743;
+}
+
+#providerDashboard button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+#providerDashboard #providerFormStatus,
+#providerDashboard #serviceFormStatus,
+#providerDashboard #availabilityStatus,
+#providerDashboard #providerBookingsStatus {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+/* ===== تنظيم أيام وساعات العمل ===== */
+#availabilityManagement {
+  margin-top: 24px;
+  padding: clamp(14px, 3vw, 22px);
+  border: 1px solid #e7e8df;
+  border-radius: 16px;
+  background: #f8f7f2;
+}
+
+#availabilityManagement > p {
+  color: #75817b;
+  font-size: 13px;
+}
+
+#availabilityDays {
+  display: grid;
+  gap: 12px;
+  margin-block: 18px;
+}
+
+#availabilityDays .availability-day {
+  display: grid;
+  grid-template-columns: minmax(80px, .8fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #e4e7df;
+  border-radius: 12px;
+  background: #fff;
+}
+
+#availabilityDays .availability-day label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  color: #29483b;
+  font-size: 13px;
+}
+
+#availabilityDays .availability-day input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #153d32;
+}
+
+#availabilityDays .availability-day input[type="time"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px;
+  border: 1px solid #dfe4dc;
+  border-radius: 9px;
+  background: #fff;
+  color: #202b25;
+}
+
+/* ===== الحجوزات الواردة ===== */
+#providerBookingsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+#providerBookingsList article {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e7e8df;
+  border-radius: 14px;
+  background: #fafaf6;
+}
+
+#providerBookingsList article p {
+  overflow-wrap: anywhere;
+  color: #58665d;
+  font-size: 13px;
+  line-height: 2;
+}
+
+#providerBookingsList article button {
+  margin: 5px 4px 0 0;
+}
+
+/* ===== تحسين عرض الجوال ===== */
+@media (max-width: 520px) {
+  #providerDashboard {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  #providerDashboard #serviceManagement,
+  #providerDashboard #providerBookings,
+  #providerDashboard #providerForm {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  #availabilityDays .availability-day {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  #availabilityDays .availability-day > label:first-child {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #edf0e9;
+  }
+
+  #availabilityDays .availability-day > label:not(:first-child) {
+    display: grid;
+    gap: 5px;
+  }
+
+  #meeadSearch.mock-search {
+    gap: 5px;
+    padding: 6px;
+  }
+
+  #meeadSearch.mock-search input {
+    font-size: 12px;
+  }
+
+  #meeadSearch.mock-search button {
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+}
+
+
