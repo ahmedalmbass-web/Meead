@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
           service_id: Number(serviceSelect.value),
           appointment_date: appointmentDate,
           start_time: startTime,
-          notes: modal.querySelector("#meeadNotes").value.trim()
+          customer_notes: modal.querySelector("#meeadNotes").value.trim()
         })
       });
 
