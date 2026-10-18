@@ -382,6 +382,27 @@ refreshBtn.addEventListener("click", async () => {
 });
 
     
+const logoutBtn = document.getElementById("logoutBtn");
+
+logoutBtn.addEventListener("click", () => {
+  const confirmed = confirm("هل تريد تسجيل الخروج من لوحة الإدارة؟");
+
+  if (!confirmed) {
+    return;
+  }
+
+  localStorage.removeItem("meead_token");
+
+  dashboard.hidden = true;
+  message.className = "success";
+  message.textContent = "تم تسجيل الخروج بنجاح. يمكنك العودة إلى الموقع.";
+
+  logoutBtn.disabled = true;
+  refreshBtn.disabled = true;
+});
+
+
+    
     const loadUsersBtn = document.getElementById("loadUsersBtn");
     const usersMessage = document.getElementById("usersMessage");
     const usersList = document.getElementById("usersList");
