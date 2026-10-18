@@ -242,9 +242,212 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  
+  const availabilityManagement =
+    document.getElementById("availabilityManagement");
+  const availabilityDays =
+    document.getElementById("availabilityDays");
+  const availabilityStatus =
+    document.getElementById("availabilityStatus");
+  const saveAvailabilityBtn =
+    document.getElementById("saveAvailabilityBtn");
+  const AVAILABILITY_API = "/.netlify/functions/availability";
+
+  const weekdays = [
+    "الأحد",
+    "الإثنين",
+    "الثلاثاء",
+    "الأربعاء",
+    "الخميس",
+    "الجمعة",
+    "السبت"
+  ];
+
+  function renderAvailabilityDays() {
+    if (!availabilityDays) return;
+
+    availabilityDays.replaceChildren();
+
+    weekdays.forEach((day, weekday) => {
+      const row = document.createElement("div");
+      row.className = "availability-day";
+
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.dataset.weekday = String(weekday);
+      checkbox.className = "availability-enabled";
+
+      label.append(checkbox, document.createTextNode(` ${day}`));
+
+      const startLabel = document.createElement("label");
+      startLabel.textContent = "من ";
+      const start = document.createElement("input");
+      start.type = "time";
+      start.className = "availability-start";
+      start.disabled = true;
+      start.setAttribute("aria-label", `${day}: وقت البداية`);
+      startLabel.appendChild(start);
+
+      const endLabel = document.createElement("label");
+      endLabel.textContent = " إلى ";
+      const end = document.createElement("input");
+      end.type = "time";
+      end.className = "availability-end";
+      end.disabled = true;
+      end.setAttribute("aria-label", `${day}: وقت النهاية`);
+      endLabel.appendChild(end);
+
+      checkbox.addEventListener("change", () => {
+        start.disabled = !checkbox.checked;
+        end.disabled = !checkbox.checked;
+      });
+
+      row.append(label, startLabel, endLabel);
+      availabilityDays.appendChild(row);
+    });
+  }
+
+  async function loadAvailability() {
+    if (!availabilityManagement || !availabilityDays) return;
+
+    const providerId = Number(providerSelect.value);
+    availabilityManagement.hidden = !providerSelect.value;
+    availabilityStatus.textContent = "";
+
+    if (!Number.isSafeInteger(providerId) || providerId < 1) {
+      return;
+    }
+
+    renderAvailabilityDays();
+    availabilityStatus.textContent = "جارٍ تحميل ساعات العمل...";
+
+    try {
+      const data = await request(
+        `${AVAILABILITY_API}?providerId=${encodeURIComponent(providerId)}`
+      );
+
+      const saved = Array.isArray(data.availability)
+        ? data.availability
+        : Array.isArray(data.hours)
+          ? data.hours
+          : [];
+
+      saved.forEach((item) => {
+        if (Number(item.is_active) !== 1) return;
+
+        const checkbox = availabilityDays.querySelector(
+          `.availability-enabled[data-weekday="${Number(item.weekday)}"]`
+        );
+
+        if (!checkbox) return;
+
+        checkbox.checked = true;
+
+        const row = checkbox.closest(".availability-day");
+        const start = row.querySelector(".availability-start");
+        const end = row.querySelector(".availability-end");
+
+        start.disabled = false;
+        end.disabled = false;
+        start.value = String(item.start_time).slice(0, 5);
+        end.value = String(item.end_time).slice(0, 5);
+      });
+
+      availabilityStatus.textContent = saved.length
+        ? "تم تحميل ساعات العمل المحفوظة."
+        : "لم تُحدد ساعات عمل بعد. فعّل الأيام المطلوبة.";
+    } catch (error) {
+      availabilityStatus.textContent =
+        error.message || "تعذر تحميل ساعات العمل.";
+    }
+  }
+
   providerSelect.addEventListener("change", () => {
     serviceStatus.textContent = "";
+    loadAvailability();
   });
+
+  if (availabilityManagement && availabilityDays && saveAvailabilityBtn) {
+    renderAvailabilityDays();
+
+    saveAvailabilityBtn.addEventListener("click", async () => {
+      const providerId = Number(providerSelect.value);
+
+      if (!Number.isSafeInteger(providerId) || providerId < 1) {
+        availabilityStatus.textContent = "اختر النشاط أولًا.";
+        return;
+      }
+
+      const rows = [...availabilityDays.querySelectorAll(".availability-day")];
+      const schedule = rows.map((row, weekday) => {
+        const enabled = row.querySelector(".availability-enabled").checked;
+        const start = row.querySelector(".availability-start").value;
+        const end = row.querySelector(".availability-end").value;
+
+        return { weekday, enabled, start, end };
+      });
+
+      for (const day of schedule) {
+        if (day.enabled && (!day.start || !day.end || day.start >= day.end)) {
+          availabilityStatus.textContent =
+            `تحقق من وقت البداية والنهاية ليوم ${weekdays[day.weekday]}.`;
+          return;
+        }
+      }
+
+      saveAvailabilityBtn.disabled = true;
+      availabilityStatus.textContent = "جارٍ حفظ ساعات العمل...";
+
+      try {
+        const existingData = await request(
+          `${AVAILABILITY_API}?providerId=${encodeURIComponent(providerId)}`
+        );
+
+        const existing = Array.isArray(existingData.availability)
+          ? existingData.availability
+          : Array.isArray(existingData.hours)
+            ? existingData.hours
+            : [];
+
+        for (const day of schedule) {
+          if (day.enabled) {
+            await request(AVAILABILITY_API, {
+              method: "POST",
+              body: JSON.stringify({
+                provider_id: providerId,
+                weekday: day.weekday,
+                start_time: day.start,
+                end_time: day.end
+              })
+            });
+          } else if (existing.some(
+            (item) =>
+              Number(item.weekday) === day.weekday &&
+              Number(item.is_active) === 1
+          )) {
+            await request(AVAILABILITY_API, {
+              method: "POST",
+              body: JSON.stringify({
+                provider_id: providerId,
+                action: "disable",
+                weekday: day.weekday
+              })
+            });
+          }
+        }
+
+        availabilityStatus.textContent = "تم حفظ ساعات العمل بنجاح.";
+        await loadAvailability();
+      } catch (error) {
+        availabilityStatus.textContent =
+          error.message || "تعذر حفظ ساعات العمل.";
+      } finally {
+        saveAvailabilityBtn.disabled = false;
+      }
+    });
+  }
+
 
   serviceForm.addEventListener("submit", async (event) => {
     event.preventDefault();
