@@ -393,9 +393,19 @@
 
         const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || "تعذر تحميل المستخدمين.");
-        }
+        
+if (!response.ok) {
+  if (response.status === 401) {
+    throw new Error("انتهت جلسة الدخول أو أن رمز الدخول غير صالح. سجّل الدخول مجددًا.");
+  }
+
+  if (response.status === 403) {
+    throw new Error("ليس لديك صلاحية المدير لعرض المستخدمين.");
+  }
+
+  throw new Error(data.message || "تعذر تحميل المستخدمين.");
+}
+
 
         if (!Array.isArray(data.users)) {
           throw new Error("استجابة المستخدمين غير صالحة.");
