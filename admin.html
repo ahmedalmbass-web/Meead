@@ -73,6 +73,55 @@
     .error { color: #a32626; }
     .success { color: #17633e; }
     footer { text-align: center; padding: 25px 12px; color: #68736b; font-size: 12px; }
+
+    
+    /* تحسين عرض لوحة الإدارة على الهواتف */
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .card {
+        min-width: 0;
+        padding: 12px;
+        overflow-wrap: anywhere;
+      }
+
+      .section-title {
+        font-size: 17px;
+        margin: 20px 0 10px;
+      }
+
+      #usersList,
+      #providersList,
+      #bookingsList {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #usersList table,
+      #providersList table,
+      #bookingsList table {
+        min-width: 650px;
+      }
+
+      #usersList th,
+      #usersList td,
+      #providersList th,
+      #providersList td,
+      #bookingsList th,
+      #bookingsList td {
+        white-space: nowrap;
+        font-size: 13px;
+      }
+
+      button {
+        max-width: 100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -125,6 +174,31 @@
       </div>
 
       
+      <h2 class="section-title">تحليلات المنصة</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>حالة الحجوزات</h3>
+          <div id="bookingChart"
+               role="img"
+               aria-label="رسم يوضح حالات الحجوزات"
+               style="min-height: 220px;">
+            <p>سيظهر الرسم بعد إضافة كود التحليلات.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>توزيع المستخدمين</h3>
+          <div id="usersChart"
+               role="img"
+               aria-label="رسم يوضح أنواع المستخدمين"
+               style="min-height: 220px;">
+            <p>سيظهر الرسم بعد إضافة كود التحليلات.</p>
+          </div>
+        </div>
+      </div>
+
+
+      
       <h2 class="section-title">إدارة الأنشطة التجارية</h2>
       <div class="card">
         <p>عرض الأنشطة التجارية المسجلة في منصة ميعاد.</p>
@@ -153,6 +227,75 @@
 
     const message = document.getElementById("message");
     const dashboard = document.getElementById("dashboard");
+
+    
+    function renderAdminCharts(stats) {
+      const bookingChart = document.getElementById("bookingChart");
+      const usersChart = document.getElementById("usersChart");
+
+      const makeChart = (items, total) => {
+        const wrapper = document.createElement("div");
+        wrapper.style.display = "grid";
+        wrapper.style.gap = "14px";
+
+        items.forEach((item) => {
+          const row = document.createElement("div");
+
+          const label = document.createElement("div");
+          label.style.display = "flex";
+          label.style.justifyContent = "space-between";
+          label.style.gap = "8px";
+          label.style.marginBottom = "5px";
+          label.style.fontSize = "14px";
+
+          const name = document.createElement("span");
+          name.textContent = item.label;
+
+          const value = document.createElement("strong");
+          value.textContent = Number(item.value || 0).toLocaleString("ar");
+
+          label.append(name, value);
+
+          const track = document.createElement("div");
+          track.style.height = "10px";
+          track.style.background = "#e9e7df";
+          track.style.borderRadius = "8px";
+          track.style.overflow = "hidden";
+
+          const bar = document.createElement("div");
+          bar.style.height = "100%";
+          bar.style.width = total > 0
+            ? `${Math.min(100, Math.max(0, Number(item.value || 0) / total * 100))}%`
+            : "0%";
+          bar.style.background = item.color;
+          bar.style.borderRadius = "8px";
+          bar.style.transition = "width 0.3s ease";
+
+          track.appendChild(bar);
+          row.append(label, track);
+          wrapper.appendChild(row);
+        });
+
+        return wrapper;
+      };
+
+      bookingChart.replaceChildren(
+        makeChart([
+          { label: "قيد الانتظار", value: stats.bookings.pending, color: "#D7B878" },
+          { label: "مؤكدة", value: stats.bookings.confirmed, color: "#173F35" },
+          { label: "ملغاة", value: stats.bookings.cancelled, color: "#B85C5C" }
+        ], stats.bookings.total)
+      );
+
+      usersChart.replaceChildren(
+        makeChart([
+          { label: "العملاء", value: stats.users.customers, color: "#173F35" },
+          { label: "أصحاب الأنشطة", value: stats.users.providerAccounts, color: "#D7B878" },
+          { label: "المديرون", value: stats.users.admins, color: "#668C80" }
+        ], stats.users.total)
+      );
+    }
+
 
     async function loadStats() {
       message.className = "";
@@ -190,6 +333,7 @@
         }
 
         const s = data.stats;
+        renderAdminCharts(s);
         const values = {
           usersTotal: s.users.total,
           customers: s.users.customers,
