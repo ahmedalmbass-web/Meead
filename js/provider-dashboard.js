@@ -28,6 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const auth = window.MeeadAuth;
   const PROVIDER_API = "/.netlify/functions/provider-manage";
   const SERVICE_API = "/.netlify/functions/services";
+  const providerBookings = document.getElementById("providerBookings");
+const providerBookingsStatus = document.getElementById("providerBookingsStatus");
+const providerBookingsList = document.getElementById("providerBookingsList");
+const refreshProviderBookings = document.getElementById("refreshProviderBookings");
+const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
 
   let providers = [];
 
@@ -171,6 +176,101 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  async function loadProviderBookings() {
+  if (!providerBookings || !providerBookingsStatus || !providerBookingsList) return;
+
+  providerBookings.hidden = false;
+  providerBookingsStatus.textContent = "جارٍ تحميل الحجوزات...";
+  providerBookingsList.replaceChildren();
+
+  if (refreshProviderBookings) refreshProviderBookings.disabled = true;
+
+  try {
+    const data = await request(BOOKING_MANAGE_API);
+    const bookings = Array.isArray(data.bookings) ? data.bookings : [];
+
+    if (!bookings.length) {
+      providerBookingsStatus.textContent = "لا توجد حجوزات واردة حاليًا.";
+      return;
+    }
+
+    providerBookingsStatus.textContent = `عدد الحجوزات: ${bookings.length}`;
+
+    bookings.forEach((booking) => {
+      const card = document.createElement("article");
+      card.style.cssText = "padding:14px;margin:12px 0;border:1px solid #ddd;border-radius:12px";
+
+      const title = document.createElement("h3");
+      title.textContent = booking.service_name || "حجز خدمة";
+
+      const details = document.createElement("p");
+      details.textContent =
+        `النشاط: ${booking.business_name || "—"}\n` +
+        `العميل: ${booking.customer_name || "—"}\n` +
+        `الهاتف: ${booking.customer_phone || "—"}\n` +
+        `التاريخ: ${booking.appointment_date || "—"}\n` +
+        `الوقت: ${booking.start_time || "—"} - ${booking.end_time || "—"}\n` +
+        `السعر: ${booking.price ?? "—"} ${booking.currency || ""}\n` +
+        `ملاحظات: ${booking.customer_notes || "لا توجد"}`;
+      details.style.whiteSpace = "pre-line";
+
+      const status = document.createElement("p");
+      const labels = {
+        pending: "بانتظار تأكيدك",
+        confirmed: "تم تأكيد الحجز",
+        cancelled: "تم إلغاء الحجز"
+      };
+      status.textContent = labels[booking.status] || booking.status || "غير محدد";
+
+      card.append(title, details, status);
+
+      if (booking.status === "pending") {
+        ["confirmed", "cancelled"].forEach((nextStatus) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = nextStatus === "confirmed" ? "تأكيد الحجز" : "إلغاء الحجز";
+          button.style.cssText = "margin:5px;padding:9px 12px;border:0;border-radius:8px;cursor:pointer";
+          button.disabled = false;
+
+          button.addEventListener("click", async () => {
+            card.querySelectorAll("button").forEach((b) => b.disabled = true);
+            providerBookingsStatus.textContent = "جارٍ تحديث الحجز...";
+
+            try {
+              const result = await request(BOOKING_MANAGE_API, {
+                method: "POST",
+                body: JSON.stringify({
+                  booking_id: Number(booking.id),
+                  status: nextStatus
+                })
+              });
+
+              providerBookingsStatus.textContent =
+                result.message || "تم تحديث الحجز.";
+              await loadProviderBookings();
+            } catch (error) {
+              providerBookingsStatus.textContent =
+                error.message || "تعذر تحديث الحجز.";
+              card.querySelectorAll("button").forEach((b) => b.disabled = false);
+            }
+          });
+
+          card.appendChild(button);
+        });
+      }
+
+      providerBookingsList.appendChild(card);
+    });
+  } catch (error) {
+    providerBookingsStatus.textContent =
+      error.message || "تعذر تحميل الحجوزات.";
+  } finally {
+    if (refreshProviderBookings) refreshProviderBookings.disabled = false;
+  }
+}
+
+refreshProviderBookings?.addEventListener("click", loadProviderBookings);
+
   async function openDashboard() {
     dashboard.hidden = false;
     dashboard.scrollIntoView({
@@ -183,6 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!auth?.isLoggedIn() || !user) {
       providerForm.hidden = true;
       serviceManagement.hidden = true;
+      if (providerBookings) providerBookings.hidden = true;
       list.replaceChildren();
       showMessage("سجّل الدخول أولًا، ثم افتح إدارة نشاطي مجددًا.");
       document.getElementById("loginBtn")?.click();
@@ -192,13 +293,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (user.role !== "provider") {
       providerForm.hidden = true;
       serviceManagement.hidden = true;
+      if (providerBookings) providerBookings.hidden = true;
       list.replaceChildren();
       showMessage("هذه الصفحة مخصصة لحساب صاحب نشاط.");
       return;
     }
 
     providerForm.hidden = false;
-    await loadProviders();
+
+if (providerBookings) providerBookings.hidden = false;
+
+await Promise.all([
+  loadProviders(),
+  loadProviderBookings()
+]);
   }
 
   openLink.addEventListener("click", (event) => {
