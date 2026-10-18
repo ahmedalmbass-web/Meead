@@ -134,8 +134,11 @@
     <div class="top">
       <strong>إحصائيات المنصة</strong>
       <div>
-        <button id="refreshBtn" type="button">تحديث الإحصائيات</button>
-        <a class="back" href="index.html">العودة للموقع</a>
+        
+<button id="refreshBtn" type="button">تحديث الإحصائيات</button>
+<button id="logoutBtn" type="button">تسجيل الخروج</button>
+<a class="back" href="index.html">العودة للموقع</a>
+
       </div>
     </div>
 
@@ -363,7 +366,21 @@
       }
     }
 
-    document.getElementById("refreshBtn").addEventListener("click", loadStats);
+    
+const refreshBtn = document.getElementById("refreshBtn");
+
+refreshBtn.addEventListener("click", async () => {
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = "جارٍ التحديث...";
+
+  try {
+    await loadStats();
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = "تحديث الإحصائيات";
+  }
+});
+
     
     const loadUsersBtn = document.getElementById("loadUsersBtn");
     const usersMessage = document.getElementById("usersMessage");
@@ -506,9 +523,19 @@ if (!response.ok) {
 
         const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || "تعذر تحميل الأنشطة التجارية.");
-        }
+        
+if (!response.ok) {
+  if (response.status === 401) {
+    throw new Error("انتهت جلسة الدخول أو أن رمز الدخول غير صالح. سجّل الدخول مجددًا.");
+  }
+
+  if (response.status === 403) {
+    throw new Error("ليس لديك صلاحية المدير لعرض الأنشطة التجارية.");
+  }
+
+  throw new Error(data.message || "تعذر تحميل الأنشطة التجارية.");
+}
+
 
         if (!Array.isArray(data.providers)) {
           throw new Error("استجابة الأنشطة التجارية غير صالحة.");
@@ -603,9 +630,18 @@ if (!response.ok) {
 
         const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || "تعذر تحميل الحجوزات.");
-        }
+        
+if (!response.ok) {
+  if (response.status === 401) {
+    throw new Error("انتهت جلسة الدخول أو أن رمز الدخول غير صالح. سجّل الدخول مجددًا.");
+  }
+
+  if (response.status === 403) {
+    throw new Error("ليس لديك صلاحية المدير لعرض الحجوزات.");
+  }
+
+  throw new Error(data.message || "تعذر تحميل الحجوزات.");
+}
 
         if (!Array.isArray(data.bookings)) {
           throw new Error("استجابة الحجوزات غير صالحة.");
