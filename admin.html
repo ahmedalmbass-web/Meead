@@ -313,6 +313,104 @@
       }
     });
 
+    
+    const loadProvidersBtn = document.getElementById("loadProvidersBtn");
+    const providersMessage = document.getElementById("providersMessage");
+    const providersList = document.getElementById("providersList");
+
+    loadProvidersBtn.addEventListener("click", async () => {
+      const token = localStorage.getItem("meead_token");
+
+      if (!token) {
+        providersMessage.textContent = "سجّل الدخول أولًا.";
+        return;
+      }
+
+      loadProvidersBtn.disabled = true;
+      providersMessage.textContent = "جارٍ تحميل الأنشطة التجارية...";
+      providersList.replaceChildren();
+
+      try {
+        const response = await fetch("/.netlify/functions/admin-providers", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "تعذر تحميل الأنشطة التجارية.");
+        }
+
+        if (!Array.isArray(data.providers)) {
+          throw new Error("استجابة الأنشطة التجارية غير صالحة.");
+        }
+
+        if (data.providers.length === 0) {
+          providersMessage.textContent = "لا توجد أنشطة تجارية مسجلة.";
+          return;
+        }
+
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+
+        ["رقم النشاط", "اسم النشاط", "التصنيف", "المدينة", "اسم المالك", "حالة النشر"]
+          .forEach((label) => {
+            const th = document.createElement("th");
+            th.textContent = label;
+            th.style.padding = "10px";
+            th.style.textAlign = "right";
+            th.style.borderBottom = "1px solid #e9e7df";
+            headerRow.appendChild(th);
+          });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+
+        data.providers.forEach((provider) => {
+          const row = document.createElement("tr");
+
+          [
+            provider.id,
+            provider.business_name,
+            provider.category,
+            provider.city,
+            provider.owner_name,
+            Number(provider.is_published) === 1 ? "منشور" : "غير منشور"
+          ].forEach((value) => {
+            const td = document.createElement("td");
+            td.textContent = String(value ?? "—");
+            td.style.padding = "10px";
+            td.style.borderBottom = "1px solid #e9e7df";
+            row.appendChild(td);
+          });
+
+          tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        providersList.appendChild(table);
+        providersMessage.textContent =
+          `تم تحميل ${data.providers.length} نشاطًا تجاريًا (الحد الأقصى 200).`;
+      } catch (error) {
+        providersMessage.textContent =
+          error.message || "حدث خطأ أثناء تحميل الأنشطة التجارية.";
+      } finally {
+        loadProvidersBtn.disabled = false;
+      }
+    });
+
+
     loadStats();
   </script>
 </body>
