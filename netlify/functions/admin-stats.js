@@ -30,10 +30,14 @@ exports.handler = async (event) => {
   try {
     const payload = verifyToken(event);
 
-    if (!payload || !payload.sub) {
-      return response(401, {
-        message: "سجّل الدخول مجددًا للوصول إلى لوحة الإدارة",
-      });
+    if (
+  !payload ||
+  !Number.isSafeInteger(Number(payload.sub)) ||
+  Number(payload.sub) <= 0
+) {
+  return response(401, {
+    message: "سجّل الدخول مجددًا للوصول إلى لوحة الإدارة",
+  });
     }
 
     const db = getDb();
