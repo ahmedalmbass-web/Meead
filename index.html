@@ -570,8 +570,19 @@
         <label for="businessAddress">العنوان</label>
         <input id="businessAddress" name="address" maxlength="250">
 
-        <label for="businessPhone">رقم التواصل</label>
-        <input id="businessPhone" name="phone" type="tel" maxlength="30">
+        <label for="businessPhone">رقم التواصل </label>
+<input
+  id="businessPhone"
+  name="phone"
+  type="tel"
+  inputmode="numeric"
+  minlength="9"
+  maxlength="9"
+  pattern="7[0-9]{8}"
+  title="أدخل رقمًا من 9 أرقام يبدأ بالرقم 7"
+  placeholder="712345678"
+  required
+>
 
         <label for="businessDescription">وصف النشاط</label>
         <textarea id="businessDescription" name="description"
@@ -707,8 +718,20 @@
       <label for="registerEmail">البريد الإلكتروني</label>
       <input id="registerEmail" name="email" type="email" autocomplete="email" required>
 
-      <label for="registerPhone">رقم الهاتف</label>
-      <input id="registerPhone" name="phone" type="tel" autocomplete="tel">
+      <label for="registerPhone">رقم الهاتف </label>
+<input
+  id="registerPhone"
+  name="phone"
+  type="tel"
+  inputmode="numeric"
+  autocomplete="tel"
+  minlength="9"
+  maxlength="9"
+  pattern="7[0-9]{8}"
+  title="أدخل رقمًا من 9 أرقام يبدأ بالرقم 7"
+  placeholder="712345678"
+  required
+>
 
       <label for="registerPassword">كلمة المرور (8 أحرف على الأقل)</label>
       <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
