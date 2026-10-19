@@ -317,6 +317,15 @@ await Promise.all([
   providerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
+        const phone = providerForm.elements.phone.value.trim();
+
+    if (!/^7[0-9]{8}$/.test(phone)) {
+      providerStatus.textContent =
+        "رقم التواصل اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.";
+      providerForm.elements.phone.focus();
+      return;
+    }
+
     const submitButton = providerForm.querySelector('[type="submit"]');
     submitButton.disabled = true;
     providerStatus.textContent = "جارٍ حفظ النشاط...";
