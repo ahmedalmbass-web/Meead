@@ -74,10 +74,22 @@ document.addEventListener("DOMContentLoaded", () => {
     },
 
     async register(details) {
-      const data = await requestAuth("register", details);
-      saveSession(data);
-      return data.user;
-    },
+  const phone = String(details.phone || "").trim();
+
+  if (!/^7[0-9]{8}$/.test(phone)) {
+    throw new Error(
+      "رقم الهاتف اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7."
+    );
+  }
+
+  const data = await requestAuth("register", {
+    ...details,
+    phone
+  });
+
+  saveSession(data);
+  return data.user;
+},
 
     async login(email, password) {
       const data = await requestAuth("login", { email, password });
