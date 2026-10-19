@@ -23,13 +23,31 @@
     header p { margin: 0; color: #e1e7df; font-size: 14px; }
     main { max-width: 1000px; margin: auto; padding: 20px 14px; }
     .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-    }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.top > div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.top button,
+.top .back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  white-space: nowrap;
+  text-align: center;
+}
     button, .back {
       border: 0;
       border-radius: 10px;
@@ -117,9 +135,27 @@
         font-size: 13px;
       }
 
-      button {
-        max-width: 100%;
-      }
+      .top {
+  align-items: stretch;
+}
+
+.top > strong {
+  width: 100%;
+}
+
+.top > div {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  gap: 10px;
+}
+
+.top button,
+.top .back {
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+}
     }
 
   </style>
