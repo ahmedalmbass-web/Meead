@@ -140,18 +140,19 @@ exports.handler = async (event) => {
     const description = String(body.description || "").trim();
     const phone = String(body.phone || "").trim();
 
-    if (
+        if (
       businessName.length < 2 || businessName.length > 150 ||
       category.length < 2 || category.length > 100 ||
       city.length < 2 || city.length > 100 ||
       address.length > 250 ||
       description.length > 2000 ||
-      phone.length > 30
+      !/^7[0-9]{8}$/.test(phone)
     ) {
       return response(400, {
-        message: "تحقق من اسم النشاط والتصنيف والمدينة وبقية البيانات",
+        message:
+          "تحقق من بيانات النشاط. رقم التواصل اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.",
       });
-    }
+        }
 
     const result = await db.execute({
       sql: `INSERT INTO providers
