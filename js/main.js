@@ -233,6 +233,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   
+
+
 async function searchProviders(query) {
   results.style.display = "block";
   results.replaceChildren(element("p", "جارٍ البحث عن الأنشطة...", "padding:20px"));
@@ -277,6 +279,8 @@ async function searchProviders(query) {
     renderResults([], query, error.message || "تعذر الاتصال بخدمة البحث.");
   }
 }
+
+
 
 
   async function openProvider(provider) {
