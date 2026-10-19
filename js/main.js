@@ -235,15 +235,17 @@ document.addEventListener("DOMContentLoaded", () => {
   
 
 
+
 async function searchProviders(query) {
   results.style.display = "block";
-  results.replaceChildren(element("p", "جارٍ البحث عن الأنشطة...", "padding:20px"));
+  results.replaceChildren(
+    element("p", "جارٍ البحث عن الأنشطة...", "padding:20px")
+  );
 
   try {
-    const url = new URL(API.providers, window.location.origin);
-    const searchTerms = {
+    const categoryFilters = {
       "العيادات الطبية": ["العيادات الطبية", "عيادة"],
-      "عيادات الأسنان": ["عيادات الأسنان", "عيادة"],
+      "عيادات الأسنان": ["عيادات الأسنان"],
       "الحلاقة الرجالية": ["الحلاقة الرجالية", "حلاقة"],
       "الصالونات والجمال": ["الصالونات والجمال", "صالون"],
       "الرياضة واللياقة": ["الرياضة واللياقة"],
@@ -252,33 +254,56 @@ async function searchProviders(query) {
       "خدمات أخرى": ["خدمات أخرى", "أخرى"]
     };
 
-    const terms = searchTerms[query] || [query];
-    const uniqueProviders = new Map();
+    const categories = categoryFilters[query];
 
-    for (const term of terms) {
-      const searchUrl = new URL(url);
-      searchUrl.searchParams.set("q", term);
+    if (categories) {
+      const uniqueProviders = new Map();
 
-      const response = await fetch(searchUrl, {
-        headers: { Accept: "application/json" }
-      });
-      const data = await response.json();
+      for (const category of categories) {
+        const url = new URL(API.providers, window.location.origin);
+        url.searchParams.set("category", category);
 
-      if (!response.ok) {
-        throw new Error(data.message || "تعذر إكمال البحث.");
+        const response = await fetch(url, {
+          headers: { Accept: "application/json" }
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "تعذر إكمال البحث.");
+        }
+
+        for (const provider of data.providers || []) {
+          uniqueProviders.set(String(provider.id), provider);
+        }
       }
 
-      for (const provider of data.providers || []) {
-        uniqueProviders.set(String(provider.id), provider);
-      }
+      renderResults([...uniqueProviders.values()], query);
+      return;
     }
 
-    renderResults([...uniqueProviders.values()], query);
+    const url = new URL(API.providers, window.location.origin);
+    url.searchParams.set("q", query);
+
+    const response = await fetch(url, {
+      headers: { Accept: "application/json" }
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "تعذر إكمال البحث.");
+    }
+
+    renderResults(data.providers || [], query);
   } catch (error) {
     console.error("Meead search error:", error);
-    renderResults([], query, error.message || "تعذر الاتصال بخدمة البحث.");
+    renderResults(
+      [],
+      query,
+      error.message || "تعذر الاتصال بخدمة البحث."
+    );
   }
 }
+
 
 
 
