@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const registerBtn = document.getElementById("registerBtn");
   const bookingsBtn = document.getElementById("myBookingsBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const manageActivityBtn = document.getElementById("manageActivityBtn");
   const closeBtn = document.getElementById("closeAccount");
   const loginForm = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
@@ -62,6 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateNavigation() {
     const user = auth.getUser();
     const loggedIn = auth.isLoggedIn();
+
+    if (manageActivityBtn) {
+  manageActivityBtn.hidden = !loggedIn || user?.role !== "provider";
+    }
 
     if (loginBtn) loginBtn.hidden = loggedIn;
     if (registerBtn) registerBtn.hidden = loggedIn;
