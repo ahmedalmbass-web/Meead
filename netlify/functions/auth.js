@@ -47,7 +47,7 @@ exports.handler = async (event) => {
       const phone = String(body.phone || "").trim();
       const role = body.role === "provider" ? "provider" : "customer";
 
-      if (
+            if (
         name.length < 2 ||
         name.length > 100 ||
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
@@ -55,12 +55,13 @@ exports.handler = async (event) => {
         typeof password !== "string" ||
         password.length < 8 ||
         password.length > 72 ||
-        phone.length > 30
+        !/^7[0-9]{8}$/.test(phone)
       ) {
         return response(400, {
-          message: "تحقق من الاسم والبريد وكلمة المرور ورقم الهاتف",
+          message:
+            "تحقق من الاسم والبريد وكلمة المرور. رقم الهاتف اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.",
         });
-      }
+            }
 
       const existing = await db.execute({
         sql: "SELECT id FROM users WHERE email = ? LIMIT 1",
