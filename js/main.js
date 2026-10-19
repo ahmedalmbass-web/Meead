@@ -19,23 +19,31 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const categorySearchTerms = {
-    "العيادات الطبية": "عيادة",
-    "عيادات الأسنان": "عيادة",
-    "الحلاقة الرجالية": "حلاقة",
-    "الصالونات والجمال": "صالون",
-    "الرياضة واللياقة": "الرياضة واللياقة",
-    "التصوير والمناسبات": "التصوير والمناسبات",
-    "الخدمات المهنية": "الخدمات المهنية",
-    "خدمات أخرى": "أخرى"
-  };
+  "العيادات الطبية": "العيادات الطبية",
+  "الحلاقة الرجالية": "الحلاقة الرجالية",
+  "الصالونات والجمال": "الصالونات والجمال",
+  "عيادات الأسنان": "عيادات الأسنان",
+  "الرياضة واللياقة": "الرياضة واللياقة",
+  "التصوير والمناسبات": "التصوير والمناسبات",
+  "الخدمات المهنية": "الخدمات المهنية",
+  "خدمات أخرى": "خدمات أخرى"
+};
 
   const categoryIcons = {
-    "عيادة": "🩺",
-    "عيادات الأسنان": "🦷",
-    "حلاقة": "💈",
-    "صالون": "💇",
-    "أخرى": "📍"
-  };
+  "العيادات الطبية": "🩺",
+  "عيادات الأسنان": "🦷",
+  "الحلاقة الرجالية": "💈",
+  "الصالونات والجمال": "💇",
+  "الرياضة واللياقة": "🏋️",
+  "التصوير والمناسبات": "📸",
+  "الخدمات المهنية": "💼",
+  "خدمات أخرى": "📍",
+
+  "عيادة": "🩺",
+  "حلاقة": "💈",
+  "صالون": "💇",
+  "أخرى": "📍"
+};
 
   const results = document.createElement("section");
   results.id = "searchResults";
@@ -224,15 +232,32 @@ document.addEventListener("DOMContentLoaded", () => {
     results.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  async function searchProviders(query) {
-    results.style.display = "block";
-    results.replaceChildren(element("p", "جارٍ البحث عن الأنشطة...", "padding:20px"));
+  
+async function searchProviders(query) {
+  results.style.display = "block";
+  results.replaceChildren(element("p", "جارٍ البحث عن الأنشطة...", "padding:20px"));
 
-    try {
-      const url = new URL(API.providers, window.location.origin);
-      url.searchParams.set("q", query);
+  try {
+    const url = new URL(API.providers, window.location.origin);
+    const searchTerms = {
+      "العيادات الطبية": ["العيادات الطبية", "عيادة"],
+      "عيادات الأسنان": ["عيادات الأسنان", "عيادة"],
+      "الحلاقة الرجالية": ["الحلاقة الرجالية", "حلاقة"],
+      "الصالونات والجمال": ["الصالونات والجمال", "صالون"],
+      "الرياضة واللياقة": ["الرياضة واللياقة"],
+      "التصوير والمناسبات": ["التصوير والمناسبات"],
+      "الخدمات المهنية": ["الخدمات المهنية"],
+      "خدمات أخرى": ["خدمات أخرى", "أخرى"]
+    };
 
-      const response = await fetch(url, {
+    const terms = searchTerms[query] || [query];
+    const uniqueProviders = new Map();
+
+    for (const term of terms) {
+      const searchUrl = new URL(url);
+      searchUrl.searchParams.set("q", term);
+
+      const response = await fetch(searchUrl, {
         headers: { Accept: "application/json" }
       });
       const data = await response.json();
@@ -241,12 +266,18 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(data.message || "تعذر إكمال البحث.");
       }
 
-      renderResults(data.providers || [], query);
-    } catch (error) {
-      console.error("Meead search error:", error);
-      renderResults([], query, error.message || "تعذر الاتصال بخدمة البحث.");
+      for (const provider of data.providers || []) {
+        uniqueProviders.set(String(provider.id), provider);
+      }
     }
+
+    renderResults([...uniqueProviders.values()], query);
+  } catch (error) {
+    console.error("Meead search error:", error);
+    renderResults([], query, error.message || "تعذر الاتصال بخدمة البحث.");
   }
+}
+
 
   async function openProvider(provider) {
     selectedProvider = provider;
