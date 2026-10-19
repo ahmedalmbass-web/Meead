@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const loginBtn = document.getElementById("loginBtn");
   const registerBtn = document.getElementById("registerBtn");
+  const providerEntryBtn = document.getElementById("providerEntryBtn");
+const registerRole = document.getElementById("registerRole");
   const bookingsBtn = document.getElementById("myBookingsBtn");
   const logoutBtn = document.getElementById("logoutBtn");
   const manageActivityBtn = document.getElementById("manageActivityBtn");
@@ -95,6 +97,24 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     openModal("register");
   });
+
+  providerEntryBtn?.addEventListener("click", (event) => {
+  event.preventDefault();
+
+  if (auth.isLoggedIn() && auth.getUser()?.role === "provider") {
+    document.getElementById("providerDashboard")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+    return;
+  }
+
+  if (registerRole) {
+    registerRole.value = "provider";
+  }
+
+  openModal("login");
+});
 
   showLoginBtn?.addEventListener("click", () => switchMode("login"));
   showRegisterBtn?.addEventListener("click", () => switchMode("register"));
