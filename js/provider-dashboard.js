@@ -216,10 +216,11 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
 
       const status = document.createElement("p");
       const labels = {
-        pending: "بانتظار تأكيدك",
-        confirmed: "تم تأكيد الحجز",
-        cancelled: "تم إلغاء الحجز"
-      };
+  pending: "بانتظار تأكيدك",
+  confirmed: "تم تأكيد الحجز",
+  cancelled: "تم إلغاء الحجز",
+  completed: "اكتمل الموعد"
+};
       status.textContent = labels[booking.status] || booking.status || "غير محدد";
 
       card.append(title, details, status);
@@ -257,6 +258,40 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
 
           card.appendChild(button);
         });
+      }
+
+      if (booking.status === "confirmed") {
+  const completeButton = document.createElement("button");
+  completeButton.type = "button";
+  completeButton.textContent = "إكمال الموعد";
+  completeButton.style.cssText =
+    "margin:5px;padding:9px 12px;border:0;border-radius:8px;cursor:pointer";
+
+  completeButton.addEventListener("click", async () => {
+    completeButton.disabled = true;
+    providerBookingsStatus.textContent = "جارٍ إكمال الموعد...";
+
+    try {
+      const result = await request(BOOKING_MANAGE_API, {
+        method: "POST",
+        body: JSON.stringify({
+          booking_id: Number(booking.id),
+          status: "completed"
+        })
+      });
+
+      providerBookingsStatus.textContent =
+        result.message || "تم تسجيل اكتمال الموعد.";
+
+      await loadProviderBookings();
+    } catch (error) {
+      providerBookingsStatus.textContent =
+        error.message || "تعذر إكمال الموعد.";
+      completeButton.disabled = false;
+    }
+  });
+
+  card.appendChild(completeButton);
       }
 
       providerBookingsList.appendChild(card);
