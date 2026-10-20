@@ -77,23 +77,31 @@ exports.handler = async (event) => {
     const status = body.status;
 
     if (
-      !Number.isSafeInteger(bookingId) ||
-      bookingId < 1 ||
-      !["confirmed", "cancelled"].includes(status)
-    ) {
+  !Number.isSafeInteger(bookingId) ||
+  bookingId < 1 ||
+  !["confirmed", "cancelled", "completed"].includes(status)
+) {
+  return response(400, { message: "بيانات الحجز غير صحيحة" });
+    } {
       return response(400, { message: "بيانات الحجز غير صحيحة" });
     }
 
     const result = await db.execute({
-      sql: `UPDATE bookings
-            SET status = ?
-            WHERE id = ?
-              AND provider_id IN (
-                SELECT id FROM providers WHERE owner_user_id = ?
-              )
-              AND status = 'pending'`,
-      args: [status, bookingId, userId],
-    });
+  sql: `UPDATE bookings
+        SET status = ?
+        WHERE id = ?
+          AND provider_id IN (
+            SELECT id
+            FROM providers
+            WHERE owner_user_id = ?
+          )
+          AND (
+            (status = 'pending' AND ? IN ('confirmed', 'cancelled'))
+            OR
+            (status = 'confirmed' AND ? = 'completed')
+          )`,
+  args: [status, bookingId, userId, status, status],
+});
 
     if (Number(result.rowsAffected) === 0) {
       return response(404, {
