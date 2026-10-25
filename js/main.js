@@ -346,6 +346,22 @@ async function searchProviders(query) {
 
       const providers = [...uniqueProviders.values()];
 
+      
+      fetch("/.netlify/functions/search-log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          search_term: query,
+          category: query,
+          results_count: providers.length
+        })
+      }).catch((error) => {
+        console.error("Meead category logging error:", error);
+      });
+
+
       if (currentSort === "rating") {
         providers.sort((a, b) =>
           Number(b.average_rating || 0) - Number(a.average_rating || 0) ||
@@ -367,6 +383,7 @@ async function searchProviders(query) {
       return;
     }
 
+    
     const url = new URL(API.providers, window.location.origin);
     url.searchParams.set("q", query);
     url.searchParams.set("sort", currentSort);
@@ -380,7 +397,25 @@ async function searchProviders(query) {
       throw new Error(data.message || "تعذر إكمال البحث.");
     }
 
-    renderResults(data.providers || [], query);
+    const providers = data.providers || [];
+
+    if (query.trim()) {
+      fetch("/.netlify/functions/search-log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          search_term: query.trim(),
+          results_count: providers.length
+        })
+      }).catch((error) => {
+        console.error("Meead search logging error:", error);
+      });
+    }
+
+    renderResults(providers, query);
+
   } catch (error) {
     console.error("Meead search error:", error);
     renderResults(
