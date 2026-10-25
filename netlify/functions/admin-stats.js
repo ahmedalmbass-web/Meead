@@ -146,6 +146,7 @@ exports.handler = async (event) => {
     const providers = providersResult.rows[0];
     const services = servicesResult.rows[0];
     const bookings = bookingsResult.rows[0];
+    const searchTotals = searchTotalsResult.rows[0];
 
     return response(200, {
       stats: {
@@ -168,6 +169,22 @@ exports.handler = async (event) => {
           pending: number(bookings.pending),
           confirmed: number(bookings.confirmed),
           cancelled: number(bookings.cancelled),
+        },
+                searches: {
+          total: number(searchTotals.total_searches),
+          withoutResults: number(searchTotals.searches_without_results),
+
+          popular: popularSearchesResult.rows.map((row) => ({
+            searchTerm: row.search_term,
+            count: number(row.search_count),
+            lastSearched: row.last_searched,
+          })),
+
+          noResults: noResultsSearchesResult.rows.map((row) => ({
+            searchTerm: row.search_term,
+            count: number(row.search_count),
+            lastSearched: row.last_searched,
+          })),
         },
       },
     });
