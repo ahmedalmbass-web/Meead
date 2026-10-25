@@ -57,12 +57,17 @@ exports.handler = async (event) => {
       });
     }
 
+    
     const [
       usersResult,
       providersResult,
       servicesResult,
       bookingsResult,
+      searchTotalsResult,
+      popularSearchesResult,
+      noResultsSearchesResult,
     ] = await Promise.all([
+
       db.execute(`
         SELECT
           COUNT(*) AS total_users,
@@ -101,6 +106,38 @@ exports.handler = async (event) => {
             AS cancelled
         FROM bookings
       `),
+
+      
+      db.execute(`
+        SELECT
+          COUNT(*) AS total_searches,
+          COALESCE(SUM(results_count = 0), 0) AS searches_without_results
+        FROM search_logs
+      `),
+
+      db.execute(`
+        SELECT
+          search_term,
+          COUNT(*) AS search_count,
+          MAX(created_at) AS last_searched
+        FROM search_logs
+        GROUP BY LOWER(TRIM(search_term))
+        ORDER BY search_count DESC, last_searched DESC
+        LIMIT 10
+      `),
+
+      db.execute(`
+        SELECT
+          search_term,
+          COUNT(*) AS search_count,
+          MAX(created_at) AS last_searched
+        FROM search_logs
+        WHERE results_count = 0
+        GROUP BY LOWER(TRIM(search_term))
+        ORDER BY search_count DESC, last_searched DESC
+        LIMIT 10
+      `),
+
     ]);
 
     const number = (value) => Number(value || 0);
