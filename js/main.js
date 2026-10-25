@@ -249,6 +249,28 @@ let currentSort = "default";
         "p", provider.category || "خدمات متنوعة",
         "margin:5px 0;color:#52645b"
       ));
+      
+      const averageRating = Number(provider.average_rating || 0);
+      const reviewCount = Number(provider.review_count || 0);
+      const bookingCount = Number(provider.booking_count || 0);
+
+      card.appendChild(element(
+        "p",
+        reviewCount > 0
+          ? `⭐ ${averageRating.toLocaleString("ar", {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1
+            })} / 5 · ${reviewCount.toLocaleString("ar")} تقييم`
+          : "☆ لا توجد تقييمات بعد",
+        "margin:8px 0;color:#956515;font-weight:600"
+      ));
+
+      card.appendChild(element(
+        "p",
+        `عدد الحجوزات: ${bookingCount.toLocaleString("ar")}`,
+        "margin:6px 0;color:#75817b;font-size:13px"
+      ));
+
       card.appendChild(element(
         "p", provider.description || "تعرّف على الخدمات المتاحة لدى هذا النشاط.",
         "margin:8px 0;color:#52645b"
