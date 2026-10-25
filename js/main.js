@@ -151,6 +151,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${amount.toLocaleString("ar")} ${currencies[service.currency] || service.currency || ""}`;
   }
 
+  
+let currentSort = "default";
+
+
   function renderResults(items, query, errorMessage = "") {
     results.style.display = "block";
     results.replaceChildren();
@@ -167,6 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "color:#75817b;font-size:13px;margin:0 0 20px"
     ));
 
+    
     if (errorMessage) {
       const retry = element("button", "إعادة المحاولة");
       retry.type = "button";
@@ -176,6 +181,44 @@ document.addEventListener("DOMContentLoaded", () => {
       results.appendChild(retry);
       return;
     }
+
+    const sortBox = document.createElement("div");
+    sortBox.style.cssText =
+      "display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 20px";
+
+    const sortLabel = element("label", "ترتيب الأنشطة:");
+    sortLabel.htmlFor = "providerSort";
+    sortLabel.style.cssText = "color:#123c32;font-weight:600";
+
+    const sortSelect = document.createElement("select");
+    sortSelect.id = "providerSort";
+    sortSelect.style.cssText =
+      "max-width:100%;padding:11px;border:1px solid #d9ded8;border-radius:10px;background:white;color:#123c32";
+
+    const sortOptions = [
+      ["default", "الترتيب الافتراضي"],
+      ["rating", "الأعلى تقييمًا"],
+      ["popular", "الأكثر حجزًا"],
+      ["most_reviewed", "الأكثر مراجعة"]
+    ];
+
+    sortOptions.forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      sortSelect.appendChild(option);
+    });
+
+    sortSelect.value = currentSort;
+
+    sortSelect.addEventListener("change", () => {
+      currentSort = sortSelect.value;
+      searchProviders(query);
+    });
+
+    sortBox.append(sortLabel, sortSelect);
+    results.appendChild(sortBox);
+
 
     const grid = document.createElement("div");
     grid.style.cssText =
@@ -236,6 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+
 async function searchProviders(query) {
   results.style.display = "block";
   results.replaceChildren(
@@ -262,6 +306,7 @@ async function searchProviders(query) {
       for (const category of categories) {
         const url = new URL(API.providers, window.location.origin);
         url.searchParams.set("category", category);
+        url.searchParams.set("sort", currentSort);
 
         const response = await fetch(url, {
           headers: { Accept: "application/json" }
@@ -277,12 +322,32 @@ async function searchProviders(query) {
         }
       }
 
-      renderResults([...uniqueProviders.values()], query);
+      const providers = [...uniqueProviders.values()];
+
+      if (currentSort === "rating") {
+        providers.sort((a, b) =>
+          Number(b.average_rating || 0) - Number(a.average_rating || 0) ||
+          Number(b.review_count || 0) - Number(a.review_count || 0)
+        );
+      } else if (currentSort === "popular") {
+        providers.sort((a, b) =>
+          Number(b.booking_count || 0) - Number(a.booking_count || 0) ||
+          Number(b.average_rating || 0) - Number(a.average_rating || 0)
+        );
+      } else if (currentSort === "most_reviewed") {
+        providers.sort((a, b) =>
+          Number(b.review_count || 0) - Number(a.review_count || 0) ||
+          Number(b.average_rating || 0) - Number(a.average_rating || 0)
+        );
+      }
+
+      renderResults(providers, query);
       return;
     }
 
     const url = new URL(API.providers, window.location.origin);
     url.searchParams.set("q", query);
+    url.searchParams.set("sort", currentSort);
 
     const response = await fetch(url, {
       headers: { Accept: "application/json" }
