@@ -1,15 +1,17 @@
 
-/* Meead - Customer Bookings */
+/* Meead - Customer Bookings and Reviews */
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
   const bookingsButton = document.getElementById("myBookingsBtn");
+
   if (!bookingsButton) {
     console.error("Meead: زر حجوزاتي غير موجود.");
     return;
   }
 
   const API_URL = "/.netlify/functions/bookings";
+  const REVIEWS_API_URL = "/.netlify/functions/reviews";
   const auth = window.MeeadAuth;
 
   const section = document.createElement("section");
@@ -25,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const description = document.createElement("p");
   description.textContent =
-    "تابع طلبات الحجز وحالة كل موعد.";
+    "تابع طلبات الحجز وحالة كل موعد، وقيّم الخدمات التي استفدت منها.";
   description.style.cssText = "color:#75817b;";
 
   const status = document.createElement("p");
@@ -62,13 +64,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const labels = {
       pending: "بانتظار تأكيد صاحب النشاط",
       confirmed: "تم تأكيد الحجز",
-      cancelled: "تم إلغاء الحجز"
+      cancelled: "تم إلغاء الحجز",
+      completed: "اكتمل الموعد"
     };
+
     return labels[value] || "حالة الحجز: " + (value || "غير معروفة");
   }
 
   function statusColor(value) {
-    if (value === "confirmed") return "#247447";
+    if (value === "confirmed" || value === "completed") return "#247447";
     if (value === "cancelled") return "#b42318";
     return "#956515";
   }
@@ -86,11 +90,129 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${amount.toLocaleString("ar")} ${symbols[currency] || currency || ""}`;
   }
 
+  function addReviewForm(card, booking) {
+    const reviewBox = document.createElement("div");
+    reviewBox.style.cssText =
+      "margin-top:15px;padding:14px;background:#f6f5f0;border-radius:12px;";
+
+    reviewBox.appendChild(makeElement(
+      "h4",
+      "قيّم تجربتك",
+      "margin:0 0 10px;color:#173F35;font-size:16px;"
+    ));
+
+    reviewBox.appendChild(makeElement(
+      "p",
+      "كيف كانت تجربتك مع هذا النشاط؟",
+      "margin:0 0 10px;color:#52645b;"
+    ));
+
+    const ratingLabel = makeElement("label", "التقييم من نجمة إلى خمس نجوم");
+    ratingLabel.htmlFor = `reviewRating-${booking.id}`;
+    ratingLabel.style.cssText = "display:block;margin-bottom:7px;";
+    reviewBox.appendChild(ratingLabel);
+
+    const ratingSelect = document.createElement("select");
+    ratingSelect.id = `reviewRating-${booking.id}`;
+    ratingSelect.required = true;
+    ratingSelect.style.cssText =
+      "display:block;width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;background:white;";
+
+    [
+      ["5", "★★★★★ — ممتاز"],
+      ["4", "★★★★☆ — جيد جدًا"],
+      ["3", "★★★☆☆ — جيد"],
+      ["2", "★★☆☆☆ — مقبول"],
+      ["1", "★☆☆☆☆ — يحتاج تحسينًا"]
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      ratingSelect.appendChild(option);
+    });
+
+    reviewBox.appendChild(ratingSelect);
+
+    const commentLabel = makeElement("label", "تعليقك (اختياري)");
+    commentLabel.htmlFor = `reviewComment-${booking.id}`;
+    commentLabel.style.cssText = "display:block;margin:12px 0 7px;";
+    reviewBox.appendChild(commentLabel);
+
+    const commentInput = document.createElement("textarea");
+    commentInput.id = `reviewComment-${booking.id}`;
+    commentInput.maxLength = 1000;
+    commentInput.rows = 3;
+    commentInput.placeholder = "شارك رأيك باحترام لمساعدة الآخرين...";
+    commentInput.style.cssText =
+      "display:block;box-sizing:border-box;width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;resize:vertical;";
+
+    reviewBox.appendChild(commentInput);
+
+    const reviewStatus = makeElement("p", "");
+    reviewStatus.setAttribute("role", "status");
+    reviewStatus.setAttribute("aria-live", "polite");
+    reviewStatus.style.cssText = "margin:10px 0;color:#52645b;";
+    reviewBox.appendChild(reviewStatus);
+
+    const submitButton = makeElement("button", "إرسال التقييم");
+    submitButton.type = "button";
+    submitButton.style.cssText =
+      "width:100%;margin-top:5px;background:#173F35;color:white;border:0;border-radius:9px;padding:12px;cursor:pointer;";
+
+    submitButton.addEventListener("click", async () => {
+      if (!auth?.isLoggedIn() || !auth.getToken()) {
+        reviewStatus.textContent = "سجّل الدخول أولًا.";
+        return;
+      }
+
+      submitButton.disabled = true;
+      reviewStatus.textContent = "جارٍ إرسال تقييمك...";
+
+      try {
+        const response = await fetch(REVIEWS_API_URL, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth.getToken()}`
+          },
+          body: JSON.stringify({
+            booking_id: Number(booking.id),
+            rating: Number(ratingSelect.value),
+            comment: commentInput.value.trim()
+          })
+        });
+
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error("تعذر قراءة استجابة الخادم.");
+        }
+
+        if (!response.ok) {
+          throw new Error(data.message || "تعذر حفظ التقييم.");
+        }
+
+        reviewStatus.textContent = data.message || "تم حفظ تقييمك بنجاح.";
+        ratingSelect.disabled = true;
+        commentInput.disabled = true;
+        submitButton.remove();
+      } catch (error) {
+        reviewStatus.textContent =
+          error.message || "تعذر إرسال التقييم. حاول مجددًا.";
+        submitButton.disabled = false;
+      }
+    });
+
+    reviewBox.appendChild(submitButton);
+    card.appendChild(reviewBox);
+  }
+
   async function loadBookings() {
     if (!auth?.isLoggedIn() || !auth.getToken()) {
       status.textContent = "سجّل الدخول أولًا لعرض حجوزاتك.";
       list.replaceChildren();
-
       document.getElementById("loginBtn")?.click();
       return;
     }
@@ -165,18 +287,21 @@ document.addEventListener("DOMContentLoaded", () => {
           `السعر: ${formatPrice(booking.price, booking.currency)}`
         ));
 
-        const badge = makeElement(
+        card.appendChild(makeElement(
           "p",
           statusLabel(booking.status),
           `color:${statusColor(booking.status)};font-weight:bold;background:#f6f5f0;padding:10px;border-radius:8px;`
-        );
-        card.appendChild(badge);
+        ));
 
         if (booking.customer_notes) {
           card.appendChild(makeElement(
             "p",
             `ملاحظاتك: ${booking.customer_notes}`
           ));
+        }
+
+        if (booking.status === "completed") {
+          addReviewForm(card, booking);
         }
 
         list.appendChild(card);
