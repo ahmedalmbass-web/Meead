@@ -300,9 +300,23 @@ document.addEventListener("DOMContentLoaded", () => {
           ));
         }
 
-        if (booking.status === "completed") {
+        
+        if (
+          booking.status === "completed" &&
+          Number(booking.has_review || 0) === 0
+        ) {
           addReviewForm(card, booking);
+        } else if (
+          booking.status === "completed" &&
+          Number(booking.has_review || 0) === 1
+        ) {
+          card.appendChild(makeElement(
+            "p",
+            "⭐ شكرًا لك، لقد قيّمت هذا الموعد مسبقًا.",
+            "margin-top:12px;padding:10px;background:#f6f5f0;border-radius:8px;color:#247447;font-weight:600"
+          ));
         }
+
 
         list.appendChild(card);
       });
