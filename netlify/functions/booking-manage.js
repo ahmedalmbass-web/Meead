@@ -111,9 +111,11 @@ exports.handler = async (event) => {
 
     return response(200, {
       message:
-        status === "confirmed"
-          ? "تم تأكيد الحجز"
-          : "تم إلغاء الحجز",
+  status === "confirmed"
+    ? "تم تأكيد الحجز"
+    : status === "completed"
+      ? "تم تسجيل اكتمال الموعد"
+      : "تم إلغاء الحجز",
       booking_id: bookingId,
       status,
     });
