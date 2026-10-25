@@ -50,17 +50,26 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "GET") {
       const result = await db.execute({
-        sql: `SELECT b.id, b.provider_id, b.service_id,
-                     b.appointment_date, b.start_time, b.end_time,
-                     b.status, b.customer_notes,
-                     p.business_name, s.name AS service_name,
-                     s.price, s.currency
-              FROM bookings b
-              JOIN providers p ON p.id = b.provider_id
-              JOIN services s ON s.id = b.service_id
-              WHERE b.customer_user_id = ?
-              ORDER BY b.appointment_date DESC, b.start_time DESC
-              LIMIT 100`,
+        sql: `
+SELECT b.id, b.provider_id, b.service_id,
+       b.appointment_date, b.start_time, b.end_time,
+       b.status, b.customer_notes,
+       p.business_name, s.name AS service_name,
+       s.price, s.currency,
+       CASE
+         WHEN r.id IS NOT NULL THEN 1
+         ELSE 0
+       END AS has_review
+FROM bookings b
+JOIN providers p ON p.id = b.provider_id
+JOIN services s ON s.id = b.service_id
+LEFT JOIN reviews r
+  ON r.booking_id = b.id
+ AND r.customer_user_id = b.customer_user_id
+WHERE b.customer_user_id = ?
+ORDER BY b.appointment_date DESC, b.start_time DESC
+LIMIT 100
+`,
         args: [userId],
       });
 
