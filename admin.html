@@ -349,11 +349,12 @@
         return wrapper;
       };
 
-      bookingChart.replaceChildren(
+            bookingChart.replaceChildren(
         makeChart([
           { label: "قيد الانتظار", value: stats.bookings.pending, color: "#D7B878" },
           { label: "مؤكدة", value: stats.bookings.confirmed, color: "#173F35" },
-          { label: "ملغاة", value: stats.bookings.cancelled, color: "#B85C5C" }
+          { label: "ملغاة", value: stats.bookings.cancelled, color: "#B85C5C" },
+          { label: "مكتملة", value: stats.bookings.completed, color: "#668C80" }
         ], stats.bookings.total)
       );
 
@@ -467,7 +468,8 @@
           bookingsTotal: s.bookings.total,
           pending: s.bookings.pending,
           confirmed: s.bookings.confirmed,
-          cancelled: s.bookings.cancelled
+          cancelled: s.bookings.cancelled,
+          completed: s.bookings.completed
         };
 
         for (const [id, value] of Object.entries(values)) {
