@@ -23,14 +23,26 @@ exports.handler = async (event) => {
   }
 
   if (event.httpMethod !== "GET") {
-    return response(405, { message: "طريقة الطلب غير مدعومة" });
+    return response(405, {
+      message: "طريقة الطلب غير مدعومة",
+    });
   }
 
   try {
     const params = event.queryStringParameters || {};
+
     const q = String(params.q || "").trim().slice(0, 100);
     const category = String(params.category || "").trim().slice(0, 100);
     const city = String(params.city || "").trim().slice(0, 100);
+    const sort = String(params.sort || "default");
+
+    const allowedSorts = ["default", "rating", "popular", "most_reviewed"];
+
+    if (!allowedSorts.includes(sort)) {
+      return response(400, {
+        message: "نوع ترتيب النتائج غير صالح",
+      });
+    }
 
     const conditions = ["p.is_published = 1"];
     const args = [];
@@ -42,7 +54,8 @@ exports.handler = async (event) => {
         p.city LIKE ? OR
         p.description LIKE ? OR
         EXISTS (
-          SELECT 1 FROM services s
+          SELECT 1
+          FROM services s
           WHERE s.provider_id = p.id
             AND s.is_active = 1
             AND s.name LIKE ?
@@ -63,6 +76,16 @@ exports.handler = async (event) => {
       args.push(`%${city}%`);
     }
 
+    let orderBy = "p.business_name COLLATE NOCASE ASC";
+
+    if (sort === "rating") {
+      orderBy = "average_rating DESC, review_count DESC, p.business_name COLLATE NOCASE ASC";
+    } else if (sort === "popular") {
+      orderBy = "booking_count DESC, average_rating DESC, p.business_name COLLATE NOCASE ASC";
+    } else if (sort === "most_reviewed") {
+      orderBy = "review_count DESC, average_rating DESC, p.business_name COLLATE NOCASE ASC";
+    }
+
     const db = getDb();
 
     const result = await db.execute({
@@ -75,17 +98,38 @@ exports.handler = async (event) => {
           p.address,
           p.description,
           p.phone,
-p.image_url,
-p.created_at,
-(
-  SELECT GROUP_CONCAT(s.name, '، ')
-  FROM services s
-  WHERE s.provider_id = p.id
-    AND s.is_active = 1
-) AS services
+          p.image_url,
+          p.created_at,
+
+          (
+            SELECT GROUP_CONCAT(s.name, '، ')
+            FROM services s
+            WHERE s.provider_id = p.id
+              AND s.is_active = 1
+          ) AS services,
+
+          COALESCE((
+            SELECT ROUND(AVG(r.rating), 1)
+            FROM reviews r
+            WHERE r.provider_id = p.id
+          ), 0) AS average_rating,
+
+          (
+            SELECT COUNT(*)
+            FROM reviews r
+            WHERE r.provider_id = p.id
+          ) AS review_count,
+
+          (
+            SELECT COUNT(*)
+            FROM bookings b
+            WHERE b.provider_id = p.id
+              AND b.status IN ('confirmed', 'completed')
+          ) AS booking_count
+
         FROM providers p
         WHERE ${conditions.join(" AND ")}
-        ORDER BY p.business_name COLLATE NOCASE
+        ORDER BY ${orderBy}
         LIMIT 50
       `,
       args,
@@ -102,6 +146,9 @@ p.created_at,
       image_url: row.image_url,
       services: row.services || "",
       created_at: row.created_at,
+      average_rating: Number(row.average_rating || 0),
+      review_count: Number(row.review_count || 0),
+      booking_count: Number(row.booking_count || 0),
     }));
 
     return response(200, {
@@ -110,6 +157,9 @@ p.created_at,
     });
   } catch (error) {
     console.error("Providers API error:", error.message);
-    return response(500, { message: "تعذر البحث عن الأنشطة حاليًا" });
+
+    return response(500, {
+      message: "تعذر البحث عن الأنشطة حاليًا",
+    });
   }
 };
