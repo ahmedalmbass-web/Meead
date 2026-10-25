@@ -1,6 +1,6 @@
 
-const { getDb } = require("./lib/db");
-const { verifyToken } = require("./lib/auth");
+const { getDb } = require("../lib/db");
+const { verifyToken } = require("../lib/auth");
 
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
