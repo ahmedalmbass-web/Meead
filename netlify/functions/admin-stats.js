@@ -95,7 +95,7 @@ exports.handler = async (event) => {
         FROM services
       `),
 
-      db.execute(`
+            db.execute(`
         SELECT
           COUNT(*) AS total,
           COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0)
@@ -103,10 +103,11 @@ exports.handler = async (event) => {
           COALESCE(SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END), 0)
             AS confirmed,
           COALESCE(SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END), 0)
-            AS cancelled
+            AS cancelled,
+          COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0)
+            AS completed
         FROM bookings
       `),
-
       
       db.execute(`
         SELECT
@@ -164,11 +165,12 @@ exports.handler = async (event) => {
         services: {
           total: number(services.total),
         },
-        bookings: {
+                bookings: {
           total: number(bookings.total),
           pending: number(bookings.pending),
           confirmed: number(bookings.confirmed),
           cancelled: number(bookings.cancelled),
+          completed: number(bookings.completed),
         },
                 searches: {
           total: number(searchTotals.total_searches),
