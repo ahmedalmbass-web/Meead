@@ -204,6 +204,36 @@
         <div class="card"><span class="label">الملغاة</span><strong class="number" id="cancelled">—</strong></div>
       </div>
 
+      
+      <h2 class="section-title">تحليلات البحث</h2>
+
+      <div class="grid">
+        <div class="card">
+          <span class="label">إجمالي عمليات البحث</span>
+          <strong class="number" id="totalSearches">—</strong>
+        </div>
+
+        <div class="card">
+          <span class="label">عمليات البحث دون نتائج</span>
+          <strong class="number" id="searchesWithoutResults">—</strong>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>الأكثر بحثًا</h3>
+        <div id="popularSearches">
+          <p>ستظهر العبارات بعد تحميل الإحصائيات.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>عمليات البحث دون نتائج</h3>
+        <div id="noResultsSearches">
+          <p>ستظهر العبارات هنا بعد تحميل الإحصائيات.</p>
+        </div>
+      </div>
+
+
             <h2 class="section-title">إدارة المستخدمين</h2>
       <div class="card">
         <p>عرض حسابات المستخدمين المسجلة في منصة ميعاد.</p>
@@ -372,6 +402,57 @@
         }
 
         const s = data.stats;
+        
+        const searchStats = s.searches || {};
+
+        document.getElementById("totalSearches").textContent =
+          Number(searchStats.total || 0).toLocaleString("ar");
+
+        document.getElementById("searchesWithoutResults").textContent =
+          Number(searchStats.withoutResults || 0).toLocaleString("ar");
+
+        function renderSearchList(containerId, items, emptyMessage) {
+          const container = document.getElementById(containerId);
+          container.replaceChildren();
+
+          if (!Array.isArray(items) || items.length === 0) {
+            const p = document.createElement("p");
+            p.textContent = emptyMessage;
+            container.appendChild(p);
+            return;
+          }
+
+          const list = document.createElement("ol");
+          list.style.cssText = "padding-right:24px;line-height:2";
+
+          items.forEach((item) => {
+            const li = document.createElement("li");
+            const term = document.createElement("strong");
+            term.textContent = String(item.searchTerm || "بحث غير محدد");
+
+            const count = document.createElement("span");
+            count.textContent =
+              ` — ${Number(item.count || 0).toLocaleString("ar")} مرة`;
+
+            li.append(term, count);
+            list.appendChild(li);
+          });
+
+          container.appendChild(list);
+        }
+
+        renderSearchList(
+          "popularSearches",
+          searchStats.popular,
+          "لا توجد عمليات بحث مسجلة حتى الآن."
+        );
+
+        renderSearchList(
+          "noResultsSearches",
+          searchStats.noResults,
+          "لا توجد عبارات مسجلة بلا نتائج حتى الآن."
+        );
+
         renderAdminCharts(s);
         const values = {
           usersTotal: s.users.total,
