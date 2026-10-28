@@ -76,14 +76,20 @@ exports.handler = async (event) => {
     const bookingId = Number(body.booking_id);
     const status = body.status;
 
-    if (
-  !Number.isSafeInteger(bookingId) ||
-  bookingId < 1 ||
-  !["confirmed", "cancelled", "completed"].includes(status)
-) {
-  return response(400, { message: "بيانات الحجز غير صحيحة" });
-    } {
-      return response(400, { message: "بيانات الحجز غير صحيحة" });
+        if (
+      !Number.isSafeInteger(bookingId) ||
+      bookingId < 1 ||
+      !["confirmed", "cancelled", "completed"].includes(status)
+    ) {
+      return response(400, {
+        message: "بيانات الحجز غير صحيحة",
+      });
+    }
+
+    if (!Number.isSafeInteger(userId) || userId < 1) {
+      return response(401, {
+        message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
+      });
     }
 
     const result = await db.execute({
