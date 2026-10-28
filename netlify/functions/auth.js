@@ -29,9 +29,11 @@ exports.handler = async (event) => {
   }
 
   const action = event.queryStringParameters?.action;
-  const db = getDb();
+  
 
   try {
+    const db = getDb();
+    
     if (event.httpMethod === "POST" && action === "register") {
       let body;
 
@@ -107,13 +109,17 @@ exports.handler = async (event) => {
       const email = String(body.email || "").trim().toLowerCase();
       const password = body.password;
 
-      if (
-        !email ||
+            if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+        email.length > 254 ||
         typeof password !== "string" ||
+        password.length === 0 ||
         password.length > 72
       ) {
-        return response(400, { message: "أدخل البريد وكلمة المرور" });
-      }
+        return response(400, {
+          message: "تحقق من البريد الإلكتروني وكلمة المرور",
+        });
+            }
 
       const result = await db.execute({
         sql: `SELECT id, name, email, password_hash, phone, role
@@ -163,8 +169,16 @@ exports.handler = async (event) => {
 
       const row = result.rows[0];
 
-      if (!row) {
-        return response(401, { message: "الحساب غير موجود" });
+            if (!row) {
+        return response(401, {
+          message: "الحساب غير موجود",
+        });
+      }
+
+      if (!["customer", "provider", "admin"].includes(row.role)) {
+        return response(403, {
+          message: "نوع الحساب غير صالح",
+        });
       }
 
       return response(200, {
