@@ -133,6 +133,24 @@ const params = event.queryStringParameters || {};
       });
     }
 
+        const overlap = await db.execute({
+      sql: `SELECT id
+            FROM availability
+            WHERE provider_id = ?
+              AND weekday = ?
+              AND is_active = 1
+              AND start_time < ?
+              AND end_time > ?
+            LIMIT 1`,
+      args: [providerId, weekday, endTime, startTime],
+    });
+
+    if (overlap.rows.length) {
+      return response(409, {
+        message: "تتداخل هذه الفترة مع ساعات عمل محفوظة، اختر فترة أخرى",
+      });
+    }
+
     await db.execute({
       sql: `INSERT INTO availability
             (provider_id, weekday, start_time, end_time, is_active)
