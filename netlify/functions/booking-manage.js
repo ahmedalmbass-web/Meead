@@ -35,8 +35,13 @@ exports.handler = async (event) => {
 
   try {
     const db = getDb();
-    const userId = Number(token.sub);
+const userId = Number(token.sub);
 
+if (!Number.isSafeInteger(userId) || userId < 1) {
+  return response(401, {
+    message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
+  });
+}
     if (event.httpMethod === "GET") {
       const result = await db.execute({
         sql: `SELECT
@@ -86,12 +91,7 @@ exports.handler = async (event) => {
       });
     }
 
-    if (!Number.isSafeInteger(userId) || userId < 1) {
-      return response(401, {
-        message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
-      });
-    }
-
+    
     const result = await db.execute({
   sql: `UPDATE bookings
         SET status = ?
