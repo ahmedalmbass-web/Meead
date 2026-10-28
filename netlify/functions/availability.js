@@ -40,8 +40,15 @@ exports.handler = async (event) => {
 
   try {
     const db = getDb();
-    const userId = Number(token.sub);
-    const params = event.queryStringParameters || {};
+const userId = Number(token.sub);
+
+if (!Number.isSafeInteger(userId) || userId < 1) {
+  return response(401, {
+    message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
+  });
+}
+
+const params = event.queryStringParameters || {};
 
     let body = {};
 
