@@ -59,10 +59,16 @@ exports.handler = async (event) => {
     });
   }
 
-  const searchTerm = body.search_term.trim().slice(0, 150);
+    const searchTerm = body.search_term.trim().slice(0, 150);
   const category = (body.category || "").trim().slice(0, 100);
   const city = (body.city || "").trim().slice(0, 100);
-    const resultsCount = body.results_count;
+  const resultsCount = body.results_count;
+
+  if (!searchTerm) {
+    return response(400, {
+      message: "عبارة البحث مطلوبة",
+    });
+  }
 
   if (
     typeof resultsCount !== "number" ||
@@ -74,14 +80,6 @@ exports.handler = async (event) => {
       message: "عدد النتائج غير صالح",
     });
   }
-
-  if (!searchTerm) {
-    return response(400, {
-      message: "عبارة البحث مطلوبة",
-    });
-  }
-
-  
 
   try {
     const db = getDb();
