@@ -28,28 +28,44 @@ exports.handler = async (event) => {
     });
   }
 
+    const rawBody = event.body || "";
+
+  if (rawBody.length > 5000) {
+    return response(413, {
+      message: "بيانات البحث أكبر من الحجم المسموح",
+    });
+  }
+
   let body;
 
   try {
-    body = JSON.parse(event.body || "{}");
+    body = JSON.parse(rawBody);
   } catch {
     return response(400, {
       message: "بيانات البحث غير صالحة",
     });
   }
 
-  const searchTerm = String(body.search_term || "").trim().slice(0, 150);
-  const category = String(body.category || "").trim().slice(0, 100);
-  const city = String(body.city || "").trim().slice(0, 100);
-  const resultsCount = Number(body.results_count);
-
-  if (!searchTerm) {
+    if (
+    !body ||
+    typeof body !== "object" ||
+    Array.isArray(body) ||
+    typeof body.search_term !== "string" ||
+    (body.category != null && typeof body.category !== "string") ||
+    (body.city != null && typeof body.city !== "string")
+  ) {
     return response(400, {
-      message: "عبارة البحث مطلوبة",
+      message: "صيغة بيانات البحث غير صحيحة",
     });
   }
 
+  const searchTerm = body.search_term.trim().slice(0, 150);
+  const category = (body.category || "").trim().slice(0, 100);
+  const city = (body.city || "").trim().slice(0, 100);
+    const resultsCount = body.results_count;
+
   if (
+    typeof resultsCount !== "number" ||
     !Number.isSafeInteger(resultsCount) ||
     resultsCount < 0 ||
     resultsCount > 100000
@@ -58,6 +74,14 @@ exports.handler = async (event) => {
       message: "عدد النتائج غير صالح",
     });
   }
+
+  if (!searchTerm) {
+    return response(400, {
+      message: "عبارة البحث مطلوبة",
+    });
+  }
+
+  
 
   try {
     const db = getDb();
