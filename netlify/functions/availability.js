@@ -1,3 +1,4 @@
+"use strict";
 
 const { getDb } = require("../lib/db");
 const { verifyToken } = require("../lib/auth");
@@ -19,36 +20,91 @@ function response(statusCode, data) {
 }
 
 function validTime(value) {
-  return typeof value === "string" &&
-    /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  return (
+    typeof value === "string" &&
+    /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
+  );
+}
+
+function validatePeriods(periods) {
+  if (!Array.isArray(periods)) {
+    return "قائمة فترات العمل غير صالحة.";
+  }
+
+  if (periods.length > 20) {
+    return "لا يمكن إضافة أكثر من 20 فترة في اليوم.";
+  }
+
+  const normalized = [];
+
+  for (const period of periods) {
+    if (
+      !period ||
+      !validTime(period.start_time) ||
+      !validTime(period.end_time) ||
+      period.start_time >= period.end_time
+    ) {
+      return "تحقق من أوقات البداية والنهاية لكل فترة.";
+    }
+
+    normalized.push({
+      start_time: period.start_time,
+      end_time: period.end_time,
+    });
+  }
+
+  normalized.sort((a, b) =>
+    a.start_time.localeCompare(b.start_time)
+  );
+
+  for (let i = 1; i < normalized.length; i++) {
+    if (
+      normalized[i].start_time <
+      normalized[i - 1].end_time
+    ) {
+      return "توجد فترات عمل متداخلة. عدّل الأوقات أولًا.";
+    }
+  }
+
+  return normalized;
 }
 
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
+    return {
+      statusCode: 204,
+      headers,
+      body: "",
+    };
   }
 
   if (!["GET", "POST"].includes(event.httpMethod)) {
-    return response(405, { message: "طريقة الطلب غير مدعومة" });
+    return response(405, {
+      message: "طريقة الطلب غير مدعومة",
+    });
   }
 
   const token = verifyToken(event);
 
   if (!token) {
-    return response(401, { message: "سجّل الدخول أولًا" });
+    return response(401, {
+      message: "سجّل الدخول أولًا",
+    });
   }
+
+  let transaction;
 
   try {
     const db = getDb();
-const userId = Number(token.sub);
+    const userId = Number(token.sub);
 
-if (!Number.isSafeInteger(userId) || userId < 1) {
-  return response(401, {
-    message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
-  });
-}
+    if (!Number.isSafeInteger(userId) || userId < 1) {
+      return response(401, {
+        message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
+      });
+    }
 
-const params = event.queryStringParameters || {};
+    const params = event.queryStringParameters || {};
 
     let body = {};
 
@@ -56,7 +112,9 @@ const params = event.queryStringParameters || {};
       try {
         body = JSON.parse(event.body || "{}");
       } catch {
-        return response(400, { message: "بيانات الطلب غير صالحة" });
+        return response(400, {
+          message: "بيانات الطلب غير صالحة",
+        });
       }
     }
 
@@ -67,11 +125,14 @@ const params = event.queryStringParameters || {};
     );
 
     if (!Number.isSafeInteger(providerId) || providerId < 1) {
-      return response(400, { message: "معرّف النشاط غير صالح" });
+      return response(400, {
+        message: "معرّف النشاط غير صالح",
+      });
     }
 
     const owner = await db.execute({
-      sql: `SELECT id FROM providers
+      sql: `SELECT id
+            FROM providers
             WHERE id = ? AND owner_user_id = ?`,
       args: [providerId, userId],
     });
@@ -82,6 +143,7 @@ const params = event.queryStringParameters || {};
       });
     }
 
+    // تحميل ساعات العمل
     if (event.httpMethod === "GET") {
       const result = await db.execute({
         sql: `SELECT id, provider_id, weekday,
@@ -92,7 +154,9 @@ const params = event.queryStringParameters || {};
         args: [providerId],
       });
 
-      return response(200, { availability: result.rows });
+      return response(200, {
+        availability: result.rows,
+      });
     }
 
     const weekday = Number(body.weekday);
@@ -102,14 +166,69 @@ const params = event.queryStringParameters || {};
       weekday < 0 ||
       weekday > 6
     ) {
-      return response(400, { message: "يوم العمل غير صالح" });
+      return response(400, {
+        message: "يوم العمل غير صالح",
+      });
     }
 
+    // استبدال جميع فترات يوم واحد
+    if (body.action === "replace_day") {
+      const periods = validatePeriods(body.periods);
+
+      if (typeof periods === "string") {
+        return response(400, {
+          message: periods,
+        });
+      }
+
+      transaction = await db.transaction("write");
+
+      // تعطيل الفترات القديمة لهذا اليوم
+      await transaction.execute({
+        sql: `UPDATE availability
+              SET is_active = 0
+              WHERE provider_id = ?
+                AND weekday = ?`,
+        args: [providerId, weekday],
+      });
+
+      // حفظ الفترات الجديدة أو إعادة تفعيل الفترات المطابقة
+      for (const period of periods) {
+        await transaction.execute({
+          sql: `INSERT INTO availability
+                (provider_id, weekday, start_time, end_time, is_active)
+                VALUES (?, ?, ?, ?, 1)
+                ON CONFLICT(provider_id, weekday, start_time, end_time)
+                DO UPDATE SET is_active = 1`,
+          args: [
+            providerId,
+            weekday,
+            period.start_time,
+            period.end_time,
+          ],
+        });
+      }
+
+      await transaction.commit();
+      transaction = null;
+
+      return response(200, {
+        message: periods.length
+          ? "تم تحديث فترات العمل بنجاح."
+          : "تم إغلاق يوم العمل.",
+        provider_id: providerId,
+        weekday,
+        periods,
+      });
+    }
+
+    // إغلاق يوم كامل بالطريقة القديمة
     if (body.action === "disable") {
       await db.execute({
         sql: `UPDATE availability
               SET is_active = 0
-              WHERE provider_id = ? AND weekday = ?`,
+              WHERE provider_id = ?
+                AND weekday = ?`,
         args: [providerId, weekday],
       });
 
@@ -120,6 +239,7 @@ const params = event.queryStringParameters || {};
       });
     }
 
+    // إضافة فترة واحدة بالطريقة القديمة
     const startTime = body.start_time;
     const endTime = body.end_time;
 
@@ -133,7 +253,7 @@ const params = event.queryStringParameters || {};
       });
     }
 
-        const overlap = await db.execute({
+    const overlap = await db.execute({
       sql: `SELECT id
             FROM availability
             WHERE provider_id = ?
@@ -167,8 +287,23 @@ const params = event.queryStringParameters || {};
       start_time: startTime,
       end_time: endTime,
     });
+
   } catch (error) {
-    console.error("Availability API error:", error.message);
+    if (transaction) {
+      try {
+        await transaction.rollback();
+      } catch (rollbackError) {
+        console.error(
+          "Availability rollback error:",
+          rollbackError.message
+        );
+      }
+    }
+
+    console.error(
+      "Availability API error:",
+      error.message
+    );
 
     return response(500, {
       message: "تعذر حفظ ساعات العمل حاليًا",
