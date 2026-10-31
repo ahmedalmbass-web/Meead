@@ -4,101 +4,300 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#173F35">
+  <meta name="theme-color" content="#102c26">
   <meta name="description" content="لوحة إدارة نشاطك التجاري على منصة ميعاد.">
   <title>إدارة نشاطي | ميعاد</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 
   <style>
-    body {
-      font-family: "Cairo", sans-serif;
+    :root {
+      --green: #123c32;
+      --green-dark: #0b2822;
+      --gold: #d8bd7c;
+      --cream: #f7f6f0;
+      --ink: #1b2b26;
+      --muted: #75817b;
     }
 
-    .dashboard-page-header {
-      padding: 22px 5%;
-      background: var(--forest, #173F35);
-      color: #fff;
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Cairo", sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.8;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    [hidden] { display: none !important; }
+
+    .dashboard-header {
+      background: var(--green-dark);
+      color: white;
+      padding: 16px 5%;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 15px;
       flex-wrap: wrap;
     }
 
-    .dashboard-page-header a {
-      color: inherit;
+    .dashboard-brand {
+      font-size: 25px;
+      font-weight: 900;
+      color: white;
       text-decoration: none;
     }
 
-    .dashboard-page-header .brand {
-      font-size: 25px;
-      font-weight: 800;
-    }
-
-    .dashboard-page-header .header-links {
+    .dashboard-nav {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
-    .dashboard-page-header .header-links a {
-      font-size: 14px;
+    .dashboard-nav a,
+    .dashboard-nav button {
+      color: white;
+      text-decoration: none;
+      background: transparent;
+      border: 1px solid #ffffff35;
+      border-radius: 10px;
+      padding: 8px 13px;
+      cursor: pointer;
+      font-size: 13px;
     }
 
-    .dashboard-page-intro {
-      padding: 35px 5% 10px;
+    .dashboard-intro {
+      padding: 32px 5% 10px;
     }
 
-    .dashboard-page-intro h1 {
-      margin-bottom: 8px;
+    .dashboard-intro h1 {
+      margin: 0 0 8px;
+      color: var(--green);
+      font-size: 30px;
     }
 
-    .dashboard-page-intro p {
-      color: var(--muted, #777);
+    .dashboard-intro p {
+      color: var(--muted);
+      margin: 0;
     }
 
     #providerDashboard {
-      display: block;
-      padding: 20px 5% 60px;
-    }
-
-    #providerDashboard[hidden] {
-      display: none !important;
+      padding: 20px 5% 65px;
     }
 
     #providerDashboardMessage {
-      margin: 15px 0;
-      line-height: 1.9;
+      padding: 14px;
+      background: white;
+      border-radius: 12px;
+      margin: 12px 0 22px;
     }
 
-    .dashboard-back-link {
-      display: inline-flex;
-      margin-top: 12px;
-      color: var(--forest, #173F35);
+    .dashboard-card {
+      background: white;
+      border: 1px solid #e8e8df;
+      border-radius: 18px;
+      padding: 22px;
+      margin: 18px 0;
+    }
+
+    .dashboard-card h2,
+    .dashboard-card h3 {
+      color: var(--green);
+      margin-top: 0;
+    }
+
+    .dashboard-card label {
+      display: block;
       font-weight: 700;
-      text-decoration: none;
+      margin: 13px 0 5px;
+      font-size: 14px;
+    }
+
+    .dashboard-card input,
+    .dashboard-card select,
+    .dashboard-card textarea {
+      width: 100%;
+      min-height: 45px;
+      padding: 10px 12px;
+      border: 1px solid #dedfd6;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .dashboard-card textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .dashboard-button {
+      border: 0;
+      border-radius: 10px;
+      background: var(--green);
+      color: white;
+      padding: 11px 18px;
+      margin-top: 15px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .dashboard-button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .dashboard-status {
+      color: var(--green);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    #providerList article {
+      background: white;
+      border: 1px solid #e8e8df;
+      border-radius: 14px;
+      padding: 17px;
+      margin: 12px 0;
+    }
+
+    #providerList article button {
+      border: 0;
+      border-radius: 9px;
+      padding: 9px 13px;
+      margin: 5px;
+      background: var(--green);
+      color: white;
+      cursor: pointer;
+    }
+
+    .availability-day {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .availability-day label {
+      margin: 0;
+    }
+
+    .availability-day label:first-child {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .availability-day input[type="checkbox"] {
+      width: 18px;
+      min-height: auto;
+    }
+
+    .availability-day input[type="time"] {
+      min-height: 40px;
+    }
+
+    #providerBookingsList article {
+      white-space: normal;
+    }
+
+    #account {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: #0009;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .account-panel {
+      width: min(440px, 100%);
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      position: relative;
+    }
+
+    #closeAccount {
+      position: absolute;
+      left: 15px;
+      top: 12px;
+      border: 0;
+      background: #f1f1ec;
+      border-radius: 9px;
+      padding: 7px 11px;
+      cursor: pointer;
+    }
+
+    .account-panel h2 { color: var(--green); }
+
+    .account-panel label {
+      display: block;
+      margin: 12px 0 5px;
+      font-weight: 700;
+    }
+
+    .account-panel input,
+    .account-panel select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid #ddd;
+      border-radius: 9px;
+      padding: 9px;
+    }
+
+    .account-panel form button,
+    .account-tabs button {
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 15px;
+      margin-top: 13px;
+      background: var(--green);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .account-panel form button { width: 100%; }
+
+    .account-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .account-tabs button {
+      flex: 1;
+      background: #eee;
+      color: var(--green);
+    }
+
+    .account-tabs button:hover {
+      background: var(--gold);
     }
 
     @media (max-width: 600px) {
-      .dashboard-page-header {
-        padding: 17px 5%;
+      .dashboard-header { padding: 14px 5%; }
+      .dashboard-brand { font-size: 22px; }
+      .dashboard-nav { width: 100%; }
+      .dashboard-nav a,
+      .dashboard-nav button { flex: 1; text-align: center; }
+      .dashboard-intro h1 { font-size: 25px; }
+      .dashboard-card { padding: 16px; }
+      .availability-day {
+        grid-template-columns: 1fr 1fr;
       }
-
-      .dashboard-page-header .brand {
-        font-size: 21px;
-      }
-
-      .dashboard-page-header .header-links {
-        gap: 12px;
-      }
-
-      .dashboard-page-intro {
-        padding-top: 25px;
+      .availability-day label:first-child {
+        grid-column: 1 / -1;
       }
     }
   </style>
@@ -106,59 +305,204 @@
 
 <body>
 
-  <header class="dashboard-page-header">
-    <a href="index.html" class="brand">ميعاد</a>
+<header class="dashboard-header">
+  <a href="index.html" class="dashboard-brand">ميعاد</a>
 
-    <nav class="header-links">
-      <a href="index.html">الرئيسية</a>
-      <a href="index.html#myBookings" id="myBookingsBtn" hidden>حجوزاتي</a>
-      <button type="button" id="loginBtn">تسجيل الدخول</button>
-      <button type="button" id="registerBtn">إنشاء حساب</button>
-      <button type="button" id="logoutBtn" hidden>تسجيل الخروج</button>
-    </nav>
-  </header>
+  <nav class="dashboard-nav">
+    <a href="index.html">الرئيسية</a>
+    <a href="index.html#bookings" id="myBookingsBtn" hidden>حجوزاتي</a>
+    <button type="button" id="loginBtn">تسجيل الدخول</button>
+    <button type="button" id="registerBtn">إنشاء حساب</button>
+    <button type="button" id="logoutBtn" hidden>تسجيل الخروج</button>
+  </nav>
+</header>
 
-  <main>
-    <section class="dashboard-page-intro">
-      <h1>إدارة نشاطي</h1>
-      <p>أدر بيانات نشاطك وخدماتك ومواعيدك وحجوزات عملائك من مكان واحد.</p>
-      <a href="index.html" class="dashboard-back-link">العودة إلى الصفحة الرئيسية ←</a>
-    </section>
+<main>
+  <section class="dashboard-intro">
+    <h1>إدارة نشاطي</h1>
+    <p>أدر بيانات نشاطك وخدماتك وساعات عملك وحجوزات عملائك من مكان واحد.</p>
+  </section>
 
-    <section id="providerDashboard" hidden>
-      <div id="providerDashboardMessage" role="status">
-        جارٍ التحقق من حسابك...
-      </div>
+  <section id="providerDashboard" hidden>
+    <div id="providerDashboardMessage" role="status" aria-live="polite">
+      جارٍ التحقق من حسابك...
+    </div>
 
-      <div id="providerList"></div>
+    <div id="providerList"></div>
 
-      <form id="providerForm">
-        <!-- سيُحافظ على حقول النموذج الحالية عند نقلها من الصفحة الرئيسية -->
+    <form id="providerForm" class="dashboard-card">
+      <h2>إضافة نشاط جديد</h2>
+
+      <label for="businessName">اسم النشاط</label>
+      <input id="businessName" name="business_name"
+        required minlength="2" maxlength="150">
+
+      <label for="businessCategory">نوع النشاط</label>
+      <select id="businessCategory" name="category" required>
+        <option value="">اختر نوع النشاط</option>
+        <option value="العيادات الطبية">العيادات الطبية</option>
+        <option value="الحلاقة الرجالية">الحلاقة الرجالية</option>
+        <option value="الصالونات والجمال">الصالونات والجمال</option>
+        <option value="عيادات الأسنان">عيادات الأسنان</option>
+        <option value="الرياضة واللياقة">الرياضة واللياقة</option>
+        <option value="التصوير والمناسبات">التصوير والمناسبات</option>
+        <option value="الخدمات المهنية">الخدمات المهنية</option>
+        <option value="خدمات أخرى">خدمات أخرى</option>
+      </select>
+
+      <label for="businessCity">المدينة</label>
+      <input id="businessCity" name="city"
+        required minlength="2" maxlength="100">
+
+      <label for="businessAddress">العنوان</label>
+      <input id="businessAddress" name="address" maxlength="250">
+
+      <label for="businessPhone">رقم التواصل</label>
+      <input id="businessPhone" name="phone" type="tel"
+        inputmode="numeric" minlength="9" maxlength="9"
+        pattern="7[0-9]{8}" placeholder="712345678" required>
+
+      <label for="businessDescription">وصف النشاط</label>
+      <textarea id="businessDescription" name="description"
+        maxlength="2000"></textarea>
+
+      <button class="dashboard-button" type="submit">حفظ النشاط</button>
+      <p id="providerFormStatus" class="dashboard-status"
+        role="status" aria-live="polite"></p>
+    </form>
+
+    <section id="serviceManagement" class="dashboard-card" hidden>
+      <h2>إدارة خدمات النشاط</h2>
+      <p>اختر النشاط الذي تريد إضافة خدمة إليه.</p>
+
+      <label for="serviceProviderSelect">النشاط</label>
+      <select id="serviceProviderSelect" required>
+        <option value="">اختر النشاط</option>
+      </select>
+
+      <form id="serviceForm">
+        <label for="serviceName">اسم الخدمة</label>
+        <input id="serviceName" name="name"
+          required minlength="2" maxlength="150">
+
+        <label for="serviceDescription">وصف الخدمة</label>
+        <textarea id="serviceDescription" name="description"
+          maxlength="1000"></textarea>
+
+        <label for="serviceDuration">مدة الخدمة بالدقائق</label>
+        <input id="serviceDuration" name="duration_minutes"
+          type="number" min="5" max="1440" step="1"
+          value="30" required>
+
+        <label for="servicePrice">السعر</label>
+        <input id="servicePrice" name="price"
+          type="number" min="0" max="1000000000"
+          step="0.01" required>
+
+        <label for="serviceCurrency">العملة</label>
+        <select id="serviceCurrency" name="currency" required>
+          <option value="YER">ريال يمني</option>
+          <option value="SAR">ريال سعودي</option>
+          <option value="USD">دولار أمريكي</option>
+        </select>
+
+        <button class="dashboard-button" type="submit">حفظ الخدمة</button>
+        <p id="serviceFormStatus" class="dashboard-status"
+          role="status" aria-live="polite"></p>
       </form>
 
-      <div id="serviceManagement">
-        <select id="serviceProviderSelect" hidden></select>
+      <section id="availabilityManagement" hidden>
+        <h3>ساعات عمل النشاط</h3>
+        <p>فعّل الأيام التي يستقبل فيها نشاطك الحجوزات، وحدد وقت البداية والنهاية.</p>
 
-        <form id="serviceForm">
-          <!-- سيُحافظ على حقول إدارة الخدمات الحالية عند نقلها -->
-        </form>
+        <div id="availabilityDays">
+          <p>جارٍ تجهيز أيام العمل...</p>
+        </div>
 
-        <div id="serviceFormStatus" role="status"></div>
-      </div>
+        <button type="button" id="saveAvailabilityBtn"
+          class="dashboard-button">حفظ ساعات العمل</button>
 
-      <section id="providerBookings">
-        <div id="providerBookingsStatus" role="status"></div>
-        <button type="button" id="refreshProviderBookings">تحديث الحجوزات</button>
-        <div id="providerBookingsList"></div>
+        <p id="availabilityStatus" class="dashboard-status"
+          role="status" aria-live="polite"></p>
       </section>
-
-      <div id="providerFormStatus" role="status"></div>
     </section>
-  </main>
 
-  <script src="js/auth.js" defer></script>
-  <script src="js/account-ui.js" defer></script>
-  <script src="js/provider-dashboard.js" defer></script>
+    <section id="providerBookings" class="dashboard-card" hidden>
+      <h2>الحجوزات الواردة</h2>
+      <p>راجع طلبات العملاء وأكّد المواعيد المناسبة أو ألغِ الطلبات التي لا يمكن قبولها.</p>
+
+      <button type="button" id="refreshProviderBookings"
+        class="dashboard-button">تحديث الحجوزات</button>
+
+      <p id="providerBookingsStatus" class="dashboard-status"
+        role="status" aria-live="polite"></p>
+
+      <div id="providerBookingsList"></div>
+    </section>
+  </section>
+</main>
+
+<section id="account" hidden role="dialog" aria-modal="true"
+  aria-labelledby="accountTitle">
+  <div class="account-panel">
+    <button type="button" id="closeAccount" aria-label="إغلاق">✕</button>
+
+    <h2 id="accountTitle">مرحبًا بك في ميعاد</h2>
+    <p id="accountMessage">سجّل دخولك للمتابعة.</p>
+
+    <div class="account-tabs">
+      <button type="button" id="showLogin">تسجيل الدخول</button>
+      <button type="button" id="showRegister">إنشاء حساب</button>
+    </div>
+
+    <form id="loginForm">
+      <label for="loginEmail">البريد الإلكتروني</label>
+      <input id="loginEmail" name="email" type="email"
+        autocomplete="email" required>
+
+      <label for="loginPassword">كلمة المرور</label>
+      <input id="loginPassword" name="password" type="password"
+        autocomplete="current-password" required>
+
+      <button type="submit">دخول</button>
+    </form>
+
+    <form id="registerForm" hidden>
+      <label for="registerName">الاسم الكامل</label>
+      <input id="registerName" name="name"
+        autocomplete="name" required maxlength="100">
+
+      <label for="registerEmail">البريد الإلكتروني</label>
+      <input id="registerEmail" name="email"
+        type="email" autocomplete="email" required>
+
+      <label for="registerPhone">رقم الهاتف</label>
+      <input id="registerPhone" name="phone" type="tel"
+        inputmode="numeric" autocomplete="tel"
+        minlength="9" maxlength="9" pattern="7[0-9]{8}"
+        placeholder="712345678" required>
+
+      <label for="registerPassword">كلمة المرور (8 أحرف على الأقل)</label>
+      <input id="registerPassword" name="password"
+        type="password" autocomplete="new-password"
+        minlength="8" maxlength="72" required>
+
+      <label for="registerRole">نوع الحساب</label>
+      <select id="registerRole" name="role" required>
+        <option value="customer">عميل — أريد حجز موعد</option>
+        <option value="provider">صاحب نشاط — أريد عرض خدماتي</option>
+      </select>
+
+      <button type="submit">إنشاء الحساب</button>
+    </form>
+
+    <p id="accountStatus" role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<script src="js/auth.js" defer></script>
+<script src="js/account-ui.js" defer></script>
+<script src="js/provider-dashboard.js" defer></script>
 
 </body>
 </html>
