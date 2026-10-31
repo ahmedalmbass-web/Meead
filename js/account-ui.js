@@ -13,26 +13,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("loginBtn");
   const registerBtn = document.getElementById("registerBtn");
   const providerEntryBtn = document.getElementById("providerEntryBtn");
-const registerRole = document.getElementById("registerRole");
+  const registerRole = document.getElementById("registerRole");
   const bookingsBtn = document.getElementById("myBookingsBtn");
   const logoutBtn = document.getElementById("logoutBtn");
   const manageActivityBtn = document.getElementById("manageActivityBtn");
+
   const closeBtn = document.getElementById("closeAccount");
   const loginForm = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
   const showLoginBtn = document.getElementById("showLogin");
   const showRegisterBtn = document.getElementById("showRegister");
+
   const status = document.getElementById("accountStatus");
   const title = document.getElementById("accountTitle");
   const message = document.getElementById("accountMessage");
 
   function setStatus(text) {
-    status.textContent = text;
+    if (status) status.textContent = text;
   }
 
   function openModal(mode = "login") {
     modal.hidden = false;
     document.body.style.overflow = "hidden";
+
     switchMode(mode);
 
     const firstInput = mode === "register"
@@ -51,39 +54,48 @@ const registerRole = document.getElementById("registerRole");
   function switchMode(mode) {
     const registering = mode === "register";
 
-    loginForm.hidden = registering;
-    registerForm.hidden = !registering;
-    title.textContent = registering
-      ? "إنشاء حساب جديد"
-      : "مرحبًا بك في ميعاد";
-    message.textContent = registering
-      ? "أنشئ حسابك للبدء في استخدام المنصة."
-      : "سجّل دخولك للمتابعة.";
+    if (loginForm) loginForm.hidden = registering;
+    if (registerForm) registerForm.hidden = !registering;
+
+    if (title) {
+      title.textContent = registering
+        ? "إنشاء حساب جديد"
+        : "مرحبًا بك في ميعاد";
+    }
+
+    if (message) {
+      message.textContent = registering
+        ? "أنشئ حسابك للبدء في استخدام المنصة."
+        : "سجّل دخولك للمتابعة.";
+    }
+
     setStatus("");
   }
 
   function updateNavigation() {
     const user = auth.getUser();
     const loggedIn = auth.isLoggedIn();
-
-    if (manageActivityBtn) {
-  manageActivityBtn.hidden = !loggedIn || user?.role !== "provider";
-    }
+    const isProvider = loggedIn && user?.role === "provider";
+    const isCustomer = loggedIn && user?.role === "customer";
 
     if (loginBtn) loginBtn.hidden = loggedIn;
     if (registerBtn) registerBtn.hidden = loggedIn;
     if (logoutBtn) logoutBtn.hidden = !loggedIn;
 
-    if (bookingsBtn) {
-  console.log("Meead account check:", {
-    loggedIn,
-    role: user?.role
-  });
-
-  bookingsBtn.hidden = !loggedIn || user?.role !== "customer";
+    if (providerEntryBtn) {
+      providerEntryBtn.hidden = loggedIn;
     }
 
-    if (loggedIn && user) {
+    if (manageActivityBtn) {
+      manageActivityBtn.hidden = !isProvider;
+      manageActivityBtn.href = "provider-dashboard.html";
+    }
+
+    if (bookingsBtn) {
+      bookingsBtn.hidden = !isCustomer;
+    }
+
+    if (loggedIn && user && message) {
       message.textContent = `مرحبًا ${user.name || ""}، تم تسجيل دخولك.`;
     }
   }
@@ -95,44 +107,67 @@ const registerRole = document.getElementById("registerRole");
 
   registerBtn?.addEventListener("click", (event) => {
     event.preventDefault();
+
+    if (registerRole) {
+      registerRole.value = "customer";
+    }
+
     openModal("register");
   });
 
   providerEntryBtn?.addEventListener("click", (event) => {
-  event.preventDefault();
+    event.preventDefault();
 
-  if (auth.isLoggedIn() && auth.getUser()?.role === "provider") {
-    document.getElementById("providerDashboard")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-    return;
-  }
+    if (auth.isLoggedIn()) {
+      const user = auth.getUser();
 
-  if (registerRole) {
-    registerRole.value = "provider";
-  }
+      if (user?.role === "provider") {
+        window.location.href = "provider-dashboard.html";
+      }
 
-  openModal("login");
-});
+      return;
+    }
 
-  showLoginBtn?.addEventListener("click", () => switchMode("login"));
-  showRegisterBtn?.addEventListener("click", () => switchMode("register"));
+    if (registerRole) {
+      registerRole.value = "provider";
+    }
+
+    openModal("register");
+  });
+
+  showLoginBtn?.addEventListener("click", () => {
+    switchMode("login");
+  });
+
+  showRegisterBtn?.addEventListener("click", () => {
+    if (registerRole && !auth.isLoggedIn()) {
+      registerRole.value = "customer";
+    }
+
+    switchMode("register");
+  });
+
   closeBtn?.addEventListener("click", closeModal);
 
   modal.addEventListener("click", (event) => {
-    if (event.target === modal) closeModal();
+    if (event.target === modal) {
+      closeModal();
+    }
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.hidden) closeModal();
+    if (event.key === "Escape" && !modal.hidden) {
+      closeModal();
+    }
   });
 
-  loginForm.addEventListener("submit", async (event) => {
+  loginForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const submitButton = loginForm.querySelector('[type="submit"]');
-    submitButton.disabled = true;
+
+    if (submitButton) submitButton.disabled = true;
+
     setStatus("جارٍ تسجيل الدخول...");
 
     try {
@@ -140,21 +175,29 @@ const registerRole = document.getElementById("registerRole");
       const password = document.getElementById("loginPassword").value;
 
       await auth.login(email, password);
+
       updateNavigation();
-      setStatus("تم تسجيل الدخول بنجاح.");
       closeModal();
+
+      const user = auth.getUser();
+
+      if (user?.role === "provider") {
+        window.location.href = "provider-dashboard.html";
+      }
     } catch (error) {
       setStatus(error.message || "تعذر تسجيل الدخول. حاول مجددًا.");
     } finally {
-      submitButton.disabled = false;
+      if (submitButton) submitButton.disabled = false;
     }
   });
 
-  registerForm.addEventListener("submit", async (event) => {
+  registerForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const submitButton = registerForm.querySelector('[type="submit"]');
-    submitButton.disabled = true;
+
+    if (submitButton) submitButton.disabled = true;
+
     setStatus("جارٍ إنشاء الحساب...");
 
     try {
@@ -167,13 +210,21 @@ const registerRole = document.getElementById("registerRole");
       };
 
       await auth.register(details);
+
       updateNavigation();
       closeModal();
-      alert("تم إنشاء حسابك بنجاح.");
+
+      const user = auth.getUser();
+
+      if (user?.role === "provider") {
+        window.location.href = "provider-dashboard.html";
+      } else {
+        alert("تم إنشاء حسابك بنجاح.");
+      }
     } catch (error) {
       setStatus(error.message || "تعذر إنشاء الحساب. حاول مجددًا.");
     } finally {
-      submitButton.disabled = false;
+      if (submitButton) submitButton.disabled = false;
     }
   });
 
