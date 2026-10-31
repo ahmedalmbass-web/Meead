@@ -186,17 +186,15 @@
       .hero-copy { font-size: 14px; }
       .hero-visual { min-height: 0; }
       .floating-note {
-  left: 8px;
-  right: 8px;
-  bottom: 12px;
-  width: fit-content;
-  max-width: calc(100% - 16px);
-  white-space: normal;
-  z-index: 2;
+        left: 8px;
+        right: 8px;
+        bottom: 12px;
+        width: fit-content;
+        max-width: calc(100% - 16px);
+        white-space: normal;
+        z-index: 2;
       }
-      .hero-visual {
-  padding-bottom: 70px;
-      }
+      .hero-visual { padding-bottom: 70px; }
       .trust-grid { grid-template-columns: 1fr; gap: 14px; padding: 20px 0; }
       .trust-item { justify-content: flex-start; }
       .section { padding: 60px 0; }
@@ -204,7 +202,6 @@
       .category-card { padding: 20px 9px; }
       .provider-banner { grid-template-columns: 1fr; padding: 26px 22px; }
       .provider-banner h2 { font-size: 23px; }
-      .provider-banner .btn { justify-self: start; }
       .steps-grid { grid-template-columns: 1fr; gap: 13px; }
       .step-card { padding: 22px; }
       .closing-inner { padding: 37px 18px; }
@@ -218,179 +215,108 @@
       *, *::before, *::after { transition: none !important; }
     }
 
-    
-/* Meead search form */
-.mock-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin: 22px 0;
-  padding: 8px;
-  background: #fff;
-  border-radius: 14px;
-  box-sizing: border-box;
-}
-
-.mock-search input {
-  flex: 1;
-  width: 0;
-  min-width: 0;
-  padding: 10px 8px;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: #1b2b26;
-  font-size: 13px;
-}
-
-.mock-search input:focus-visible {
-  outline: 2px solid #d8bd7c;
-  outline-offset: -2px;
-  border-radius: 8px;
-}
-
-.mock-search input::placeholder {
-  color: #87918b;
-}
-
-.mock-search button {
-  flex-shrink: 0;
-  padding: 10px 16px;
-  border: 0;
-  border-radius: 9px;
-  background: #d8bd7c;
-  color: #20372c;
-  font-weight: 800;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.mock-search button:hover {
-  background: #c9aa61;
-}
-
-@media (max-width: 380px) {
-  .mock-search {
-    gap: 4px;
-    padding: 6px;
-  }
-
-  .mock-search button {
-    padding: 9px 11px;
-  }
-
-  .mock-search input {
-    font-size: 12px;
-  }
-}
-
-    [hidden] {
-  display: none !important;
+    /* Meead search form */
+    .mock-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin: 22px 0;
+      padding: 8px;
+      background: #fff;
+      border-radius: 14px;
+      box-sizing: border-box;
     }
+    .mock-search input {
+      flex: 1;
+      width: 0;
+      min-width: 0;
+      padding: 10px 8px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #1b2b26;
+      font-size: 13px;
+    }
+    .mock-search input:focus-visible {
+      outline: 2px solid #d8bd7c;
+      outline-offset: -2px;
+      border-radius: 8px;
+    }
+    .mock-search input::placeholder { color: #87918b; }
+    .mock-search button {
+      flex-shrink: 0;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 9px;
+      background: #d8bd7c;
+      color: #20372c;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .mock-search button:hover { background: #c9aa61; }
+    @media (max-width: 380px) {
+      .mock-search { gap: 4px; padding: 6px; }
+      .mock-search button { padding: 9px 11px; }
+      .mock-search input { font-size: 12px; }
+    }
+    [hidden] { display: none !important; }
 
-    
-/* Meead premium contact buttons */
-.footer-contact-desc {
-  color: #b9c9c0;
-  font-size: 12px;
-  margin: -5px 0 16px;
-}
-
-.footer-contact {
-  min-width: 0;
-}
-
-.contact-button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  max-width: 340px;
-  padding: 13px 14px;
-  margin: 10px 0;
-  border: 1px solid rgba(216, 189, 124, .25);
-  border-radius: 16px;
-  color: #fff;
-  background: linear-gradient(
-    135deg,
-    rgba(255,255,255,.09),
-    rgba(255,255,255,.025)
-  );
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
-  transition: transform .25s ease, border-color .25s ease,
-              background .25s ease, box-shadow .25s ease;
-}
-
-.contact-button:hover {
-  transform: translateY(-3px);
-  border-color: #d8bd7c;
-  background: linear-gradient(
-    135deg,
-    rgba(216,189,124,.16),
-    rgba(255,255,255,.04)
-  );
-  box-shadow: 0 12px 28px rgba(0,0,0,.2);
-}
-
-.contact-icon {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 43px;
-  height: 43px;
-  border-radius: 13px;
-  font-size: 23px;
-  background: rgba(216,189,124,.12);
-  border: 1px solid rgba(216,189,124,.2);
-  color: #d8bd7c;
-}
-
-.contact-whatsapp .contact-icon {
-  color: #65e6a0;
-  background: rgba(37,211,102,.10);
-  border-color: rgba(37,211,102,.22);
-}
-
-.contact-text {
-  display: grid;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.contact-text strong {
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.contact-text small {
-  color: #b9c9c0;
-  font-size: 10px;
-}
-
-.contact-arrow {
-  color: #d8bd7c;
-  font-size: 19px;
-  transition: transform .25s ease;
-}
-
-.contact-button:hover .contact-arrow {
-  transform: translate(-3px, -3px);
-}
-
-.contact-button:focus-visible {
-  outline: 2px solid #d8bd7c;
-  outline-offset: 4px;
-}
-
-@media (max-width: 650px) {
-  .contact-button {
-    max-width: 100%;
-  }
-}
-
-
+    /* Meead premium contact buttons */
+    .footer-contact-desc {
+      color: #b9c9c0;
+      font-size: 12px;
+      margin: -5px 0 16px;
+    }
+    .footer-contact { min-width: 0; }
+    .contact-button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 340px;
+      padding: 13px 14px;
+      margin: 10px 0;
+      border: 1px solid rgba(216, 189, 124, .25);
+      border-radius: 16px;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(255,255,255,.09), rgba(255,255,255,.025));
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      transition: transform .25s ease, border-color .25s ease, background .25s ease, box-shadow .25s ease;
+    }
+    .contact-button:hover {
+      transform: translateY(-3px);
+      border-color: #d8bd7c;
+      background: linear-gradient(135deg, rgba(216,189,124,.16), rgba(255,255,255,.04));
+      box-shadow: 0 12px 28px rgba(0,0,0,.2);
+    }
+    .contact-icon {
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      width: 43px;
+      height: 43px;
+      border-radius: 13px;
+      font-size: 23px;
+      background: rgba(216,189,124,.12);
+      border: 1px solid rgba(216,189,124,.2);
+      color: #d8bd7c;
+    }
+    .contact-whatsapp .contact-icon {
+      color: #65e6a0;
+      background: rgba(37,211,102,.10);
+      border-color: rgba(37,211,102,.22);
+    }
+    .contact-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+    .contact-text strong { font-size: 12px; font-weight: 800; }
+    .contact-text small { color: #b9c9c0; font-size: 10px; }
+    .contact-arrow { color: #d8bd7c; font-size: 19px; transition: transform .25s ease; }
+    .contact-button:hover .contact-arrow { transform: translate(-3px, -3px); }
+    .contact-button:focus-visible { outline: 2px solid #d8bd7c; outline-offset: 4px; }
+    @media (max-width: 650px) {
+      .contact-button { max-width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -400,17 +326,18 @@
         <span class="brand-mark">م</span>
         <span class="brand-name">ميعاد<small>MEEAD</small></span>
       </a>
-      
-<nav class="nav-links" id="mainNav" aria-label="القائمة الرئيسية">
-  <a href="#home">الرئيسية</a>
-  <a href="#categories">استكشف الخدمات</a>
-  <a href="#how">كيف تعمل المنصة؟</a>
-  <a href="#providers">أصحاب الأنشطة</a>
-  <a href="#account" id="loginBtn">تسجيل الدخول</a>
-  <a href="#account" id="registerBtn">إنشاء حساب</a>
-  <a href="#bookings" id="myBookingsBtn" hidden>حجوزاتي</a>
-  <button type="button" id="logoutBtn" hidden>تسجيل الخروج</button>
-</nav>
+
+      <nav class="nav-links" id="mainNav" aria-label="القائمة الرئيسية">
+        <a href="#home">الرئيسية</a>
+        <a href="#categories">استكشف الخدمات</a>
+        <a href="#how">كيف تعمل المنصة؟</a>
+        <a href="#providers">أصحاب الأنشطة</a>
+        <a href="provider-dashboard.html" id="manageActivityBtn" hidden>إدارة نشاطي</a>
+        <a href="#account" id="loginBtn">تسجيل الدخول</a>
+        <a href="#account" id="registerBtn">إنشاء حساب</a>
+        <a href="#bookings" id="myBookingsBtn" hidden>حجوزاتي</a>
+        <button type="button" id="logoutBtn" hidden>تسجيل الخروج</button>
+      </nav>
 
       <div class="nav-actions">
         <a class="btn btn-outline" href="#providers">أضف نشاطك</a>
@@ -429,11 +356,7 @@
           <p class="hero-copy">ابحث عن الخدمة التي تحتاجها، اكتشف الأنشطة المناسبة لك، واحجز موعدك بكل سهولة. ولأصحاب الأنشطة، نظّموا مواعيدكم ووصلوا إلى عملاء جدد من مكان واحد.</p>
           <div class="hero-buttons">
             <a href="#categories" class="btn btn-gold">اكتشف الخدمات <span>←</span></a>
-            
-
-<a href="#account" class="btn btn-glass" id="providerEntryBtn">أنا صاحب نشاط</a>
-
-
+            <a href="#account" class="btn btn-glass" id="providerEntryBtn">أنا صاحب نشاط</a>
           </div>
           <p class="hero-note">✦ منصة مجانية للجميع، هدفها تسهيل الوصول إلى الخدمات وتنظيم المواعيد.</p>
         </div>
@@ -443,16 +366,11 @@
             <strong>اكتشف ما تحتاجه</strong>
             <span class="live-pill">بخطوات بسيطة</span>
           </div>
-          
-<form class="mock-search" id="meeadSearch" role="search">
-  <input
-    type="search"
-    id="searchInput"
-    placeholder="ابحث عن عيادة، حلاق، صالون..."
-    aria-label="ابحث عن نشاط أو خدمة"
-  >
-  <button type="submit">بحث</button>
-</form>
+
+          <form class="mock-search" id="meeadSearch" role="search">
+            <input type="search" id="searchInput" placeholder="ابحث عن عيادة، حلاق، صالون..." aria-label="ابحث عن نشاط أو خدمة">
+            <button type="submit">بحث</button>
+          </form>
 
           <div class="mock-card">
             <div class="mock-icon">🩺</div>
@@ -490,213 +408,28 @@
           <p>مكان واحد يجمع أنواعًا متعددة من الخدمات، لتصل إلى ما تحتاجه دون عناء البحث الطويل.</p>
         </div>
         <div class="category-grid">
-          <a class="category-card" href="#providers">
-            <div class="category-icon">🩺</div>
-            <h3>العيادات الطبية</h3>
-            <p>عيادات ومراكز صحية</p>
-          </a>
-          <a class="category-card" href="#providers">
-            <div class="category-icon">💈</div>
-            <h3>الحلاقة الرجالية</h3>
-            <p>حلاقة وعناية شخصية</p>
-          </a>
-          <a class="category-card" href="#providers">
-            <div class="category-icon">💇‍♀️</div>
-            <h3>الصالونات والجمال</h3>
-            <p>تجميل وعناية</p>
-          </a>
-          <a class="category-card" href="#providers">
-            <div class="category-icon">🦷</div>
-            <h3>عيادات الأسنان</h3>
-            <p>خدمات طب الأسنان</p>
-          </a>
-          <a class="category-card" href="#providers">
-            <div class="category-icon">🏋️</div>
-            <h3>الرياضة واللياقة</h3>
-            <p>نوادٍ ومدربون</p>
-          </a>
-          <a class="category-card" href="#providers">
-            <div class="category-icon">📸</div>
-            <h3>التصوير والمناسبات</h3>
-            <p>مصورون وخدمات مناسبات</p>
-          </a>
-          <a class="category-card" href="#providers">
-            <div class="category-icon">🛠️</div>
-            <h3>الخدمات المهنية</h3>
-            <p>خدمات وحرف متنوعة</p>
-          </a>
-          <a class="category-card" href="#providers">
-            <div class="category-icon">＋</div>
-            <h3>خدمات أخرى</h3>
-            <p>أنشطة متنوعة باستمرار</p>
-          </a>
+          <a class="category-card" href="#providers"><div class="category-icon">🩺</div><h3>العيادات الطبية</h3><p>عيادات ومراكز صحية</p></a>
+          <a class="category-card" href="#providers"><div class="category-icon">💈</div><h3>الحلاقة الرجالية</h3><p>حلاقة وعناية شخصية</p></a>
+          <a class="category-card" href="#providers"><div class="category-icon">💇‍♀️</div><h3>الصالونات والجمال</h3><p>تجميل وعناية</p></a>
+          <a class="category-card" href="#providers"><div class="category-icon">🦷</div><h3>عيادات الأسنان</h3><p>خدمات طب الأسنان</p></a>
+          <a class="category-card" href="#providers"><div class="category-icon">🏋️</div><h3>الرياضة واللياقة</h3><p>نوادٍ ومدربون</p></a>
+          <a class="category-card" href="#providers"><div class="category-icon">📸</div><h3>التصوير والمناسبات</h3><p>مصورون وخدمات مناسبات</p></a>
+          <a class="category-card" href="#providers"><div class="category-icon">🛠️</div><h3>الخدمات المهنية</h3><p>خدمات وحرف متنوعة</p></a>
+          <a class="category-card" href="#providers"><div class="category-icon">＋</div><h3>خدمات أخرى</h3><p>أنشطة متنوعة باستمرار</p></a>
         </div>
       </div>
     </section>
 
-    
-<section class="section" id="providers" style="padding-top:0">
-  <div class="container">
-    <div class="provider-banner">
-      <div>
-        <h2>عندك نشاط؟ خلّ عملاءك يوصلوا إليك.</h2>
-        <p>أنشئ صفحة لنشاطك، أضف خدماتك وأسعارك، وحدد أوقات استقبال الحجوزات من مكان واحد.</p>
+    <section class="section" id="providers" style="padding-top:0">
+      <div class="container">
+        <div class="provider-banner">
+          <div>
+            <h2>عندك نشاط؟ خلّ عملاءك يوصلوا إليك.</h2>
+            <p>أنشئ صفحة لنشاطك، أضف خدماتك وأسعارك، وحدد أوقات استقبال الحجوزات من مكان واحد.</p>
+          </div>
+        </div>
       </div>
-      <a class="btn btn-gold" id="manageActivityBtn"
-   href="#providerDashboard" hidden>
-  إدارة نشاطي ←
-      </a>
-    </div>
-
-    <div id="providerDashboard" hidden>
-      <h2>إدارة نشاطي</h2>
-      <p id="providerDashboardMessage">
-        سجّل الدخول بحساب صاحب نشاط للبدء.
-      </p>
-
-      <div id="providerList"></div>
-      
-<div id="serviceManagement" hidden>
-  <h3>إضافة خدمات النشاط</h3>
-  <p>اختر النشاط الذي تريد إضافة خدمة إليه.</p>
-
-  <label for="serviceProviderSelect">النشاط</label>
-  <select id="serviceProviderSelect" required>
-    <option value="">اختر النشاط</option>
-  </select>
-
-  <form id="serviceForm">
-    <label for="serviceName">اسم الخدمة</label>
-    <input
-      id="serviceName"
-      name="name"
-      required
-      minlength="2"
-      maxlength="150"
-    >
-
-    <label for="serviceDescription">وصف الخدمة</label>
-    <textarea
-      id="serviceDescription"
-      name="description"
-      maxlength="1000"
-    ></textarea>
-
-    <label for="serviceDuration">مدة الخدمة بالدقائق</label>
-    <input
-      id="serviceDuration"
-      name="duration_minutes"
-      type="number"
-      min="5"
-      max="1440"
-      step="1"
-      value="30"
-      required
-    >
-
-    <label for="servicePrice">السعر</label>
-    <input
-      id="servicePrice"
-      name="price"
-      type="number"
-      min="0"
-      max="1000000000"
-      step="0.01"
-      required
-    >
-
-    <label for="serviceCurrency">العملة</label>
-    <select id="serviceCurrency" name="currency" required>
-      <option value="YER">ريال يمني</option>
-      <option value="SAR">ريال سعودي</option>
-      <option value="USD">دولار أمريكي</option>
-    </select>
-
-    <button type="submit">حفظ الخدمة</button>
-    <p id="serviceFormStatus" role="status" aria-live="polite"></p>
-  </form>
-
-  <section id="availabilityManagement" hidden>
-  <h3>ساعات عمل النشاط</h3>
-  <p>فعّل الأيام التي يستقبل فيها نشاطك الحجوزات، وحدد وقت البداية والنهاية. اترك يوم الإجازة غير مفعّل.</p>
-
-  <div id="availabilityDays">
-    <p>جارٍ تجهيز أيام العمل...</p>
-  </div>
-
-  <button type="button" id="saveAvailabilityBtn">حفظ ساعات العمل</button>
-  <p id="availabilityStatus" role="status" aria-live="polite"></p>
-  </section>
-</div>
-
-<section id="providerBookings" hidden
-  style="margin:25px 0;padding:20px;background:#fff;border:1px solid #e7e7df;border-radius:16px;">
-
-  <h3 style="color:#173F35;">الحجوزات الواردة</h3>
-  <p>راجع طلبات العملاء وأكّد المواعيد المناسبة أو ألغِ الطلبات التي لا يمكن قبولها.</p>
-
-  <button type="button" id="refreshProviderBookings"
-    style="background:#173F35;color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;">
-    تحديث الحجوزات
-  </button>
-
-  <p id="providerBookingsStatus" role="status" aria-live="polite"></p>
-  <div id="providerBookingsList"></div>
-
-</section>
-
-<form id="providerForm">
-        <h3>إضافة نشاط جديد</h3>
-
-        <label for="businessName">اسم النشاط</label>
-        <input id="businessName" name="business_name"
-          required minlength="2" maxlength="150">
-
-        <label for="businessCategory">نوع النشاط</label>
-<select id="businessCategory" name="category" required>
-  <option value="">اختر نوع النشاط</option>
-  <option value="العيادات الطبية">العيادات الطبية</option>
-  <option value="الحلاقة الرجالية">الحلاقة الرجالية</option>
-  <option value="الصالونات والجمال">الصالونات والجمال</option>
-  <option value="عيادات الأسنان">عيادات الأسنان</option>
-  <option value="الرياضة واللياقة">الرياضة واللياقة</option>
-  <option value="التصوير والمناسبات">التصوير والمناسبات</option>
-  <option value="الخدمات المهنية">الخدمات المهنية</option>
-  <option value="خدمات أخرى">خدمات أخرى</option>
-</select>
-
-        <label for="businessCity">المدينة</label>
-        <input id="businessCity" name="city"
-          required minlength="2" maxlength="100">
-
-        <label for="businessAddress">العنوان</label>
-        <input id="businessAddress" name="address" maxlength="250">
-
-        <label for="businessPhone">رقم التواصل </label>
-<input
-  id="businessPhone"
-  name="phone"
-  type="tel"
-  inputmode="numeric"
-  minlength="9"
-  maxlength="9"
-  pattern="7[0-9]{8}"
-  title="أدخل رقمًا من 9 أرقام يبدأ بالرقم 7"
-  placeholder="712345678"
-  required
->
-
-        <label for="businessDescription">وصف النشاط</label>
-        <textarea id="businessDescription" name="description"
-          maxlength="2000"></textarea>
-
-        <button type="submit">حفظ النشاط</button>
-        <p id="providerFormStatus" role="status" aria-live="polite"></p>
-      </form>
-    </div>
-  </div>
-</section>
-
+    </section>
 
     <section class="section" id="how">
       <div class="container">
@@ -763,42 +496,20 @@
           </div>
         </div>
 
-        
-<div class="footer-contact">
-  <h3 class="footer-title">تواصل معنا</h3>
-  <p class="footer-contact-desc">
-    نحن هنا لمساعدتك، تواصل معنا في أي وقت.
-  </p>
-
-  <a
-    class="contact-button contact-whatsapp"
-    href="https://wa.me/967734564299"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    <span class="contact-icon">✆</span>
-    <span class="contact-text">
-      <strong>تواصل عبر واتساب</strong>
-      <small>نحن هنا لمساعدتك</small>
-    </span>
-    <span class="contact-arrow">↗</span>
-  </a>
-
-  <a
-    class="contact-button contact-email"
-    href="mailto:ahmedalmbass@gmail.com"
-  >
-    <span class="contact-icon">✉</span>
-    <span class="contact-text">
-      <strong>راسلنا بالبريد الإلكتروني</strong>
-      <small>يسعدنا استقبال رسالتك</small>
-    </span>
-    <span class="contact-arrow">↗</span>
-  </a>
-</div>
-
-
-        
+        <div class="footer-contact">
+          <h3 class="footer-title">تواصل معنا</h3>
+          <p class="footer-contact-desc">نحن هنا لمساعدتك، تواصل معنا في أي وقت.</p>
+          <a class="contact-button contact-whatsapp" href="https://wa.me/967734564299" target="_blank" rel="noopener noreferrer">
+            <span class="contact-icon">✆</span>
+            <span class="contact-text"><strong>تواصل عبر واتساب</strong><small>نحن هنا لمساعدتك</small></span>
+            <span class="contact-arrow">↗</span>
+          </a>
+          <a class="contact-button contact-email" href="mailto:ahmedalmbass@gmail.com">
+            <span class="contact-icon">✉</span>
+            <span class="contact-text"><strong>راسلنا بالبريد الإلكتروني</strong><small>يسعدنا استقبال رسالتك</small></span>
+            <span class="contact-arrow">↗</span>
+          </a>
+        </div>
       </div>
       <div class="footer-bottom">
         <span>© <span id="year"></span> ميعاد Meead — جميع الحقوق محفوظة.</span>
@@ -827,74 +538,49 @@
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 
-  
-<section id="account" hidden role="dialog" aria-modal="true" aria-labelledby="accountTitle">
-  <div class="account-panel">
-    <button type="button" id="closeAccount" aria-label="إغلاق">✕</button>
+  <section id="account" hidden role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+    <div class="account-panel">
+      <button type="button" id="closeAccount" aria-label="إغلاق">✕</button>
+      <h2 id="accountTitle">مرحبًا بك في ميعاد</h2>
+      <p id="accountMessage">سجّل دخولك لمتابعة حجوزاتك.</p>
 
-    <h2 id="accountTitle">مرحبًا بك في ميعاد</h2>
-    <p id="accountMessage">سجّل دخولك لمتابعة حجوزاتك.</p>
+      <div class="account-tabs">
+        <button type="button" id="showLogin">تسجيل الدخول</button>
+        <button type="button" id="showRegister">إنشاء حساب</button>
+      </div>
 
-    <div class="account-tabs">
-      <button type="button" id="showLogin">تسجيل الدخول</button>
-      <button type="button" id="showRegister">إنشاء حساب</button>
+      <form id="loginForm">
+        <label for="loginEmail">البريد الإلكتروني</label>
+        <input id="loginEmail" name="email" type="email" autocomplete="email" required>
+        <label for="loginPassword">كلمة المرور</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+        <button type="submit">دخول</button>
+      </form>
+
+      <form id="registerForm" hidden>
+        <label for="registerName">الاسم الكامل</label>
+        <input id="registerName" name="name" autocomplete="name" required maxlength="100">
+        <label for="registerEmail">البريد الإلكتروني</label>
+        <input id="registerEmail" name="email" type="email" autocomplete="email" required>
+        <label for="registerPhone">رقم الهاتف</label>
+        <input id="registerPhone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" minlength="9" maxlength="9" pattern="7[0-9]{8}" title="أدخل رقمًا من 9 أرقام يبدأ بالرقم 7" placeholder="712345678" required>
+        <label for="registerPassword">كلمة المرور (8 أحرف على الأقل)</label>
+        <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
+        <label for="registerRole">نوع الحساب</label>
+        <select id="registerRole" name="role" required>
+          <option value="customer">عميل — أريد حجز موعد</option>
+          <option value="provider">صاحب نشاط — أريد عرض خدماتي</option>
+        </select>
+        <button type="submit">إنشاء الحساب</button>
+      </form>
+
+      <p id="accountStatus" role="status" aria-live="polite"></p>
     </div>
+  </section>
 
-    <form id="loginForm">
-      <label for="loginEmail">البريد الإلكتروني</label>
-      <input id="loginEmail" name="email" type="email" autocomplete="email" required>
-
-      <label for="loginPassword">كلمة المرور</label>
-      <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
-
-      <button type="submit">دخول</button>
-    </form>
-
-    <form id="registerForm" hidden>
-      <label for="registerName">الاسم الكامل</label>
-      <input id="registerName" name="name" autocomplete="name" required maxlength="100">
-
-      <label for="registerEmail">البريد الإلكتروني</label>
-      <input id="registerEmail" name="email" type="email" autocomplete="email" required>
-
-      <label for="registerPhone">رقم الهاتف </label>
-<input
-  id="registerPhone"
-  name="phone"
-  type="tel"
-  inputmode="numeric"
-  autocomplete="tel"
-  minlength="9"
-  maxlength="9"
-  pattern="7[0-9]{8}"
-  title="أدخل رقمًا من 9 أرقام يبدأ بالرقم 7"
-  placeholder="712345678"
-  required
->
-
-      <label for="registerPassword">كلمة المرور (8 أحرف على الأقل)</label>
-      <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
-
-      <label for="registerRole">نوع الحساب</label>
-      <select id="registerRole" name="role" required>
-        <option value="customer">عميل — أريد حجز موعد</option>
-        <option value="provider">صاحب نشاط — أريد عرض خدماتي</option>
-      </select>
-
-      <button type="submit">إنشاء الحساب</button>
-    </form>
-
-    <p id="accountStatus" role="status" aria-live="polite"></p>
-  </div>
-</section>
-
-
-  
-<script src="js/main.js" defer></script>
-<script src="js/auth.js" defer></script>
-<script src="js/account-ui.js" defer></script>
-<script src="js/provider-dashboard.js" defer></script>
-<script src="js/bookings.js" defer></script>
-
+  <script src="js/main.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/account-ui.js" defer></script>
+  <script src="js/bookings.js" defer></script>
 </body>
 </html>
