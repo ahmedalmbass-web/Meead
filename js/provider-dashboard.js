@@ -3,9 +3,6 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const dashboard = document.getElementById("providerDashboard");
-  const openLink = document.querySelector(
-    '.provider-banner a[href="#providerDashboard"]'
-  );
   const message = document.getElementById("providerDashboardMessage");
   const list = document.getElementById("providerList");
   const providerForm = document.getElementById("providerForm");
@@ -16,25 +13,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const serviceForm = document.getElementById("serviceForm");
   const serviceStatus = document.getElementById("serviceFormStatus");
 
-  if (
-    !dashboard || !openLink || !message || !list ||
-    !providerForm || !serviceManagement || !providerSelect ||
-    !serviceForm || !serviceStatus
-  ) {
-    console.error("Meead: بعض عناصر إدارة النشاط أو الخدمات غير موجودة.");
-    return;
-  }
+  const providerBookings = document.getElementById("providerBookings");
+  const providerBookingsStatus = document.getElementById("providerBookingsStatus");
+  const providerBookingsList = document.getElementById("providerBookingsList");
+  const refreshProviderBookings = document.getElementById("refreshProviderBookings");
+
+  const availabilityManagement = document.getElementById("availabilityManagement");
+  const availabilityDays = document.getElementById("availabilityDays");
+  const availabilityStatus = document.getElementById("availabilityStatus");
+  const saveAvailabilityBtn = document.getElementById("saveAvailabilityBtn");
 
   const auth = window.MeeadAuth;
+
   const PROVIDER_API = "/.netlify/functions/provider-manage";
   const SERVICE_API = "/.netlify/functions/services";
-  const providerBookings = document.getElementById("providerBookings");
-const providerBookingsStatus = document.getElementById("providerBookingsStatus");
-const providerBookingsList = document.getElementById("providerBookingsList");
-const refreshProviderBookings = document.getElementById("refreshProviderBookings");
-const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
+  const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
+  const AVAILABILITY_API = "/.netlify/functions/availability";
 
   let providers = [];
+
+  if (
+    !dashboard || !message || !list || !providerForm ||
+    !providerStatus || !serviceManagement || !providerSelect ||
+    !serviceForm || !serviceStatus || !providerBookings ||
+    !providerBookingsStatus || !providerBookingsList ||
+    !availabilityManagement || !availabilityDays ||
+    !availabilityStatus || !saveAvailabilityBtn
+  ) {
+    console.error("Meead: بعض عناصر لوحة إدارة النشاط غير موجودة.");
+    return;
+  }
 
   async function request(url, options = {}) {
     const token = auth?.getToken();
@@ -83,6 +91,8 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
         "لم تضف أي نشاط بعد. أضف نشاطك من النموذج أدناه.";
       list.appendChild(empty);
       serviceManagement.hidden = true;
+      providerBookings.hidden = false;
+      availabilityManagement.hidden = true;
       return;
     }
 
@@ -104,17 +114,17 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
 
       chooseButton.type = "button";
       chooseButton.textContent = "إضافة خدمات لهذا النشاط";
+
       chooseButton.addEventListener("click", () => {
-  providerSelect.value = String(provider.id);
-  serviceManagement.hidden = false;
+        providerSelect.value = String(provider.id);
+        serviceManagement.hidden = false;
+        loadAvailability();
 
-  loadAvailability();
-
-  serviceManagement.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
-});
+        serviceManagement.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      });
 
       card.append(title, details, status, chooseButton);
 
@@ -124,6 +134,7 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
 
         publishButton.type = "button";
         publishButton.textContent = "نشر النشاط";
+
         publishButton.addEventListener("click", async () => {
           publishButton.disabled = true;
           publishStatus.textContent = "جارٍ نشر النشاط...";
@@ -155,7 +166,9 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
 
       const option = document.createElement("option");
       option.value = String(provider.id);
-      option.textContent = `${provider.business_name} — ${provider.city}`;
+      option.textContent =
+        `${provider.business_name} — ${provider.city}`;
+
       providerSelect.appendChild(option);
     });
 
@@ -169,6 +182,7 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
     try {
       const data = await request(PROVIDER_API);
       providers = Array.isArray(data.providers) ? data.providers : [];
+
       renderProviders();
       showMessage("يمكنك إدارة أنشطتك وإضافة خدماتها ونشرها من هنا.");
     } catch (error) {
@@ -177,236 +191,154 @@ const BOOKING_MANAGE_API = "/.netlify/functions/booking-manage";
   }
 
   async function loadProviderBookings() {
-  if (!providerBookings || !providerBookingsStatus || !providerBookingsList) return;
+    providerBookings.hidden = false;
+    providerBookingsStatus.textContent = "جارٍ تحميل الحجوزات...";
+    providerBookingsList.replaceChildren();
 
-  providerBookings.hidden = false;
-  providerBookingsStatus.textContent = "جارٍ تحميل الحجوزات...";
-  providerBookingsList.replaceChildren();
-
-  if (refreshProviderBookings) refreshProviderBookings.disabled = true;
-
-  try {
-    const data = await request(BOOKING_MANAGE_API);
-    const bookings = Array.isArray(data.bookings) ? data.bookings : [];
-
-    if (!bookings.length) {
-      providerBookingsStatus.textContent = "لا توجد حجوزات واردة حاليًا.";
-      return;
+    if (refreshProviderBookings) {
+      refreshProviderBookings.disabled = true;
     }
 
-    providerBookingsStatus.textContent = `عدد الحجوزات: ${bookings.length}`;
+    try {
+      const data = await request(BOOKING_MANAGE_API);
+      const bookings = Array.isArray(data.bookings)
+        ? data.bookings
+        : [];
 
-    bookings.forEach((booking) => {
-      const card = document.createElement("article");
-      card.style.cssText = "padding:14px;margin:12px 0;border:1px solid #ddd;border-radius:12px";
+      if (!bookings.length) {
+        providerBookingsStatus.textContent =
+          "لا توجد حجوزات واردة حاليًا.";
+        return;
+      }
 
-      const title = document.createElement("h3");
-      title.textContent = booking.service_name || "حجز خدمة";
+      providerBookingsStatus.textContent =
+        `عدد الحجوزات: ${bookings.length}`;
 
-      const details = document.createElement("p");
-      details.textContent =
-        `النشاط: ${booking.business_name || "—"}\n` +
-        `العميل: ${booking.customer_name || "—"}\n` +
-        `الهاتف: ${booking.customer_phone || "—"}\n` +
-        `التاريخ: ${booking.appointment_date || "—"}\n` +
-        `الوقت: ${booking.start_time || "—"} - ${booking.end_time || "—"}\n` +
-        `السعر: ${booking.price ?? "—"} ${booking.currency || ""}\n` +
-        `ملاحظات: ${booking.customer_notes || "لا توجد"}`;
-      details.style.whiteSpace = "pre-line";
+      bookings.forEach((booking) => {
+        const card = document.createElement("article");
+        card.style.cssText =
+          "padding:14px;margin:12px 0;border:1px solid #ddd;border-radius:12px";
 
-      const status = document.createElement("p");
-      const labels = {
-  pending: "بانتظار تأكيدك",
-  confirmed: "تم تأكيد الحجز",
-  cancelled: "تم إلغاء الحجز",
-  completed: "اكتمل الموعد"
-};
-      status.textContent = labels[booking.status] || booking.status || "غير محدد";
+        const title = document.createElement("h3");
+        title.textContent = booking.service_name || "حجز خدمة";
 
-      card.append(title, details, status);
+        const details = document.createElement("p");
+        details.textContent =
+          `النشاط: ${booking.business_name || "—"}\n` +
+          `العميل: ${booking.customer_name || "—"}\n` +
+          `الهاتف: ${booking.customer_phone || "—"}\n` +
+          `التاريخ: ${booking.appointment_date || "—"}\n` +
+          `الوقت: ${booking.start_time || "—"} - ${booking.end_time || "—"}\n` +
+          `السعر: ${booking.price ?? "—"} ${booking.currency || ""}\n` +
+          `ملاحظات: ${booking.customer_notes || "لا توجد"}`;
 
-      if (booking.status === "pending") {
-        ["confirmed", "cancelled"].forEach((nextStatus) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.textContent = nextStatus === "confirmed" ? "تأكيد الحجز" : "إلغاء الحجز";
-          button.style.cssText = "margin:5px;padding:9px 12px;border:0;border-radius:8px;cursor:pointer";
-          button.disabled = false;
+        details.style.whiteSpace = "pre-line";
 
-          button.addEventListener("click", async () => {
-            card.querySelectorAll("button").forEach((b) => b.disabled = true);
-            providerBookingsStatus.textContent = "جارٍ تحديث الحجز...";
+        const status = document.createElement("p");
+        const labels = {
+          pending: "بانتظار تأكيدك",
+          confirmed: "تم تأكيد الحجز",
+          cancelled: "تم إلغاء الحجز",
+          completed: "اكتمل الموعد"
+        };
+
+        status.textContent =
+          labels[booking.status] || booking.status || "غير محدد";
+
+        card.append(title, details, status);
+
+        if (booking.status === "pending") {
+          ["confirmed", "cancelled"].forEach((nextStatus) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent =
+              nextStatus === "confirmed" ? "تأكيد الحجز" : "إلغاء الحجز";
+
+            button.style.cssText =
+              "margin:5px;padding:9px 12px;border:0;border-radius:8px;cursor:pointer";
+
+            button.addEventListener("click", async () => {
+              card.querySelectorAll("button").forEach((b) => {
+                b.disabled = true;
+              });
+
+              providerBookingsStatus.textContent =
+                "جارٍ تحديث الحجز...";
+
+              try {
+                const result = await request(BOOKING_MANAGE_API, {
+                  method: "POST",
+                  body: JSON.stringify({
+                    booking_id: Number(booking.id),
+                    status: nextStatus
+                  })
+                });
+
+                providerBookingsStatus.textContent =
+                  result.message || "تم تحديث الحجز.";
+
+                await loadProviderBookings();
+              } catch (error) {
+                providerBookingsStatus.textContent =
+                  error.message || "تعذر تحديث الحجز.";
+
+                card.querySelectorAll("button").forEach((b) => {
+                  b.disabled = false;
+                });
+              }
+            });
+
+            card.appendChild(button);
+          });
+        }
+
+        if (booking.status === "confirmed") {
+          const completeButton = document.createElement("button");
+          completeButton.type = "button";
+          completeButton.textContent = "إكمال الموعد";
+          completeButton.style.cssText =
+            "margin:5px;padding:9px 12px;border:0;border-radius:8px;cursor:pointer";
+
+          completeButton.addEventListener("click", async () => {
+            completeButton.disabled = true;
+            providerBookingsStatus.textContent =
+              "جارٍ إكمال الموعد...";
 
             try {
               const result = await request(BOOKING_MANAGE_API, {
                 method: "POST",
                 body: JSON.stringify({
                   booking_id: Number(booking.id),
-                  status: nextStatus
+                  status: "completed"
                 })
               });
 
               providerBookingsStatus.textContent =
-                result.message || "تم تحديث الحجز.";
+                result.message || "تم تسجيل اكتمال الموعد.";
+
               await loadProviderBookings();
             } catch (error) {
               providerBookingsStatus.textContent =
-                error.message || "تعذر تحديث الحجز.";
-              card.querySelectorAll("button").forEach((b) => b.disabled = false);
+                error.message || "تعذر إكمال الموعد.";
+
+              completeButton.disabled = false;
             }
           });
 
-          card.appendChild(button);
-        });
-      }
+          card.appendChild(completeButton);
+        }
 
-      if (booking.status === "confirmed") {
-  const completeButton = document.createElement("button");
-  completeButton.type = "button";
-  completeButton.textContent = "إكمال الموعد";
-  completeButton.style.cssText =
-    "margin:5px;padding:9px 12px;border:0;border-radius:8px;cursor:pointer";
-
-  completeButton.addEventListener("click", async () => {
-    completeButton.disabled = true;
-    providerBookingsStatus.textContent = "جارٍ إكمال الموعد...";
-
-    try {
-      const result = await request(BOOKING_MANAGE_API, {
-        method: "POST",
-        body: JSON.stringify({
-          booking_id: Number(booking.id),
-          status: "completed"
-        })
+        providerBookingsList.appendChild(card);
       });
-
-      providerBookingsStatus.textContent =
-        result.message || "تم تسجيل اكتمال الموعد.";
-
-      await loadProviderBookings();
     } catch (error) {
       providerBookingsStatus.textContent =
-        error.message || "تعذر إكمال الموعد.";
-      completeButton.disabled = false;
-    }
-  });
-
-  card.appendChild(completeButton);
-      }
-
-      providerBookingsList.appendChild(card);
-    });
-  } catch (error) {
-    providerBookingsStatus.textContent =
-      error.message || "تعذر تحميل الحجوزات.";
-  } finally {
-    if (refreshProviderBookings) refreshProviderBookings.disabled = false;
-  }
-}
-
-refreshProviderBookings?.addEventListener("click", loadProviderBookings);
-
-  async function openDashboard() {
-    dashboard.hidden = false;
-    dashboard.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-
-    const user = auth?.getUser();
-
-    if (!auth?.isLoggedIn() || !user) {
-      providerForm.hidden = true;
-      serviceManagement.hidden = true;
-      if (providerBookings) providerBookings.hidden = true;
-      list.replaceChildren();
-      showMessage("سجّل الدخول أولًا، ثم افتح إدارة نشاطي مجددًا.");
-      document.getElementById("loginBtn")?.click();
-      return;
-    }
-
-    if (user.role !== "provider") {
-      providerForm.hidden = true;
-      serviceManagement.hidden = true;
-      if (providerBookings) providerBookings.hidden = true;
-      list.replaceChildren();
-      showMessage("هذه الصفحة مخصصة لحساب صاحب نشاط.");
-      return;
-    }
-
-    providerForm.hidden = false;
-
-if (providerBookings) providerBookings.hidden = false;
-
-await Promise.all([
-  loadProviders(),
-  loadProviderBookings()
-]);
-  }
-
-  openLink.addEventListener("click", (event) => {
-    event.preventDefault();
-    openDashboard();
-  });
-
-  providerForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-        const phone = providerForm.elements.phone.value.trim();
-
-    if (!/^7[0-9]{8}$/.test(phone)) {
-      providerStatus.textContent =
-        "رقم التواصل اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.";
-      providerForm.elements.phone.focus();
-      return;
-    }
-
-    const submitButton = providerForm.querySelector('[type="submit"]');
-    submitButton.disabled = true;
-    providerStatus.textContent = "جارٍ حفظ النشاط...";
-
-    const payload = {
-      business_name: providerForm.elements.business_name.value.trim(),
-      category: providerForm.elements.category.value.trim(),
-      city: providerForm.elements.city.value.trim(),
-      address: providerForm.elements.address.value.trim(),
-      phone: providerForm.elements.phone.value.trim(),
-      description: providerForm.elements.description.value.trim()
-    };
-
-    try {
-      const data = await request(PROVIDER_API, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-
-      providerForm.reset();
-      providerStatus.textContent =
-        data.message || "تم حفظ النشاط بنجاح.";
-
-      await loadProviders();
-
-      if (data.provider?.id) {
-        providerSelect.value = String(data.provider.id);
-      }
-    } catch (error) {
-      providerStatus.textContent =
-        error.message || "تعذر حفظ النشاط.";
+        error.message || "تعذر تحميل الحجوزات.";
     } finally {
-      submitButton.disabled = false;
+      if (refreshProviderBookings) {
+        refreshProviderBookings.disabled = false;
+      }
     }
-  });
-
-  
-  const availabilityManagement =
-    document.getElementById("availabilityManagement");
-  const availabilityDays =
-    document.getElementById("availabilityDays");
-  const availabilityStatus =
-    document.getElementById("availabilityStatus");
-  const saveAvailabilityBtn =
-    document.getElementById("saveAvailabilityBtn");
-  const AVAILABILITY_API = "/.netlify/functions/availability";
+  }
 
   const weekdays = [
     "الأحد",
@@ -419,8 +351,6 @@ await Promise.all([
   ];
 
   function renderAvailabilityDays() {
-    if (!availabilityDays) return;
-
     availabilityDays.replaceChildren();
 
     weekdays.forEach((day, weekday) => {
@@ -429,6 +359,7 @@ await Promise.all([
 
       const label = document.createElement("label");
       const checkbox = document.createElement("input");
+
       checkbox.type = "checkbox";
       checkbox.dataset.weekday = String(weekday);
       checkbox.className = "availability-enabled";
@@ -437,6 +368,7 @@ await Promise.all([
 
       const startLabel = document.createElement("label");
       startLabel.textContent = "من ";
+
       const start = document.createElement("input");
       start.type = "time";
       start.className = "availability-start";
@@ -446,6 +378,7 @@ await Promise.all([
 
       const endLabel = document.createElement("label");
       endLabel.textContent = " إلى ";
+
       const end = document.createElement("input");
       end.type = "time";
       end.className = "availability-end";
@@ -464,9 +397,8 @@ await Promise.all([
   }
 
   async function loadAvailability() {
-    if (!availabilityManagement || !availabilityDays) return;
-
     const providerId = Number(providerSelect.value);
+
     availabilityManagement.hidden = !providerSelect.value;
     availabilityStatus.textContent = "";
 
@@ -518,91 +450,144 @@ await Promise.all([
     }
   }
 
+  providerForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const phone = providerForm.elements.phone.value.trim();
+
+    if (!/^7[0-9]{8}$/.test(phone)) {
+      providerStatus.textContent =
+        "رقم التواصل اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.";
+      providerForm.elements.phone.focus();
+      return;
+    }
+
+    const submitButton =
+      providerForm.querySelector('[type="submit"]');
+
+    submitButton.disabled = true;
+    providerStatus.textContent = "جارٍ حفظ النشاط...";
+
+    const payload = {
+      business_name: providerForm.elements.business_name.value.trim(),
+      category: providerForm.elements.category.value.trim(),
+      city: providerForm.elements.city.value.trim(),
+      address: providerForm.elements.address.value.trim(),
+      phone,
+      description: providerForm.elements.description.value.trim()
+    };
+
+    try {
+      const data = await request(PROVIDER_API, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      providerForm.reset();
+      providerStatus.textContent =
+        data.message || "تم حفظ النشاط بنجاح.";
+
+      await loadProviders();
+
+      if (data.provider?.id) {
+        providerSelect.value = String(data.provider.id);
+        serviceManagement.hidden = false;
+      }
+    } catch (error) {
+      providerStatus.textContent =
+        error.message || "تعذر حفظ النشاط.";
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
   providerSelect.addEventListener("change", () => {
     serviceStatus.textContent = "";
     loadAvailability();
   });
 
-  if (availabilityManagement && availabilityDays && saveAvailabilityBtn) {
-    renderAvailabilityDays();
+  saveAvailabilityBtn.addEventListener("click", async () => {
+    const providerId = Number(providerSelect.value);
 
-    saveAvailabilityBtn.addEventListener("click", async () => {
-      const providerId = Number(providerSelect.value);
+    if (!Number.isSafeInteger(providerId) || providerId < 1) {
+      availabilityStatus.textContent = "اختر النشاط أولًا.";
+      return;
+    }
 
-      if (!Number.isSafeInteger(providerId) || providerId < 1) {
-        availabilityStatus.textContent = "اختر النشاط أولًا.";
+    const rows = [
+      ...availabilityDays.querySelectorAll(".availability-day")
+    ];
+
+    const schedule = rows.map((row, weekday) => {
+      const enabled =
+        row.querySelector(".availability-enabled").checked;
+
+      const start = row.querySelector(".availability-start").value;
+      const end = row.querySelector(".availability-end").value;
+
+      return { weekday, enabled, start, end };
+    });
+
+    for (const day of schedule) {
+      if (day.enabled && (!day.start || !day.end || day.start >= day.end)) {
+        availabilityStatus.textContent =
+          `تحقق من وقت البداية والنهاية ليوم ${weekdays[day.weekday]}.`;
         return;
       }
+    }
 
-      const rows = [...availabilityDays.querySelectorAll(".availability-day")];
-      const schedule = rows.map((row, weekday) => {
-        const enabled = row.querySelector(".availability-enabled").checked;
-        const start = row.querySelector(".availability-start").value;
-        const end = row.querySelector(".availability-end").value;
+    saveAvailabilityBtn.disabled = true;
+    availabilityStatus.textContent = "جارٍ حفظ ساعات العمل...";
 
-        return { weekday, enabled, start, end };
-      });
+    try {
+      const existingData = await request(
+        `${AVAILABILITY_API}?providerId=${encodeURIComponent(providerId)}`
+      );
+
+      const existing = Array.isArray(existingData.availability)
+        ? existingData.availability
+        : Array.isArray(existingData.hours)
+          ? existingData.hours
+          : [];
 
       for (const day of schedule) {
-        if (day.enabled && (!day.start || !day.end || day.start >= day.end)) {
-          availabilityStatus.textContent =
-            `تحقق من وقت البداية والنهاية ليوم ${weekdays[day.weekday]}.`;
-          return;
+        if (day.enabled) {
+          await request(AVAILABILITY_API, {
+            method: "POST",
+            body: JSON.stringify({
+              provider_id: providerId,
+              weekday: day.weekday,
+              start_time: day.start,
+              end_time: day.end
+            })
+          });
+        } else if (existing.some(
+          (item) =>
+            Number(item.weekday) === day.weekday &&
+            Number(item.is_active) === 1
+        )) {
+          await request(AVAILABILITY_API, {
+            method: "POST",
+            body: JSON.stringify({
+              provider_id: providerId,
+              action: "disable",
+              weekday: day.weekday
+            })
+          });
         }
       }
 
-      saveAvailabilityBtn.disabled = true;
-      availabilityStatus.textContent = "جارٍ حفظ ساعات العمل...";
+      availabilityStatus.textContent =
+        "تم حفظ ساعات العمل بنجاح.";
 
-      try {
-        const existingData = await request(
-          `${AVAILABILITY_API}?providerId=${encodeURIComponent(providerId)}`
-        );
-
-        const existing = Array.isArray(existingData.availability)
-          ? existingData.availability
-          : Array.isArray(existingData.hours)
-            ? existingData.hours
-            : [];
-
-        for (const day of schedule) {
-          if (day.enabled) {
-            await request(AVAILABILITY_API, {
-              method: "POST",
-              body: JSON.stringify({
-                provider_id: providerId,
-                weekday: day.weekday,
-                start_time: day.start,
-                end_time: day.end
-              })
-            });
-          } else if (existing.some(
-            (item) =>
-              Number(item.weekday) === day.weekday &&
-              Number(item.is_active) === 1
-          )) {
-            await request(AVAILABILITY_API, {
-              method: "POST",
-              body: JSON.stringify({
-                provider_id: providerId,
-                action: "disable",
-                weekday: day.weekday
-              })
-            });
-          }
-        }
-
-        availabilityStatus.textContent = "تم حفظ ساعات العمل بنجاح.";
-        await loadAvailability();
-      } catch (error) {
-        availabilityStatus.textContent =
-          error.message || "تعذر حفظ ساعات العمل.";
-      } finally {
-        saveAvailabilityBtn.disabled = false;
-      }
-    });
-  }
-
+      await loadAvailability();
+    } catch (error) {
+      availabilityStatus.textContent =
+        error.message || "تعذر حفظ ساعات العمل.";
+    } finally {
+      saveAvailabilityBtn.disabled = false;
+    }
+  });
 
   serviceForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -614,7 +599,9 @@ await Promise.all([
       return;
     }
 
-    const submitButton = serviceForm.querySelector('[type="submit"]');
+    const submitButton =
+      serviceForm.querySelector('[type="submit"]');
+
     submitButton.disabled = true;
     serviceStatus.textContent = "جارٍ حفظ الخدمة...";
 
@@ -646,12 +633,57 @@ await Promise.all([
     }
   });
 
+  refreshProviderBookings.addEventListener(
+    "click",
+    loadProviderBookings
+  );
+
+  async function openDashboard() {
+    dashboard.hidden = false;
+
+    const user = auth?.getUser();
+
+    if (!auth?.isLoggedIn() || !user) {
+      providerForm.hidden = true;
+      serviceManagement.hidden = true;
+      providerBookings.hidden = true;
+
+      showMessage("سجّل الدخول بحساب صاحب نشاط للمتابعة.");
+      document.getElementById("loginBtn")?.click();
+      return;
+    }
+
+    if (user.role !== "provider") {
+      providerForm.hidden = true;
+      serviceManagement.hidden = true;
+      providerBookings.hidden = true;
+
+      showMessage("هذه الصفحة مخصصة لحساب صاحب نشاط.");
+      return;
+    }
+
+    providerForm.hidden = false;
+    providerBookings.hidden = false;
+
+    await Promise.all([
+      loadProviders(),
+      loadProviderBookings()
+    ]);
+  }
+
   window.addEventListener("meead:auth-change", () => {
-    if (auth?.getUser()?.role !== "provider") {
+    const user = auth?.getUser();
+
+    if (!auth?.isLoggedIn() || user?.role !== "provider") {
       dashboard.hidden = true;
       providers = [];
       list.replaceChildren();
       serviceManagement.hidden = true;
+      providerBookings.hidden = true;
+    } else {
+      openDashboard();
     }
   });
+
+  openDashboard();
 });
