@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -174,7 +175,153 @@
       cursor: pointer;
     }
 
+    /* قائمة الخدمات */
+
+    .services-intro {
+      color: var(--muted);
+      font-size: 13px;
+      margin: -8px 0 15px;
+    }
+
+    #providerServices {
+      margin-top: 25px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+    }
+
+    .services-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 13px;
+      margin-top: 15px;
+    }
+
+    .service-item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .service-item.is-inactive {
+      background: #f8f8f6;
+      opacity: .85;
+    }
+
+    .service-item h4 {
+      color: var(--green);
+      margin: 0 0 7px;
+      font-size: 17px;
+    }
+
+    .service-item p {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 5px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .service-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 12px;
+    }
+
+    .service-item-meta span {
+      background: #f2f4ef;
+      color: var(--green);
+      padding: 5px 9px;
+      border-radius: 8px;
+    }
+
+    .service-state {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .service-state.active {
+      color: #216443;
+      background: #e7f5ec;
+    }
+
+    .service-state.inactive {
+      color: #8c5142;
+      background: #f9ece8;
+    }
+
+    .service-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .service-action-btn {
+      border: 0;
+      border-radius: 9px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .service-edit-btn {
+      background: #edf2ef;
+      color: var(--green);
+    }
+
+    .service-toggle-btn {
+      background: #fff2e9;
+      color: #92542e;
+    }
+
+    .service-toggle-btn.activate {
+      background: #e7f5ec;
+      color: #216443;
+    }
+
+    .service-action-btn:disabled {
+      opacity: .5;
+      cursor: wait;
+    }
+
+    .service-empty {
+      padding: 18px;
+      text-align: center;
+      border: 1px dashed #d9ded5;
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      background: #fafaf7;
+    }
+
+    .service-form-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .service-cancel-btn {
+      border: 1px solid var(--border);
+      background: #f5f5f1;
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 11px 18px;
+      margin-top: 15px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
     /* ساعات العمل */
+
     .availability-intro {
       color: var(--muted);
       font-size: 13px;
@@ -372,6 +519,14 @@
       .remove-period-btn {
         grid-column: 1 / -1;
       }
+
+      .services-list {
+        grid-template-columns: 1fr;
+      }
+
+      .service-form-actions > button {
+        flex: 1;
+      }
     }
   </style>
 </head>
@@ -446,7 +601,7 @@
 
     <section id="serviceManagement" class="dashboard-card" hidden>
       <h2>إدارة خدمات النشاط</h2>
-      <p>اختر النشاط الذي تريد إضافة خدمة إليه.</p>
+      <p>اختر النشاط الذي تريد إدارة خدماته.</p>
 
       <label for="serviceProviderSelect">النشاط</label>
       <select id="serviceProviderSelect" required>
@@ -454,6 +609,8 @@
       </select>
 
       <form id="serviceForm">
+        <h3 id="serviceFormHeading">إضافة خدمة جديدة</h3>
+
         <label for="serviceName">اسم الخدمة</label>
         <input id="serviceName" name="name"
           required minlength="2" maxlength="150">
@@ -479,10 +636,35 @@
           <option value="USD">دولار أمريكي</option>
         </select>
 
-        <button class="dashboard-button" type="submit">حفظ الخدمة</button>
+        <div class="service-form-actions">
+          <button class="dashboard-button" id="saveServiceBtn" type="submit">
+            حفظ الخدمة
+          </button>
+
+          <button class="service-cancel-btn" id="cancelServiceEdit"
+            type="button" hidden>
+            إلغاء التعديل
+          </button>
+        </div>
+
         <p id="serviceFormStatus" class="dashboard-status"
           role="status" aria-live="polite"></p>
       </form>
+
+      <!-- الخدمات المحفوظة -->
+      <section id="providerServices">
+        <h3>الخدمات المسجلة</h3>
+        <p class="services-intro">
+          يمكنك تعديل بيانات خدماتك أو تعطيلها مؤقتًا، وإعادة تفعيلها متى شئت.
+        </p>
+
+        <p id="providerServicesStatus" class="dashboard-status"
+          role="status" aria-live="polite"></p>
+
+        <div id="providerServicesList" class="services-list">
+          <div class="service-empty">اختر نشاطًا لعرض خدماته.</div>
+        </div>
+      </section>
 
       <section id="availabilityManagement" hidden>
         <h3>ساعات عمل النشاط</h3>
