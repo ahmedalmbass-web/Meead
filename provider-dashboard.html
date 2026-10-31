@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#173F35">
+  <meta name="description" content="لوحة إدارة نشاطك التجاري على منصة ميعاد.">
+  <title>إدارة نشاطي | ميعاد</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    body {
+      font-family: "Cairo", sans-serif;
+    }
+
+    .dashboard-page-header {
+      padding: 22px 5%;
+      background: var(--forest, #173F35);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .dashboard-page-header a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .dashboard-page-header .brand {
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .dashboard-page-header .header-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .dashboard-page-header .header-links a {
+      font-size: 14px;
+    }
+
+    .dashboard-page-intro {
+      padding: 35px 5% 10px;
+    }
+
+    .dashboard-page-intro h1 {
+      margin-bottom: 8px;
+    }
+
+    .dashboard-page-intro p {
+      color: var(--muted, #777);
+    }
+
+    #providerDashboard {
+      display: block;
+      padding: 20px 5% 60px;
+    }
+
+    #providerDashboard[hidden] {
+      display: none !important;
+    }
+
+    #providerDashboardMessage {
+      margin: 15px 0;
+      line-height: 1.9;
+    }
+
+    .dashboard-back-link {
+      display: inline-flex;
+      margin-top: 12px;
+      color: var(--forest, #173F35);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .dashboard-page-header {
+        padding: 17px 5%;
+      }
+
+      .dashboard-page-header .brand {
+        font-size: 21px;
+      }
+
+      .dashboard-page-header .header-links {
+        gap: 12px;
+      }
+
+      .dashboard-page-intro {
+        padding-top: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="dashboard-page-header">
+    <a href="index.html" class="brand">ميعاد</a>
+
+    <nav class="header-links">
+      <a href="index.html">الرئيسية</a>
+      <a href="index.html#myBookings" id="myBookingsBtn" hidden>حجوزاتي</a>
+      <button type="button" id="loginBtn">تسجيل الدخول</button>
+      <button type="button" id="registerBtn">إنشاء حساب</button>
+      <button type="button" id="logoutBtn" hidden>تسجيل الخروج</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="dashboard-page-intro">
+      <h1>إدارة نشاطي</h1>
+      <p>أدر بيانات نشاطك وخدماتك ومواعيدك وحجوزات عملائك من مكان واحد.</p>
+      <a href="index.html" class="dashboard-back-link">العودة إلى الصفحة الرئيسية ←</a>
+    </section>
+
+    <section id="providerDashboard" hidden>
+      <div id="providerDashboardMessage" role="status">
+        جارٍ التحقق من حسابك...
+      </div>
+
+      <div id="providerList"></div>
+
+      <form id="providerForm">
+        <!-- سيُحافظ على حقول النموذج الحالية عند نقلها من الصفحة الرئيسية -->
+      </form>
+
+      <div id="serviceManagement">
+        <select id="serviceProviderSelect" hidden></select>
+
+        <form id="serviceForm">
+          <!-- سيُحافظ على حقول إدارة الخدمات الحالية عند نقلها -->
+        </form>
+
+        <div id="serviceFormStatus" role="status"></div>
+      </div>
+
+      <section id="providerBookings">
+        <div id="providerBookingsStatus" role="status"></div>
+        <button type="button" id="refreshProviderBookings">تحديث الحجوزات</button>
+        <div id="providerBookingsList"></div>
+      </section>
+
+      <div id="providerFormStatus" role="status"></div>
+    </section>
+  </main>
+
+  <script src="js/auth.js" defer></script>
+  <script src="js/account-ui.js" defer></script>
+  <script src="js/provider-dashboard.js" defer></script>
+
+</body>
+</html>
