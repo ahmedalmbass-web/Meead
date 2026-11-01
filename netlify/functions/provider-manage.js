@@ -18,6 +18,37 @@ function response(statusCode, data) {
   };
 }
 
+function validateProviderData(body) {
+  const data = {
+    business_name: String(body.business_name || "").trim(),
+    category: String(body.category || "").trim(),
+    city: String(body.city || "").trim(),
+    address: String(body.address || "").trim(),
+    description: String(body.description || "").trim(),
+    phone: String(body.phone || "").trim(),
+  };
+
+  if (
+    data.business_name.length < 2 ||
+    data.business_name.length > 150 ||
+    data.category.length < 2 ||
+    data.category.length > 100 ||
+    data.city.length < 2 ||
+    data.city.length > 100 ||
+    data.address.length > 250 ||
+    data.description.length > 2000 ||
+    !/^7[0-9]{8}$/.test(data.phone)
+  ) {
+    return {
+      valid: false,
+      message:
+        "تحقق من بيانات النشاط. رقم التواصل اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.",
+    };
+  }
+
+  return { valid: true, data };
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers, body: "" };
@@ -34,11 +65,17 @@ exports.handler = async (event) => {
       return response(401, { message: "سجّل الدخول أولًا" });
     }
 
+    const userId = Number(token.sub);
+
+    if (!Number.isSafeInteger(userId) || userId < 1) {
+      return response(401, { message: "بيانات تسجيل الدخول غير صالحة" });
+    }
+
     const db = getDb();
 
     const account = await db.execute({
       sql: "SELECT id, role FROM users WHERE id = ? LIMIT 1",
-      args: [Number(token.sub)],
+      args: [userId],
     });
 
     const user = account.rows[0];
@@ -77,8 +114,8 @@ exports.handler = async (event) => {
       return response(400, { message: "بيانات الطلب غير صالحة" });
     }
 
-    // نشر نشاط موجود يملكه المستخدم
-    if (body.action === "publish") {
+    // التحقق من معرّف النشاط عند التعديل أو النشر
+    if (body.action === "update" || body.action === "publish") {
       const providerId = Number(body.provider_id);
 
       if (!Number.isSafeInteger(providerId) || providerId < 1) {
@@ -96,63 +133,98 @@ exports.handler = async (event) => {
       const provider = ownedProvider.rows[0];
 
       if (!provider) {
-        return response(404, { message: "النشاط غير موجود أو لا تملكه" });
-      }
-
-      if (Number(provider.is_published) === 1) {
-        return response(200, { message: "النشاط منشور بالفعل" });
-      }
-
-      const serviceCount = await db.execute({
-        sql: `SELECT COUNT(*) AS total
-              FROM services
-              WHERE provider_id = ? AND is_active = 1`,
-        args: [providerId],
-      });
-
-      if (Number(serviceCount.rows[0]?.total || 0) < 1) {
-        return response(400, {
-          message: "أضف خدمة نشطة واحدة على الأقل قبل نشر النشاط",
+        return response(404, {
+          message: "النشاط غير موجود أو لا تملكه",
         });
       }
 
-      await db.execute({
-        sql: `UPDATE providers
-              SET is_published = 1
-              WHERE id = ? AND owner_user_id = ?`,
-        args: [providerId, Number(user.id)],
-      });
+      // تعديل بيانات النشاط
+      if (body.action === "update") {
+        const validation = validateProviderData(body);
 
-      return response(200, {
-        message: "تم نشر النشاط بنجاح، وأصبح متاحًا للعملاء",
-        provider: {
-          id: providerId,
-          is_published: 1,
-        },
-      });
+        if (!validation.valid) {
+          return response(400, { message: validation.message });
+        }
+
+        const data = validation.data;
+
+        await db.execute({
+          sql: `UPDATE providers
+                SET business_name = ?,
+                    category = ?,
+                    city = ?,
+                    address = ?,
+                    description = ?,
+                    phone = ?
+                WHERE id = ? AND owner_user_id = ?`,
+          args: [
+            data.business_name,
+            data.category,
+            data.city,
+            data.address || null,
+            data.description || null,
+            data.phone,
+            providerId,
+            Number(user.id),
+          ],
+        });
+
+        return response(200, {
+          message: "تم تحديث بيانات النشاط بنجاح",
+          provider: {
+            id: providerId,
+            ...data,
+            is_published: Number(provider.is_published),
+          },
+        });
+      }
+
+      // نشر نشاط موجود
+      if (body.action === "publish") {
+        if (Number(provider.is_published) === 1) {
+          return response(200, {
+            message: "النشاط منشور بالفعل",
+          });
+        }
+
+        const serviceCount = await db.execute({
+          sql: `SELECT COUNT(*) AS total
+                FROM services
+                WHERE provider_id = ? AND is_active = 1`,
+          args: [providerId],
+        });
+
+        if (Number(serviceCount.rows[0]?.total || 0) < 1) {
+          return response(400, {
+            message: "أضف خدمة نشطة واحدة على الأقل قبل نشر النشاط",
+          });
+        }
+
+        await db.execute({
+          sql: `UPDATE providers
+                SET is_published = 1
+                WHERE id = ? AND owner_user_id = ?`,
+          args: [providerId, Number(user.id)],
+        });
+
+        return response(200, {
+          message: "تم نشر النشاط بنجاح، وأصبح متاحًا للعملاء",
+          provider: {
+            id: providerId,
+            is_published: 1,
+          },
+        });
+      }
     }
 
     // إضافة نشاط جديد
-    const businessName = String(body.business_name || "").trim();
-    const category = String(body.category || "").trim();
-    const city = String(body.city || "").trim();
-    const address = String(body.address || "").trim();
-    const description = String(body.description || "").trim();
-    const phone = String(body.phone || "").trim();
+    const validation = validateProviderData(body);
 
-        if (
-      businessName.length < 2 || businessName.length > 150 ||
-      category.length < 2 || category.length > 100 ||
-      city.length < 2 || city.length > 100 ||
-      address.length > 250 ||
-      description.length > 2000 ||
-      !/^7[0-9]{8}$/.test(phone)
-    ) {
-      return response(400, {
-        message:
-          "تحقق من بيانات النشاط. رقم التواصل اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.",
-      });
-        }
+    if (!validation.valid) {
+      return response(400, { message: validation.message });
+    }
+
+    const data = validation.data;
 
     const result = await db.execute({
       sql: `INSERT INTO providers
@@ -161,12 +233,12 @@ exports.handler = async (event) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
       args: [
         Number(user.id),
-        businessName,
-        category,
-        city,
-        address || null,
-        description || null,
-        phone || null,
+        data.business_name,
+        data.category,
+        data.city,
+        data.address || null,
+        data.description || null,
+        data.phone,
       ],
     });
 
@@ -174,14 +246,13 @@ exports.handler = async (event) => {
       message: "تم تسجيل النشاط، أضف خدماته ثم انشره",
       provider: {
         id: Number(result.lastInsertRowid),
-        business_name: businessName,
-        category,
-        city,
+        ...data,
         is_published: 0,
       },
     });
   } catch (error) {
     console.error("Provider management error:", error.message);
+
     return response(500, {
       message: "تعذر تنفيذ الطلب حاليًا",
     });
