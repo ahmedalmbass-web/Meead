@@ -1,4 +1,3 @@
-
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -8,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const providerForm = document.getElementById("providerForm");
   const providerStatus = document.getElementById("providerFormStatus");
 
-  // نموذج تعديل النشاط
   const editProviderSection = document.getElementById("editProviderSection");
   const editProviderForm = document.getElementById("editProviderForm");
   const editProviderId = document.getElementById("editProviderId");
@@ -1023,6 +1021,12 @@ document.addEventListener("DOMContentLoaded", () => {
       ...availabilityDays.querySelectorAll(".availability-day")
     ];
 
+    if (dayRows.length !== 7) {
+      availabilityStatus.textContent =
+        "تعذر قراءة أيام الأسبوع كاملة. أعد تحميل ساعات العمل.";
+      return;
+    }
+
     const schedule = dayRows.map((dayRow) => {
       const weekday = Number(dayRow.dataset.weekday);
       const periods = getDayPeriods(dayRow);
@@ -1031,6 +1035,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     for (const day of schedule) {
+      if (
+        !Number.isInteger(day.weekday) ||
+        day.weekday < 0 ||
+        day.weekday > 6
+      ) {
+        availabilityStatus.textContent =
+          "يوجد يوم غير صالح في جدول العمل.";
+        return;
+      }
+
       const error = validateDayPeriods(day.weekday, day.periods);
 
       if (error) {
@@ -1040,28 +1054,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     saveAvailabilityBtn.disabled = true;
-    availabilityStatus.textContent = "جارٍ حفظ ساعات العمل...";
+    availabilityStatus.textContent =
+      "جارٍ حفظ ساعات العمل للأسبوع كاملًا...";
 
     try {
-      for (const day of schedule) {
-        await request(AVAILABILITY_API, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "replace_day",
-            provider_id: providerId,
-            weekday: day.weekday,
-            periods: day.periods
-          })
-        });
-      }
+      const data = await request(AVAILABILITY_API, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "replace_week",
+          provider_id: providerId,
+          days: schedule
+        })
+      });
 
       availabilityStatus.textContent =
-        "تم حفظ ساعات العمل بنجاح.";
+        data.message || "تم حفظ ساعات العمل للأسبوع كاملًا بنجاح.";
 
       await loadAvailability();
     } catch (error) {
       availabilityStatus.textContent =
-        error.message || "تعذر حفظ ساعات العمل.";
+        error.message || "تعذر حفظ ساعات العمل. لم يتم اعتماد التغييرات.";
     } finally {
       saveAvailabilityBtn.disabled = false;
     }
