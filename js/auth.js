@@ -1,4 +1,3 @@
-
 /* Meead - Account Interface */
 "use strict";
 
@@ -30,21 +29,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function requestAuth(action, payload = {}) {
+    const token = localStorage.getItem(TOKEN_KEY);
+
     const response = await fetch(`${API_URL}?action=${action}`, {
       method: action === "me" ? "GET" : "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        ...(localStorage.getItem(TOKEN_KEY)
+        ...(token
           ? {
-              Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`
+              Authorization: `Bearer ${token}`
             }
           : {})
       },
-      ...(action === "me" ? {} : { body: JSON.stringify(payload) })
+      ...(action === "me"
+        ? {}
+        : { body: JSON.stringify(payload) })
     });
 
     let data;
+
     try {
       data = await response.json();
     } catch {
@@ -52,7 +56,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!response.ok) {
-      throw new Error(data.message || "تعذر إكمال الطلب.");
+      const error = new Error(
+        data.message || "تعذر إكمال الطلب."
+      );
+
+      error.status = response.status;
+      throw error;
     }
 
     return data;
@@ -74,42 +83,81 @@ document.addEventListener("DOMContentLoaded", () => {
     },
 
     async register(details) {
-  const phone = String(details.phone || "").trim();
+      const phone = String(details.phone || "").trim();
 
-  if (!/^7[0-9]{8}$/.test(phone)) {
-    throw new Error(
-      "رقم الهاتف اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7."
-    );
-  }
+      if (!/^7[0-9]{8}$/.test(phone)) {
+        throw new Error(
+          "رقم الهاتف اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7."
+        );
+      }
 
-  const data = await requestAuth("register", {
-    ...details,
-    phone
-  });
+      const data = await requestAuth("register", {
+        ...details,
+        phone
+      });
 
-  saveSession(data);
-  return data.user;
-},
+      saveSession(data);
+
+      return data.user;
+    },
 
     async login(email, password) {
-      const data = await requestAuth("login", { email, password });
+      const data = await requestAuth("login", {
+        email,
+        password
+      });
+
       saveSession(data);
+
       return data.user;
     },
 
     async refreshUser() {
-      const data = await requestAuth("me");
-      if (data.user) {
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        clearSession();
+        throw new Error("سجّل الدخول أولًا.");
       }
-      return data.user;
+
+      try {
+        const data = await requestAuth("me");
+
+        if (!data.user) {
+          throw new Error("تعذر تحديث بيانات الحساب.");
+        }
+
+        localStorage.setItem(
+          USER_KEY,
+          JSON.stringify(data.user)
+        );
+
+        window.dispatchEvent(
+          new Event("meead:auth-change")
+        );
+
+        return data.user;
+      } catch (error) {
+        if (error.status === 401 || error.status === 403) {
+          clearSession();
+
+          window.dispatchEvent(
+            new Event("meead:auth-change")
+          );
+        }
+
+        throw error;
+      }
     },
 
     logout() {
       clearSession();
-      window.dispatchEvent(new Event("meead:auth-change"));
+
+      window.dispatchEvent(
+        new Event("meead:auth-change")
+      );
     }
   };
 
-  window.dispatchEvent(new Event("meead:auth-ready"));
+  window.dispatchEvent(
+    new Event("meead:auth-ready")
+  );
 });
