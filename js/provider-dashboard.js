@@ -8,6 +8,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const providerForm = document.getElementById("providerForm");
   const providerStatus = document.getElementById("providerFormStatus");
 
+  // نموذج تعديل النشاط
+  const editProviderSection = document.getElementById("editProviderSection");
+  const editProviderForm = document.getElementById("editProviderForm");
+  const editProviderId = document.getElementById("editProviderId");
+  const editProviderStatus = document.getElementById("editProviderStatus");
+  const saveProviderChanges = document.getElementById("saveProviderChanges");
+  const cancelProviderEdit = document.getElementById("cancelProviderEdit");
+
   const serviceManagement = document.getElementById("serviceManagement");
   const providerSelect = document.getElementById("serviceProviderSelect");
   const serviceForm = document.getElementById("serviceForm");
@@ -60,7 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
     !availabilityStatus || !saveAvailabilityBtn ||
     !providerServices || !providerServicesList ||
     !providerServicesStatus || !serviceFormHeading ||
-    !saveServiceBtn || !cancelServiceEdit
+    !saveServiceBtn || !cancelServiceEdit ||
+    !editProviderSection || !editProviderForm ||
+    !editProviderId || !editProviderStatus ||
+    !saveProviderChanges || !cancelProviderEdit
   ) {
     console.error("Meead: بعض عناصر لوحة إدارة النشاط غير موجودة.");
     return;
@@ -104,6 +115,118 @@ document.addEventListener("DOMContentLoaded", () => {
     return Number.isSafeInteger(id) && id > 0 ? id : null;
   }
 
+  // ==========================================
+  // تعديل بيانات النشاط
+  // ==========================================
+
+  function closeProviderEdit() {
+    editProviderForm.reset();
+    editProviderId.value = "";
+    editProviderStatus.textContent = "";
+    editProviderSection.hidden = true;
+    saveProviderChanges.disabled = false;
+    cancelProviderEdit.disabled = false;
+  }
+
+  function startEditProvider(provider) {
+    editProviderId.value = String(provider.id);
+
+    editProviderForm.elements.business_name.value =
+      provider.business_name || "";
+
+    editProviderForm.elements.category.value =
+      provider.category || "";
+
+    editProviderForm.elements.city.value =
+      provider.city || "";
+
+    editProviderForm.elements.address.value =
+      provider.address || "";
+
+    editProviderForm.elements.phone.value =
+      provider.phone || "";
+
+    editProviderForm.elements.description.value =
+      provider.description || "";
+
+    editProviderStatus.textContent =
+      `تعديل بيانات: ${provider.business_name}`;
+
+    editProviderSection.hidden = false;
+
+    editProviderSection.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+    editProviderForm.elements.business_name.focus();
+  }
+
+  cancelProviderEdit.addEventListener("click", closeProviderEdit);
+
+  editProviderForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const providerId = Number(editProviderId.value);
+
+    if (!Number.isSafeInteger(providerId) || providerId < 1) {
+      editProviderStatus.textContent = "معرّف النشاط غير صالح.";
+      return;
+    }
+
+    const phone = editProviderForm.elements.phone.value.trim();
+
+    if (!/^7[0-9]{8}$/.test(phone)) {
+      editProviderStatus.textContent =
+        "رقم التواصل اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.";
+
+      editProviderForm.elements.phone.focus();
+      return;
+    }
+
+    const payload = {
+      action: "update",
+      provider_id: providerId,
+      business_name: editProviderForm.elements.business_name.value.trim(),
+      category: editProviderForm.elements.category.value.trim(),
+      city: editProviderForm.elements.city.value.trim(),
+      address: editProviderForm.elements.address.value.trim(),
+      phone,
+      description: editProviderForm.elements.description.value.trim()
+    };
+
+    saveProviderChanges.disabled = true;
+    cancelProviderEdit.disabled = true;
+
+    editProviderStatus.textContent = "جارٍ حفظ تعديلات النشاط...";
+
+    try {
+      const data = await request(PROVIDER_API, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      editProviderStatus.textContent =
+        data.message || "تم تحديث بيانات النشاط بنجاح.";
+
+      await loadProviders();
+
+      closeProviderEdit();
+
+      showMessage("تم تحديث بيانات النشاط بنجاح.");
+    } catch (error) {
+      editProviderStatus.textContent =
+        error.message || "تعذر تحديث بيانات النشاط.";
+    } finally {
+      saveProviderChanges.disabled = false;
+      cancelProviderEdit.disabled = false;
+    }
+  });
+
+  // ==========================================
+  // عرض الأنشطة
+  // ==========================================
+
   function renderProviders() {
     const previousId = providerSelect.value;
 
@@ -124,6 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
       serviceManagement.hidden = true;
       providerBookings.hidden = false;
       availabilityManagement.hidden = true;
+      closeProviderEdit();
       return;
     }
 
@@ -133,6 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const details = document.createElement("p");
       const status = document.createElement("p");
       const chooseButton = document.createElement("button");
+      const editButton = document.createElement("button");
 
       title.textContent = provider.business_name;
       details.textContent = `${provider.category} — ${provider.city}`;
@@ -149,6 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chooseButton.addEventListener("click", async () => {
         providerSelect.value = String(provider.id);
         serviceManagement.hidden = false;
+        closeProviderEdit();
 
         resetServiceForm();
         await loadServices();
@@ -160,7 +286,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
 
-      card.append(title, details, status, chooseButton);
+      editButton.type = "button";
+      editButton.textContent = "تعديل بيانات النشاط";
+
+      editButton.addEventListener("click", () => {
+        startEditProvider(provider);
+      });
+
+      card.append(title, details, status, chooseButton, editButton);
 
       if (!published) {
         const publishButton = document.createElement("button");
@@ -1110,6 +1243,7 @@ document.addEventListener("DOMContentLoaded", () => {
       providerForm.hidden = true;
       serviceManagement.hidden = true;
       providerBookings.hidden = true;
+      editProviderSection.hidden = true;
 
       showMessage("سجّل الدخول بحساب صاحب نشاط للمتابعة.");
 
@@ -1121,6 +1255,7 @@ document.addEventListener("DOMContentLoaded", () => {
       providerForm.hidden = true;
       serviceManagement.hidden = true;
       providerBookings.hidden = true;
+      editProviderSection.hidden = true;
 
       showMessage("هذه الصفحة مخصصة لحساب صاحب نشاط.");
       return;
@@ -1162,6 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
       providerBookings.hidden = true;
       availabilityManagement.hidden = true;
       availabilityDays.replaceChildren();
+      closeProviderEdit();
     } else {
       openDashboard();
     }
