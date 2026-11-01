@@ -1,4 +1,3 @@
-
 const { getDb } = require("../lib/db");
 const { verifyToken } = require("../lib/auth");
 
@@ -24,24 +23,53 @@ exports.handler = async (event) => {
   }
 
   if (!["GET", "POST"].includes(event.httpMethod)) {
-    return response(405, { message: "طريقة الطلب غير مدعومة" });
+    return response(405, {
+      message: "طريقة الطلب غير مدعومة",
+    });
   }
 
   const token = verifyToken(event);
 
   if (!token) {
-    return response(401, { message: "سجّل الدخول أولًا" });
+    return response(401, {
+      message: "سجّل الدخول أولًا",
+    });
   }
 
   try {
     const db = getDb();
-const userId = Number(token.sub);
+    const userId = Number(token.sub);
 
-if (!Number.isSafeInteger(userId) || userId < 1) {
-  return response(401, {
-    message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
-  });
-}
+    if (!Number.isSafeInteger(userId) || userId < 1) {
+      return response(401, {
+        message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
+      });
+    }
+
+    // التحقق من وجود الحساب وأن دوره مقدم خدمة
+    const userResult = await db.execute({
+      sql: `SELECT id, role
+            FROM users
+            WHERE id = ?
+            LIMIT 1`,
+      args: [userId],
+    });
+
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return response(401, {
+        message: "الحساب غير موجود، سجّل الدخول مجددًا",
+      });
+    }
+
+    if (user.role !== "provider") {
+      return response(403, {
+        message: "ليس لديك صلاحية إدارة الحجوزات",
+      });
+    }
+
+    // عرض حجوزات الأنشطة التابعة لمقدم الخدمة فقط
     if (event.httpMethod === "GET") {
       const result = await db.execute({
         sql: `SELECT
@@ -63,25 +91,32 @@ if (!Number.isSafeInteger(userId) || userId < 1) {
               JOIN services s ON s.id = b.service_id
               JOIN users u ON u.id = b.customer_user_id
               WHERE p.owner_user_id = ?
-              ORDER BY b.appointment_date DESC, b.start_time DESC`,
+              ORDER BY
+                b.appointment_date DESC,
+                b.start_time DESC`,
         args: [userId],
       });
 
-      return response(200, { bookings: result.rows });
+      return response(200, {
+        bookings: result.rows,
+      });
     }
 
+    // قراءة بيانات الطلب
     let body;
 
     try {
       body = JSON.parse(event.body || "{}");
     } catch {
-      return response(400, { message: "بيانات الطلب غير صالحة" });
+      return response(400, {
+        message: "بيانات الطلب غير صالحة",
+      });
     }
 
     const bookingId = Number(body.booking_id);
     const status = body.status;
 
-        if (
+    if (
       !Number.isSafeInteger(bookingId) ||
       bookingId < 1 ||
       !["confirmed", "cancelled", "completed"].includes(status)
@@ -91,23 +126,35 @@ if (!Number.isSafeInteger(userId) || userId < 1) {
       });
     }
 
-    
+    // تعديل حالة الحجز بشرط ملكية النشاط وصحة انتقال الحالة
     const result = await db.execute({
-  sql: `UPDATE bookings
-        SET status = ?
-        WHERE id = ?
-          AND provider_id IN (
-            SELECT id
-            FROM providers
-            WHERE owner_user_id = ?
-          )
-          AND (
-            (status = 'pending' AND ? IN ('confirmed', 'cancelled'))
-            OR
-            (status = 'confirmed' AND ? = 'completed')
-          )`,
-  args: [status, bookingId, userId, status, status],
-});
+      sql: `UPDATE bookings
+            SET status = ?
+            WHERE id = ?
+              AND provider_id IN (
+                SELECT id
+                FROM providers
+                WHERE owner_user_id = ?
+              )
+              AND (
+                (
+                  status = 'pending'
+                  AND ? IN ('confirmed', 'cancelled')
+                )
+                OR
+                (
+                  status = 'confirmed'
+                  AND ? = 'completed'
+                )
+              )`,
+      args: [
+        status,
+        bookingId,
+        userId,
+        status,
+        status,
+      ],
+    });
 
     if (Number(result.rowsAffected) === 0) {
       return response(404, {
@@ -117,11 +164,11 @@ if (!Number.isSafeInteger(userId) || userId < 1) {
 
     return response(200, {
       message:
-  status === "confirmed"
-    ? "تم تأكيد الحجز"
-    : status === "completed"
-      ? "تم تسجيل اكتمال الموعد"
-      : "تم إلغاء الحجز",
+        status === "confirmed"
+          ? "تم تأكيد الحجز"
+          : status === "completed"
+            ? "تم تسجيل اكتمال الموعد"
+            : "تم إلغاء الحجز",
       booking_id: bookingId,
       status,
     });
