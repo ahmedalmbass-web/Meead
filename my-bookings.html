@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#173F35">
+
+  <title>حجوزاتي | ميعاد</title>
+  <meta name="description" content="تابع مواعيدك وحجوزاتك وتقييماتك في منصة ميعاد.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="customer-bookings-page">
+
+  <header class="bookings-header">
+    <div class="container bookings-header-inner">
+      <a href="index.html" class="bookings-brand" aria-label="ميعاد - الصفحة الرئيسية">
+        <span class="bookings-brand-mark">م</span>
+        <span>
+          <strong>ميعاد</strong>
+          <small>موعدك يبدأ من هنا</small>
+        </span>
+      </a>
+
+      <a href="index.html" class="bookings-home-link">
+        <span aria-hidden="true">←</span>
+        العودة للرئيسية
+      </a>
+    </div>
+  </header>
+
+  <main class="customer-bookings-main">
+    <section class="container customer-bookings-container">
+
+      <div class="customer-bookings-intro">
+        <span class="bookings-eyebrow">مساحتك الشخصية</span>
+        <h1>حجوزاتي</h1>
+        <p>كل مواعيدك في مكان واحد، تابع حالة حجزك وشاركنا رأيك بعد انتهاء موعدك.</p>
+      </div>
+
+      <div class="bookings-account-card" id="bookingsAccountInfo">
+        <div class="bookings-account-icon" aria-hidden="true">✦</div>
+        <div>
+          <strong id="bookingsCustomerName">حجوزاتك في ميعاد</strong>
+          <p>يمكنك متابعة مواعيدك وتفاصيل كل حجز من هنا.</p>
+        </div>
+      </div>
+
+      <div class="customer-bookings-toolbar">
+        <div>
+          <h2>سجل المواعيد</h2>
+          <p>استعرض جميع طلبات الحجز الخاصة بك.</p>
+        </div>
+
+        <button type="button" id="refreshMyBookings" class="bookings-refresh-btn">
+          <span aria-hidden="true">↻</span>
+          تحديث
+        </button>
+      </div>
+
+      <div id="myBookingsStatus" class="my-bookings-status" role="status" aria-live="polite">
+        جارٍ تحميل حجوزاتك...
+      </div>
+
+      <div id="myBookingsList" class="my-bookings-list"></div>
+
+      <div class="bookings-empty-action" id="bookingsEmptyAction" hidden>
+        <a href="index.html#categories">استكشف الأنشطة واحجز موعدك</a>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="bookings-footer">
+    <div class="container">
+      <a href="index.html">ميعاد</a>
+      <p>موعدك يبدأ من هنا.</p>
+    </div>
+  </footer>
+
+  <script src="js/auth.js" defer></script>
+  <script src="js/my-bookings.js" defer></script>
+
+</body>
+</html>
