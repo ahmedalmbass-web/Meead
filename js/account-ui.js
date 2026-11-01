@@ -1,262 +1,277 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
-const auth = window.MeeadAuth;
-const modal = document.getElementById("account");
+  const auth = window.MeeadAuth;
+  const modal = document.getElementById("account");
 
-if (!auth || !modal) {
-console.error("Meead: Account interface is not ready.");
-return;
-}
-
-const isProviderDashboard =
-window.location.pathname.endsWith("/provider-dashboard.html") ||
-window.location.pathname.endsWith("provider-dashboard.html");
-
-const loginBtn = document.getElementById("loginBtn");
-const registerBtn = document.getElementById("registerBtn");
-const providerEntryBtn = document.getElementById("providerEntryBtn");
-const registerRole = document.getElementById("registerRole");
-const bookingsBtn = document.getElementById("myBookingsBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const manageActivityBtn = document.getElementById("manageActivityBtn");
-
-const closeBtn = document.getElementById("closeAccount");
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const showLoginBtn = document.getElementById("showLogin");
-const showRegisterBtn = document.getElementById("showRegister");
-
-const status = document.getElementById("accountStatus");
-const title = document.getElementById("accountTitle");
-const message = document.getElementById("accountMessage");
-
-function setStatus(text) {
-if (status) status.textContent = text;
-}
-
-function openModal(mode = "login") {
-modal.hidden = false;
-document.body.style.overflow = "hidden";
-switchMode(mode);
-
-const firstInput = mode === "register"
-  ? document.getElementById("registerName")
-  : document.getElementById("loginEmail");
-
-firstInput?.focus();
-
-}
-
-function closeModal() {
-modal.hidden = true;
-document.body.style.overflow = "";
-setStatus("");
-}
-
-function switchMode(mode) {
-const registering = mode === "register";
-
-if (loginForm) loginForm.hidden = registering;
-if (registerForm) registerForm.hidden = !registering;
-
-if (title) {
-  title.textContent = registering
-    ? "إنشاء حساب جديد"
-    : "مرحبًا بك في ميعاد";
-}
-
-if (message) {
-  message.textContent = registering
-    ? "أنشئ حسابك للبدء في استخدام المنصة."
-    : "سجّل دخولك للمتابعة.";
-}
-
-setStatus("");
-
-}
-
-function updateNavigation() {
-const user = auth.getUser();
-const loggedIn = auth.isLoggedIn();
-const isProvider = loggedIn && user?.role === "provider";
-const isCustomer = loggedIn && user?.role === "customer";
-
-if (loginBtn) loginBtn.hidden = loggedIn;
-if (registerBtn) registerBtn.hidden = loggedIn;
-if (logoutBtn) logoutBtn.hidden = !loggedIn;
-
-if (providerEntryBtn) {
-  providerEntryBtn.hidden = loggedIn;
-}
-
-if (manageActivityBtn) {
-  manageActivityBtn.hidden = !isProvider;
-  manageActivityBtn.href = "provider-dashboard.html";
-}
-
-if (bookingsBtn) {
-  bookingsBtn.hidden = !isCustomer;
-}
-
-if (loggedIn && user && message) {
-  message.textContent = `مرحبًا ${user.name || ""}، تم تسجيل دخولك.`;
-}
-
-}
-
-loginBtn?.addEventListener("click", (event) => {
-event.preventDefault();
-openModal("login");
-});
-
-registerBtn?.addEventListener("click", (event) => {
-event.preventDefault();
-
-if (registerRole) registerRole.value = "customer";
-openModal("register");
-
-});
-
-providerEntryBtn?.addEventListener("click", (event) => {
-event.preventDefault();
-
-if (auth.isLoggedIn()) {
-  const user = auth.getUser();
-
-  if (user?.role === "provider") {
-    window.location.href = "provider-dashboard.html";
+  if (!auth || !modal) {
+    console.error("Meead: Account interface is not ready.");
+    return;
   }
 
-  return;
-}
+  const isProviderDashboard =
+    window.location.pathname.endsWith("/provider-dashboard.html") ||
+    window.location.pathname.endsWith("provider-dashboard.html");
 
-if (registerRole) registerRole.value = "provider";
-openModal("register");
+  const loginBtn = document.getElementById("loginBtn");
+  const registerBtn = document.getElementById("registerBtn");
+  const providerEntryBtn = document.getElementById("providerEntryBtn");
+  const registerRole = document.getElementById("registerRole");
+  const bookingsBtn = document.getElementById("myBookingsBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const manageActivityBtn = document.getElementById("manageActivityBtn");
 
-});
+  const closeBtn = document.getElementById("closeAccount");
+  const loginForm = document.getElementById("loginForm");
+  const registerForm = document.getElementById("registerForm");
+  const showLoginBtn = document.getElementById("showLogin");
+  const showRegisterBtn = document.getElementById("showRegister");
 
-showLoginBtn?.addEventListener("click", () => {
-switchMode("login");
-});
+  const status = document.getElementById("accountStatus");
+  const title = document.getElementById("accountTitle");
+  const message = document.getElementById("accountMessage");
 
-showRegisterBtn?.addEventListener("click", () => {
-if (registerRole && !auth.isLoggedIn()) {
-registerRole.value = "customer";
-}
+  function setStatus(text) {
+    if (status) status.textContent = text;
+  }
 
-switchMode("register");
+  function openModal(mode = "login") {
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    switchMode(mode);
 
-});
+    const firstInput =
+      mode === "register"
+        ? document.getElementById("registerName")
+        : document.getElementById("loginEmail");
 
-closeBtn?.addEventListener("click", closeModal);
+    firstInput?.focus();
+  }
 
-modal.addEventListener("click", (event) => {
-if (event.target === modal) closeModal();
-});
+  function closeModal() {
+    modal.hidden = true;
+    document.body.style.overflow = "";
+    setStatus("");
+  }
 
-document.addEventListener("keydown", (event) => {
-if (event.key === "Escape" && !modal.hidden) {
-closeModal();
-}
-});
+  function switchMode(mode) {
+    const registering = mode === "register";
 
-loginForm?.addEventListener("submit", async (event) => {
-event.preventDefault();
+    if (loginForm) loginForm.hidden = registering;
+    if (registerForm) registerForm.hidden = !registering;
 
-const submitButton = loginForm.querySelector('[type="submit"]');
-if (submitButton) submitButton.disabled = true;
+    if (title) {
+      title.textContent = registering
+        ? "إنشاء حساب جديد"
+        : "مرحبًا بك في ميعاد";
+    }
 
-setStatus("جارٍ تسجيل الدخول...");
+    if (message) {
+      message.textContent = registering
+        ? "أنشئ حسابك للبدء في استخدام المنصة."
+        : "سجّل دخولك للمتابعة.";
+    }
 
-try {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value;
+    setStatus("");
+  }
 
-  await auth.login(email, password);
+  function updateNavigation() {
+    const user = auth.getUser();
+    const loggedIn = auth.isLoggedIn();
+
+    const isProvider = loggedIn && user?.role === "provider";
+    const isCustomer = loggedIn && user?.role === "customer";
+
+    if (loginBtn) loginBtn.hidden = loggedIn;
+    if (registerBtn) registerBtn.hidden = loggedIn;
+    if (logoutBtn) logoutBtn.hidden = !loggedIn;
+
+    if (providerEntryBtn) {
+      providerEntryBtn.hidden = loggedIn;
+    }
+
+    if (manageActivityBtn) {
+      manageActivityBtn.hidden = !isProvider;
+      manageActivityBtn.href = "provider-dashboard.html";
+    }
+
+    if (bookingsBtn) {
+      bookingsBtn.hidden = !isCustomer;
+    }
+
+    if (loggedIn && user && message) {
+      message.textContent = `مرحبًا ${user.name || ""}، تم تسجيل دخولك.`;
+    }
+  }
+
+  // حماية صفحة لوحة مقدم الخدمة من الحسابات غير المصرح لها
+  function protectProviderDashboard() {
+    if (!isProviderDashboard) return;
+
+    if (!auth.isLoggedIn()) {
+      window.location.replace("index.html");
+      return;
+    }
+
+    const user = auth.getUser();
+
+    if (user?.role !== "provider") {
+      window.location.replace("index.html");
+    }
+  }
+
+  loginBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    openModal("login");
+  });
+
+  registerBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+
+    if (registerRole) registerRole.value = "customer";
+
+    openModal("register");
+  });
+
+  providerEntryBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+
+    if (auth.isLoggedIn()) {
+      const user = auth.getUser();
+
+      if (user?.role === "provider") {
+        window.location.href = "provider-dashboard.html";
+      }
+
+      return;
+    }
+
+    if (registerRole) registerRole.value = "provider";
+
+    openModal("register");
+  });
+
+  showLoginBtn?.addEventListener("click", () => {
+    switchMode("login");
+  });
+
+  showRegisterBtn?.addEventListener("click", () => {
+    if (registerRole && !auth.isLoggedIn()) {
+      registerRole.value = "customer";
+    }
+
+    switchMode("register");
+  });
+
+  closeBtn?.addEventListener("click", closeModal);
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeModal();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) {
+      closeModal();
+    }
+  });
+
+  loginForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const submitButton = loginForm.querySelector('[type="submit"]');
+
+    if (submitButton) submitButton.disabled = true;
+
+    setStatus("جارٍ تسجيل الدخول...");
+
+    try {
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      await auth.login(email, password);
+
+      updateNavigation();
+      closeModal();
+
+      const user = auth.getUser();
+
+      if (user?.role === "provider" && !isProviderDashboard) {
+        window.location.href = "provider-dashboard.html";
+        return;
+      }
+
+      if (user?.role === "customer" && isProviderDashboard) {
+        window.location.replace("index.html");
+        return;
+      }
+
+      window.dispatchEvent(new Event("meead:auth-change"));
+    } catch (error) {
+      setStatus(error.message || "تعذر تسجيل الدخول. حاول مجددًا.");
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+
+  registerForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const submitButton = registerForm.querySelector('[type="submit"]');
+
+    if (submitButton) submitButton.disabled = true;
+
+    setStatus("جارٍ إنشاء الحساب...");
+
+    try {
+      const details = {
+        name: document.getElementById("registerName").value.trim(),
+        email: document.getElementById("registerEmail").value.trim(),
+        phone: document.getElementById("registerPhone").value.trim(),
+        password: document.getElementById("registerPassword").value,
+        role: document.getElementById("registerRole").value
+      };
+
+      await auth.register(details);
+
+      updateNavigation();
+      closeModal();
+
+      const user = auth.getUser();
+
+      if (user?.role === "provider" && !isProviderDashboard) {
+        window.location.href = "provider-dashboard.html";
+        return;
+      }
+
+      if (user?.role === "customer" && isProviderDashboard) {
+        window.location.replace("index.html");
+        return;
+      }
+
+      window.dispatchEvent(new Event("meead:auth-change"));
+
+      if (user?.role === "customer") {
+        alert("تم إنشاء حسابك بنجاح.");
+      }
+    } catch (error) {
+      setStatus(error.message || "تعذر إنشاء الحساب. حاول مجددًا.");
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+
+  logoutBtn?.addEventListener("click", () => {
+    auth.logout();
+    updateNavigation();
+    closeModal();
+
+    if (isProviderDashboard) {
+      window.location.replace("index.html");
+    }
+  });
+
+  window.addEventListener("meead:auth-change", updateNavigation);
 
   updateNavigation();
-  closeModal();
-
-  const user = auth.getUser();
-
-  if (user?.role === "provider" && !isProviderDashboard) {
-    window.location.href = "provider-dashboard.html";
-    return;
-  }
-
-  if (user?.role === "customer" && isProviderDashboard) {
-    window.location.href = "index.html";
-    return;
-  }
-
-  window.dispatchEvent(new Event("meead:auth-change"));
-} catch (error) {
-  setStatus(error.message || "تعذر تسجيل الدخول. حاول مجددًا.");
-} finally {
-  if (submitButton) submitButton.disabled = false;
-}
-
-});
-
-registerForm?.addEventListener("submit", async (event) => {
-event.preventDefault();
-
-const submitButton = registerForm.querySelector('[type="submit"]');
-if (submitButton) submitButton.disabled = true;
-
-setStatus("جارٍ إنشاء الحساب...");
-
-try {
-  const details = {
-    name: document.getElementById("registerName").value.trim(),
-    email: document.getElementById("registerEmail").value.trim(),
-    phone: document.getElementById("registerPhone").value.trim(),
-    password: document.getElementById("registerPassword").value,
-    role: document.getElementById("registerRole").value
-  };
-
-  await auth.register(details);
-
-  updateNavigation();
-  closeModal();
-
-  const user = auth.getUser();
-
-  if (user?.role === "provider" && !isProviderDashboard) {
-    window.location.href = "provider-dashboard.html";
-    return;
-  }
-
-  if (user?.role === "customer" && isProviderDashboard) {
-    window.location.href = "index.html";
-    return;
-  }
-
-  window.dispatchEvent(new Event("meead:auth-change"));
-
-  if (user?.role === "customer") {
-    alert("تم إنشاء حسابك بنجاح.");
-  }
-} catch (error) {
-  setStatus(error.message || "تعذر إنشاء الحساب. حاول مجددًا.");
-} finally {
-  if (submitButton) submitButton.disabled = false;
-}
-
-});
-
-logoutBtn?.addEventListener("click", () => {
-auth.logout();
-updateNavigation();
-closeModal();
-
-if (isProviderDashboard) {
-  window.location.href = "index.html";
-}
-
-});
-
-window.addEventListener("meead:auth-change", updateNavigation);
-updateNavigation();
+  protectProviderDashboard();
 });
