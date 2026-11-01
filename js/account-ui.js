@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const isProviderDashboard =
-    window.location.pathname.endsWith("/provider-dashboard.html") ||
     window.location.pathname.endsWith("provider-dashboard.html");
 
   const loginBtn = document.getElementById("loginBtn");
@@ -30,6 +29,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const status = document.getElementById("accountStatus");
   const title = document.getElementById("accountTitle");
   const message = document.getElementById("accountMessage");
+
+  function getReturnPage() {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("return");
+
+    // لا نسمح بإعادة التوجيه إلى روابط خارجية.
+    if (requested === "my-bookings.html") {
+      return "my-bookings.html";
+    }
+
+    return "";
+  }
 
   function setStatus(text) {
     if (status) status.textContent = text;
@@ -97,6 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (bookingsBtn) {
       bookingsBtn.hidden = !isCustomer;
+      bookingsBtn.href = "my-bookings.html";
     }
 
     if (loggedIn && user && message) {
@@ -104,7 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // حماية صفحة لوحة مقدم الخدمة من الحسابات غير المصرح لها
   function protectProviderDashboard() {
     if (!isProviderDashboard) return;
 
@@ -118,6 +129,35 @@ document.addEventListener("DOMContentLoaded", () => {
     if (user?.role !== "provider") {
       window.location.replace("index.html");
     }
+  }
+
+  function finishAuthentication() {
+    updateNavigation();
+    closeModal();
+
+    const user = auth.getUser();
+
+    if (user?.role === "provider" && !isProviderDashboard) {
+      window.location.replace("provider-dashboard.html");
+      return true;
+    }
+
+    if (user?.role === "customer" && isProviderDashboard) {
+      window.location.replace("index.html");
+      return true;
+    }
+
+    if (user?.role === "customer") {
+      const returnPage = getReturnPage();
+
+      if (returnPage) {
+        window.location.replace(returnPage);
+        return true;
+      }
+    }
+
+    window.dispatchEvent(new Event("meead:auth-change"));
+    return false;
   }
 
   loginBtn?.addEventListener("click", (event) => {
@@ -190,22 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await auth.login(email, password);
 
-      updateNavigation();
-      closeModal();
-
-      const user = auth.getUser();
-
-      if (user?.role === "provider" && !isProviderDashboard) {
-        window.location.href = "provider-dashboard.html";
-        return;
-      }
-
-      if (user?.role === "customer" && isProviderDashboard) {
-        window.location.replace("index.html");
-        return;
-      }
-
-      window.dispatchEvent(new Event("meead:auth-change"));
+      finishAuthentication();
     } catch (error) {
       setStatus(error.message || "تعذر تسجيل الدخول. حاول مجددًا.");
     } finally {
@@ -233,24 +258,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await auth.register(details);
 
-      updateNavigation();
-      closeModal();
+      const redirected = finishAuthentication();
 
-      const user = auth.getUser();
-
-      if (user?.role === "provider" && !isProviderDashboard) {
-        window.location.href = "provider-dashboard.html";
-        return;
-      }
-
-      if (user?.role === "customer" && isProviderDashboard) {
-        window.location.replace("index.html");
-        return;
-      }
-
-      window.dispatchEvent(new Event("meead:auth-change"));
-
-      if (user?.role === "customer") {
+      if (!redirected && auth.getUser()?.role === "customer") {
         alert("تم إنشاء حسابك بنجاح.");
       }
     } catch (error) {
@@ -274,4 +284,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateNavigation();
   protectProviderDashboard();
+
+  // فتح نافذة الدخول تلقائيًا عند العودة من صفحة الحجوزات.
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("auth") === "required" && !auth.isLoggedIn()) {
+    openModal("login");
+  }
 });
