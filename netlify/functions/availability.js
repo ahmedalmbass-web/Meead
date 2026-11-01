@@ -69,6 +69,75 @@ function validatePeriods(periods) {
   return normalized;
 }
 
+function validateWeek(days) {
+  if (!Array.isArray(days) || days.length !== 7) {
+    return "يجب إرسال بيانات أيام الأسبوع السبعة.";
+  }
+
+  const normalizedDays = [];
+  const seenWeekdays = new Set();
+
+  for (const day of days) {
+    if (!day || !Number.isInteger(day.weekday) ||
+        day.weekday < 0 || day.weekday > 6) {
+      return "أحد أيام الأسبوع غير صالح.";
+    }
+
+    if (seenWeekdays.has(day.weekday)) {
+      return "يوجد يوم مكرر في بيانات الأسبوع.";
+    }
+
+    seenWeekdays.add(day.weekday);
+
+    const periods = validatePeriods(day.periods);
+
+    if (typeof periods === "string") {
+      return `اليوم ${day.weekday}: ${periods}`;
+    }
+
+    normalizedDays.push({
+      weekday: day.weekday,
+      periods,
+    });
+  }
+
+  normalizedDays.sort((a, b) => a.weekday - b.weekday);
+
+  for (let i = 0; i < 7; i++) {
+    if (normalizedDays[i].weekday !== i) {
+      return "بيانات أيام الأسبوع غير مكتملة.";
+    }
+  }
+
+  return normalizedDays;
+}
+
+async function replaceDay(transaction, providerId, weekday, periods) {
+  await transaction.execute({
+    sql: `UPDATE availability
+          SET is_active = 0
+          WHERE provider_id = ?
+            AND weekday = ?`,
+    args: [providerId, weekday],
+  });
+
+  for (const period of periods) {
+    await transaction.execute({
+      sql: `INSERT INTO availability
+            (provider_id, weekday, start_time, end_time, is_active)
+            VALUES (?, ?, ?, ?, 1)
+            ON CONFLICT(provider_id, weekday, start_time, end_time)
+            DO UPDATE SET is_active = 1`,
+      args: [
+        providerId,
+        weekday,
+        period.start_time,
+        period.end_time,
+      ],
+    });
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return {
@@ -101,6 +170,23 @@ exports.handler = async (event) => {
     if (!Number.isSafeInteger(userId) || userId < 1) {
       return response(401, {
         message: "جلسة الدخول غير صالحة، سجّل الدخول مجددًا",
+      });
+    }
+
+    const userResult = await db.execute({
+      sql: `SELECT id, role
+            FROM users
+            WHERE id = ?
+            LIMIT 1`,
+      args: [userId],
+    });
+
+    if (
+      !userResult.rows.length ||
+      userResult.rows[0].role !== "provider"
+    ) {
+      return response(403, {
+        message: "هذه العملية متاحة لمقدمي الخدمات فقط.",
       });
     }
 
@@ -159,6 +245,37 @@ exports.handler = async (event) => {
       });
     }
 
+    // حفظ الأسبوع كاملًا داخل معاملة واحدة
+    if (body.action === "replace_week") {
+      const days = validateWeek(body.days);
+
+      if (typeof days === "string") {
+        return response(400, {
+          message: days,
+        });
+      }
+
+      transaction = await db.transaction("write");
+
+      for (const day of days) {
+        await replaceDay(
+          transaction,
+          providerId,
+          day.weekday,
+          day.periods
+        );
+      }
+
+      await transaction.commit();
+      transaction = null;
+
+      return response(200, {
+        message: "تم تحديث ساعات العمل للأسبوع كاملًا بنجاح.",
+        provider_id: providerId,
+        days,
+      });
+    }
+
     const weekday = Number(body.weekday);
 
     if (
@@ -183,31 +300,12 @@ exports.handler = async (event) => {
 
       transaction = await db.transaction("write");
 
-      // تعطيل الفترات القديمة لهذا اليوم
-      await transaction.execute({
-        sql: `UPDATE availability
-              SET is_active = 0
-              WHERE provider_id = ?
-                AND weekday = ?`,
-        args: [providerId, weekday],
-      });
-
-      // حفظ الفترات الجديدة أو إعادة تفعيل الفترات المطابقة
-      for (const period of periods) {
-        await transaction.execute({
-          sql: `INSERT INTO availability
-                (provider_id, weekday, start_time, end_time, is_active)
-                VALUES (?, ?, ?, ?, 1)
-                ON CONFLICT(provider_id, weekday, start_time, end_time)
-                DO UPDATE SET is_active = 1`,
-          args: [
-            providerId,
-            weekday,
-            period.start_time,
-            period.end_time,
-          ],
-        });
-      }
+      await replaceDay(
+        transaction,
+        providerId,
+        weekday,
+        periods
+      );
 
       await transaction.commit();
       transaction = null;
