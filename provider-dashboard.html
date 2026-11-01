@@ -175,6 +175,37 @@
       cursor: pointer;
     }
 
+    /* تعديل بيانات النشاط */
+
+    #editProviderSection {
+      border: 1px solid #dce6df;
+      background: #fff;
+      scroll-margin-top: 20px;
+    }
+
+    .edit-provider-intro {
+      color: var(--muted);
+      font-size: 13px;
+      margin: -8px 0 15px;
+    }
+
+    .edit-provider-actions {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .edit-provider-cancel {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 18px;
+      margin-top: 15px;
+      background: #f5f5f1;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
     /* قائمة الخدمات */
 
     .services-intro {
@@ -504,11 +535,13 @@
       .dashboard-header { padding: 14px 5%; }
       .dashboard-brand { font-size: 22px; }
       .dashboard-nav { width: 100%; }
+
       .dashboard-nav a,
       .dashboard-nav button {
         flex: 1;
         text-align: center;
       }
+
       .dashboard-intro h1 { font-size: 25px; }
       .dashboard-card { padding: 16px; }
 
@@ -524,7 +557,8 @@
         grid-template-columns: 1fr;
       }
 
-      .service-form-actions > button {
+      .service-form-actions > button,
+      .edit-provider-actions > button {
         flex: 1;
       }
     }
@@ -558,6 +592,7 @@
 
     <div id="providerList"></div>
 
+    <!-- نموذج إضافة نشاط جديد -->
     <form id="providerForm" class="dashboard-card">
       <h2>إضافة نشاط جديد</h2>
 
@@ -598,6 +633,63 @@
       <p id="providerFormStatus" class="dashboard-status"
         role="status" aria-live="polite"></p>
     </form>
+
+    <!-- نموذج تعديل بيانات النشاط -->
+    <section id="editProviderSection" class="dashboard-card" hidden>
+      <h2>تعديل بيانات النشاط</h2>
+      <p class="edit-provider-intro">
+        حدّث بيانات نشاطك، وستظهر التغييرات للعملاء بعد حفظها.
+      </p>
+
+      <form id="editProviderForm">
+        <input type="hidden" id="editProviderId">
+
+        <label for="editBusinessName">اسم النشاط</label>
+        <input id="editBusinessName" name="business_name"
+          required minlength="2" maxlength="150">
+
+        <label for="editBusinessCategory">نوع النشاط</label>
+        <select id="editBusinessCategory" name="category" required>
+          <option value="">اختر نوع النشاط</option>
+          <option value="العيادات الطبية">العيادات الطبية</option>
+          <option value="الحلاقة الرجالية">الحلاقة الرجالية</option>
+          <option value="الصالونات والجمال">الصالونات والجمال</option>
+          <option value="عيادات الأسنان">عيادات الأسنان</option>
+          <option value="الرياضة واللياقة">الرياضة واللياقة</option>
+          <option value="التصوير والمناسبات">التصوير والمناسبات</option>
+          <option value="الخدمات المهنية">الخدمات المهنية</option>
+          <option value="خدمات أخرى">خدمات أخرى</option>
+        </select>
+
+        <label for="editBusinessCity">المدينة</label>
+        <input id="editBusinessCity" name="city"
+          required minlength="2" maxlength="100">
+
+        <label for="editBusinessAddress">العنوان</label>
+        <input id="editBusinessAddress" name="address" maxlength="250">
+
+        <label for="editBusinessPhone">رقم التواصل</label>
+        <input id="editBusinessPhone" name="phone"
+          type="tel" inputmode="numeric"
+          minlength="9" maxlength="9"
+          pattern="7[0-9]{8}" placeholder="712345678" required>
+
+        <label for="editBusinessDescription">وصف النشاط</label>
+        <textarea id="editBusinessDescription" name="description"
+          maxlength="2000"></textarea>
+
+        <div class="edit-provider-actions">
+          <button class="dashboard-button" id="saveProviderChanges"
+            type="submit">حفظ التعديلات</button>
+
+          <button class="edit-provider-cancel" id="cancelProviderEdit"
+            type="button">إلغاء التعديل</button>
+        </div>
+
+        <p id="editProviderStatus" class="dashboard-status"
+          role="status" aria-live="polite"></p>
+      </form>
+    </section>
 
     <section id="serviceManagement" class="dashboard-card" hidden>
       <h2>إدارة خدمات النشاط</h2>
@@ -651,7 +743,6 @@
           role="status" aria-live="polite"></p>
       </form>
 
-      <!-- الخدمات المحفوظة -->
       <section id="providerServices">
         <h3>الخدمات المسجلة</h3>
         <p class="services-intro">
