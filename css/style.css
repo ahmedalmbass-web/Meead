@@ -2104,3 +2104,463 @@ body .hero .hero-visual .visual-top .live-pill {
   }
 }
 
+
+/* =========================================
+   MEEAD — CUSTOMER BOOKINGS PAGE
+   HTML CLASS COMPATIBILITY
+   ========================================= */
+
+.customer-bookings-page {
+  min-height: 100vh;
+  background: var(--cream, #f6f5f0);
+}
+
+.bookings-header {
+  position: relative;
+  background: #fff;
+  border-bottom: 1px solid rgba(23, 63, 53, 0.09);
+}
+
+.bookings-header-inner {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.bookings-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--forest, #173f35);
+  text-decoration: none;
+}
+
+.bookings-brand-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--forest, #173f35);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.bookings-brand strong,
+.bookings-brand small {
+  display: block;
+}
+
+.bookings-brand strong {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.bookings-brand small {
+  margin-top: 3px;
+  color: #888;
+  font-size: 0.72rem;
+}
+
+.bookings-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--forest, #173f35);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.customer-bookings-main {
+  min-height: calc(100vh - 180px);
+  padding: 48px 0 65px;
+}
+
+.customer-bookings-container {
+  max-width: 1000px;
+}
+
+.customer-bookings-intro {
+  margin-bottom: 30px;
+}
+
+.bookings-eyebrow {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #a58b51;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.customer-bookings-intro h1 {
+  margin: 0 0 10px;
+  color: var(--forest, #173f35);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 800;
+}
+
+.customer-bookings-intro p,
+.customer-bookings-toolbar p {
+  color: #777;
+  line-height: 1.9;
+}
+
+.bookings-account-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 38px;
+  padding: 22px;
+  border: 1px solid rgba(215, 184, 120, 0.35);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.bookings-account-icon {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: #f6f0e2;
+  color: #a58b51;
+  font-size: 1.5rem;
+}
+
+.bookings-account-card strong {
+  color: var(--forest, #173f35);
+  font-size: 1.05rem;
+}
+
+.bookings-account-card p {
+  margin: 5px 0 0;
+  color: #888;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.customer-bookings-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.customer-bookings-toolbar h2 {
+  margin: 0 0 5px;
+  color: var(--forest, #173f35);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.customer-bookings-toolbar p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.bookings-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--forest, #173f35);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--forest, #173f35);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bookings-refresh-btn:hover {
+  background: var(--forest, #173f35);
+  color: #fff;
+}
+
+.bookings-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.my-bookings-status {
+  margin: 18px 0;
+  padding: 14px 17px;
+  border-radius: 12px;
+  background: #fff;
+  color: #777;
+  line-height: 1.8;
+}
+
+.my-bookings-status:empty,
+.my-bookings-status[hidden] {
+  display: none;
+}
+
+.my-bookings-status.error {
+  background: #fff0ef;
+  color: #a33d38;
+}
+
+.my-bookings-list {
+  display: grid;
+  gap: 18px;
+}
+
+.customer-booking-card {
+  padding: 22px;
+  border: 1px solid rgba(23, 63, 53, 0.09);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(23, 63, 53, 0.045);
+}
+
+.customer-booking-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.booking-business-name {
+  margin: 0;
+  color: var(--forest, #173f35);
+  font-size: 1.12rem;
+  font-weight: 800;
+}
+
+.booking-business-category {
+  margin: 6px 0 0;
+  color: #888;
+  font-size: 0.83rem;
+}
+
+.booking-status-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 30px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.booking-status-badge.pending {
+  background: #fff4d9;
+  color: #936400;
+}
+
+.booking-status-badge.confirmed {
+  background: #e5f2eb;
+  color: #226747;
+}
+
+.booking-status-badge.cancelled {
+  background: #fbe8e7;
+  color: #a33d38;
+}
+
+.booking-status-badge.completed {
+  background: #e8edf8;
+  color: #405b91;
+}
+
+.booking-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.booking-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 13px;
+  border-radius: 12px;
+  background: #f8f8f5;
+}
+
+.booking-info-label {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.booking-info-value {
+  color: var(--forest, #173f35);
+  font-size: 0.94rem;
+}
+
+.booking-location,
+.booking-customer-notes {
+  margin-top: 15px;
+  color: #777;
+  line-height: 1.8;
+}
+
+.booking-customer-notes {
+  padding: 13px;
+  border-radius: 12px;
+  background: #faf8f2;
+}
+
+.booking-customer-notes strong {
+  color: var(--forest, #173f35);
+}
+
+.booking-customer-notes p {
+  margin: 5px 0 0;
+}
+
+.booking-review-box {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #eee;
+}
+
+.booking-review-box h4 {
+  margin: 0 0 8px;
+  color: var(--forest, #173f35);
+}
+
+.booking-review-box > p {
+  color: #888;
+  font-size: 0.88rem;
+}
+
+.booking-review-form {
+  display: grid;
+  gap: 10px;
+}
+
+.booking-review-form label {
+  margin-top: 8px;
+  color: var(--forest, #173f35);
+  font-weight: 700;
+}
+
+.booking-review-form select,
+.booking-review-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  color: #333;
+  font: inherit;
+}
+
+.booking-review-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.booking-review-submit {
+  justify-self: start;
+  padding: 11px 20px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--forest, #173f35);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.booking-review-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.booking-review-message.success,
+.booking-reviewed-message {
+  color: #226747;
+}
+
+.bookings-empty-action {
+  margin-top: 25px;
+  text-align: center;
+}
+
+.bookings-empty-action a {
+  display: inline-block;
+  padding: 13px 22px;
+  border-radius: 12px;
+  background: var(--forest, #173f35);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.bookings-footer {
+  padding: 25px 0;
+  border-top: 1px solid rgba(23, 63, 53, 0.09);
+  background: #fff;
+  text-align: center;
+}
+
+.bookings-footer a {
+  color: var(--forest, #173f35);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.bookings-footer p {
+  margin: 6px 0 0;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .bookings-header-inner {
+    min-height: 74px;
+  }
+
+  .bookings-brand-mark {
+    width: 40px;
+    height: 40px;
+  }
+
+  .bookings-home-link {
+    font-size: 0.82rem;
+  }
+
+  .customer-bookings-main {
+    padding: 30px 0 45px;
+  }
+
+  .bookings-account-card {
+    padding: 16px;
+  }
+
+  .customer-bookings-toolbar {
+    align-items: flex-start;
+  }
+
+  .bookings-refresh-btn {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .customer-booking-card {
+    padding: 16px;
+  }
+
+  .booking-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-booking-card-header {
+    flex-direction: column;
+  }
+
+  .booking-review-submit {
+    width: 100%;
+  }
+}
+
