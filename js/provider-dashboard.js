@@ -1,3 +1,4 @@
+
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,6 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const providerSelect = document.getElementById("serviceProviderSelect");
   const serviceForm = document.getElementById("serviceForm");
   const serviceStatus = document.getElementById("serviceFormStatus");
+
+  const providerServices = document.getElementById("providerServices");
+  const providerServicesList = document.getElementById("providerServicesList");
+  const providerServicesStatus = document.getElementById("providerServicesStatus");
+  const serviceFormHeading = document.getElementById("serviceFormHeading");
+  const saveServiceBtn = document.getElementById("saveServiceBtn");
+  const cancelServiceEdit = document.getElementById("cancelServiceEdit");
 
   const providerBookings = document.getElementById("providerBookings");
   const providerBookingsStatus = document.getElementById("providerBookingsStatus");
@@ -30,6 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const AVAILABILITY_API = "/.netlify/functions/availability";
 
   let providers = [];
+  let services = [];
+  let editingServiceId = null;
 
   const weekdays = [
     "الأحد",
@@ -47,7 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
     !serviceForm || !serviceStatus || !providerBookings ||
     !providerBookingsStatus || !providerBookingsList ||
     !availabilityManagement || !availabilityDays ||
-    !availabilityStatus || !saveAvailabilityBtn
+    !availabilityStatus || !saveAvailabilityBtn ||
+    !providerServices || !providerServicesList ||
+    !providerServicesStatus || !serviceFormHeading ||
+    !saveServiceBtn || !cancelServiceEdit
   ) {
     console.error("Meead: بعض عناصر لوحة إدارة النشاط غير موجودة.");
     return;
@@ -85,7 +98,15 @@ document.addEventListener("DOMContentLoaded", () => {
     message.textContent = text;
   }
 
+  function selectedProviderId() {
+    const id = Number(providerSelect.value);
+
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+  }
+
   function renderProviders() {
+    const previousId = providerSelect.value;
+
     list.replaceChildren();
     providerSelect.replaceChildren();
 
@@ -123,12 +144,15 @@ document.addEventListener("DOMContentLoaded", () => {
         : "حالة النشاط: غير منشور";
 
       chooseButton.type = "button";
-      chooseButton.textContent = "إضافة خدمات لهذا النشاط";
+      chooseButton.textContent = "إدارة خدمات النشاط";
 
-      chooseButton.addEventListener("click", () => {
+      chooseButton.addEventListener("click", async () => {
         providerSelect.value = String(provider.id);
         serviceManagement.hidden = false;
-        loadAvailability();
+
+        resetServiceForm();
+        await loadServices();
+        await loadAvailability();
 
         serviceManagement.scrollIntoView({
           behavior: "smooth",
@@ -183,7 +207,11 @@ document.addEventListener("DOMContentLoaded", () => {
       providerSelect.appendChild(option);
     });
 
-    serviceManagement.hidden = false;
+    if (providers.some((provider) => String(provider.id) === previousId)) {
+      providerSelect.value = previousId;
+    }
+
+    serviceManagement.hidden = !providerSelect.value;
   }
 
   async function loadProviders() {
@@ -203,6 +231,229 @@ document.addEventListener("DOMContentLoaded", () => {
       showMessage(error.message || "تعذر تحميل الأنشطة.");
     }
   }
+
+  // ==========================================
+  // إدارة الخدمات
+  // ==========================================
+
+  function resetServiceForm() {
+    editingServiceId = null;
+    serviceForm.reset();
+
+    serviceFormHeading.textContent = "إضافة خدمة جديدة";
+    saveServiceBtn.textContent = "حفظ الخدمة";
+    cancelServiceEdit.hidden = true;
+    serviceStatus.textContent = "";
+
+    const durationInput = serviceForm.elements.duration_minutes;
+
+    if (durationInput) {
+      durationInput.value = "30";
+    }
+  }
+
+  function renderServices() {
+    providerServicesList.replaceChildren();
+
+    if (!services.length) {
+      const empty = document.createElement("div");
+      empty.className = "service-empty";
+      empty.textContent = "لا توجد خدمات مسجلة لهذا النشاط حتى الآن.";
+      providerServicesList.appendChild(empty);
+      return;
+    }
+
+    services.forEach((service) => {
+      const card = document.createElement("article");
+      card.className = "service-item";
+
+      const active = Number(service.is_active) === 1;
+
+      if (!active) {
+        card.classList.add("is-inactive");
+      }
+
+      const state = document.createElement("span");
+      state.className = `service-state ${active ? "active" : "inactive"}`;
+      state.textContent = active ? "خدمة نشطة" : "خدمة معطّلة";
+
+      const title = document.createElement("h4");
+      title.textContent = service.name || "خدمة بدون اسم";
+
+      const description = document.createElement("p");
+      description.textContent =
+        service.description || "لا يوجد وصف لهذه الخدمة.";
+
+      const meta = document.createElement("div");
+      meta.className = "service-item-meta";
+
+      const duration = document.createElement("span");
+      duration.textContent =
+        `${Number(service.duration_minutes) || 0} دقيقة`;
+
+      const price = document.createElement("span");
+      price.textContent =
+        `${service.price ?? 0} ${service.currency || "YER"}`;
+
+      meta.append(duration, price);
+
+      const actions = document.createElement("div");
+      actions.className = "service-actions";
+
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className =
+        "service-action-btn service-edit-btn";
+      editButton.textContent = "تعديل";
+
+      editButton.addEventListener("click", () => {
+        startEditService(service);
+      });
+
+      const toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className =
+        "service-action-btn service-toggle-btn";
+
+      if (active) {
+        toggleButton.textContent = "تعطيل الخدمة";
+      } else {
+        toggleButton.textContent = "تفعيل الخدمة";
+        toggleButton.classList.add("activate");
+      }
+
+      toggleButton.addEventListener("click", async () => {
+        await changeServiceStatus(service, toggleButton);
+      });
+
+      actions.append(editButton, toggleButton);
+      card.append(state, title, description, meta, actions);
+
+      providerServicesList.appendChild(card);
+    });
+  }
+
+  async function loadServices() {
+    const providerId = selectedProviderId();
+
+    services = [];
+    providerServicesList.replaceChildren();
+
+    if (!providerId) {
+      providerServicesStatus.textContent = "";
+      const empty = document.createElement("div");
+      empty.className = "service-empty";
+      empty.textContent = "اختر نشاطًا لعرض خدماته.";
+      providerServicesList.appendChild(empty);
+      return;
+    }
+
+    providerServicesStatus.textContent =
+      "جارٍ تحميل الخدمات المسجلة...";
+
+    try {
+      const data = await request(
+        `${SERVICE_API}?providerId=${encodeURIComponent(providerId)}&manage=1`
+      );
+
+      services = Array.isArray(data.services) ? data.services : [];
+
+      renderServices();
+
+      providerServicesStatus.textContent = services.length
+        ? `عدد الخدمات المسجلة: ${services.length}`
+        : "لم تضف خدمات لهذا النشاط بعد.";
+    } catch (error) {
+      providerServicesStatus.textContent =
+        error.message || "تعذر تحميل الخدمات.";
+
+      const empty = document.createElement("div");
+      empty.className = "service-empty";
+      empty.textContent = "تعذر عرض الخدمات. حاول تحديث القائمة.";
+      providerServicesList.appendChild(empty);
+    }
+  }
+
+  function startEditService(service) {
+    editingServiceId = Number(service.id);
+
+    serviceForm.elements.name.value = service.name || "";
+    serviceForm.elements.description.value =
+      service.description || "";
+    serviceForm.elements.duration_minutes.value =
+      Number(service.duration_minutes) || 30;
+    serviceForm.elements.price.value = service.price ?? 0;
+    serviceForm.elements.currency.value =
+      service.currency || "YER";
+
+    serviceFormHeading.textContent = "تعديل بيانات الخدمة";
+    saveServiceBtn.textContent = "حفظ التعديلات";
+    cancelServiceEdit.hidden = false;
+
+    serviceStatus.textContent =
+      `أنت تعدّل خدمة: ${service.name}`;
+
+    serviceForm.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+
+    serviceForm.elements.name.focus();
+  }
+
+  async function changeServiceStatus(service, button) {
+    const providerId = selectedProviderId();
+
+    if (!providerId) {
+      providerServicesStatus.textContent = "اختر النشاط أولًا.";
+      return;
+    }
+
+    const currentlyActive = Number(service.is_active) === 1;
+    const nextStatus = currentlyActive ? 0 : 1;
+
+    button.disabled = true;
+    providerServicesStatus.textContent = currentlyActive
+      ? "جارٍ تعطيل الخدمة..."
+      : "جارٍ تفعيل الخدمة...";
+
+    try {
+      const data = await request(SERVICE_API, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "set_status",
+          provider_id: providerId,
+          service_id: Number(service.id),
+          is_active: nextStatus
+        })
+      });
+
+      providerServicesStatus.textContent =
+        data.message ||
+        (nextStatus
+          ? "تم تفعيل الخدمة بنجاح."
+          : "تم تعطيل الخدمة بنجاح.");
+
+      if (editingServiceId === Number(service.id)) {
+        resetServiceForm();
+      }
+
+      await loadServices();
+    } catch (error) {
+      providerServicesStatus.textContent =
+        error.message || "تعذر تغيير حالة الخدمة.";
+
+      button.disabled = false;
+    }
+  }
+
+  cancelServiceEdit.addEventListener("click", () => {
+    resetServiceForm();
+  });
+
+  // ==========================================
+  // الحجوزات
+  // ==========================================
 
   async function loadProviderBookings() {
     providerBookings.hidden = false;
@@ -456,7 +707,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const dayName = weekdays[weekday];
 
     const periods = dayRow.querySelector(".availability-periods");
-    const addButton = dayRow.querySelector(".add-period-btn");
 
     const row = createPeriodRow(dayName, period);
 
@@ -533,12 +783,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadAvailability() {
-    const providerId = Number(providerSelect.value);
+    const providerId = selectedProviderId();
 
-    availabilityManagement.hidden = !providerSelect.value;
+    availabilityManagement.hidden = !providerId;
     availabilityStatus.textContent = "";
 
-    if (!Number.isSafeInteger(providerId) || providerId < 1) {
+    if (!providerId) {
       availabilityDays.replaceChildren();
       return;
     }
@@ -629,9 +879,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function saveAvailability() {
-    const providerId = Number(providerSelect.value);
+    const providerId = selectedProviderId();
 
-    if (!Number.isSafeInteger(providerId) || providerId < 1) {
+    if (!providerId) {
       availabilityStatus.textContent = "اختر النشاط أولًا.";
       return;
     }
@@ -732,6 +982,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.provider?.id) {
         providerSelect.value = String(data.provider.id);
         serviceManagement.hidden = false;
+
+        await loadServices();
+        await loadAvailability();
       }
     } catch (error) {
       providerStatus.textContent =
@@ -745,32 +998,31 @@ document.addEventListener("DOMContentLoaded", () => {
   // اختيار النشاط
   // ==========================================
 
-  providerSelect.addEventListener("change", () => {
+  providerSelect.addEventListener("change", async () => {
     serviceStatus.textContent = "";
-    loadAvailability();
+    providerServicesStatus.textContent = "";
+
+    resetServiceForm();
+
+    await loadServices();
+    await loadAvailability();
   });
 
   saveAvailabilityBtn.addEventListener("click", saveAvailability);
 
   // ==========================================
-  // إضافة خدمة
+  // إضافة خدمة أو تعديلها
   // ==========================================
 
   serviceForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const providerId = Number(providerSelect.value);
+    const providerId = selectedProviderId();
 
-    if (!Number.isSafeInteger(providerId) || providerId < 1) {
+    if (!providerId) {
       serviceStatus.textContent = "اختر النشاط أولًا.";
       return;
     }
-
-    const submitButton =
-      serviceForm.querySelector('[type="submit"]');
-
-    submitButton.disabled = true;
-    serviceStatus.textContent = "جارٍ حفظ الخدمة...";
 
     const payload = {
       provider_id: providerId,
@@ -783,21 +1035,56 @@ document.addEventListener("DOMContentLoaded", () => {
       currency: serviceForm.elements.currency.value
     };
 
+    if (
+      !payload.name ||
+      !Number.isInteger(payload.duration_minutes) ||
+      payload.duration_minutes < 5 ||
+      payload.duration_minutes > 1440 ||
+      !Number.isFinite(payload.price) ||
+      payload.price < 0
+    ) {
+      serviceStatus.textContent =
+        "راجع اسم الخدمة ومدتها وسعرها.";
+      return;
+    }
+
+    const isEditing = editingServiceId !== null;
+
+    if (isEditing) {
+      payload.action = "update";
+      payload.service_id = editingServiceId;
+    } else {
+      payload.action = "create";
+    }
+
+    saveServiceBtn.disabled = true;
+    cancelServiceEdit.disabled = true;
+
+    serviceStatus.textContent = isEditing
+      ? "جارٍ حفظ تعديلات الخدمة..."
+      : "جارٍ إضافة الخدمة...";
+
     try {
       const data = await request(SERVICE_API, {
         method: "POST",
         body: JSON.stringify(payload)
       });
 
-      serviceForm.reset();
+      resetServiceForm();
 
       serviceStatus.textContent =
-        data.message || "تمت إضافة الخدمة بنجاح.";
+        data.message ||
+        (isEditing
+          ? "تم تحديث الخدمة بنجاح."
+          : "تمت إضافة الخدمة بنجاح.");
+
+      await loadServices();
     } catch (error) {
       serviceStatus.textContent =
         error.message || "تعذر حفظ الخدمة.";
     } finally {
-      submitButton.disabled = false;
+      saveServiceBtn.disabled = false;
+      cancelServiceEdit.disabled = false;
     }
   });
 
@@ -846,6 +1133,17 @@ document.addEventListener("DOMContentLoaded", () => {
       loadProviders(),
       loadProviderBookings()
     ]);
+
+    const providerId = selectedProviderId();
+
+    if (providerId) {
+      serviceManagement.hidden = false;
+
+      await Promise.all([
+        loadServices(),
+        loadAvailability()
+      ]);
+    }
   }
 
   window.addEventListener("meead:auth-change", () => {
@@ -854,7 +1152,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!auth?.isLoggedIn() || user?.role !== "provider") {
       dashboard.hidden = true;
       providers = [];
+      services = [];
+      editingServiceId = null;
+
       list.replaceChildren();
+      providerServicesList.replaceChildren();
+
       serviceManagement.hidden = true;
       providerBookings.hidden = true;
       availabilityManagement.hidden = true;
