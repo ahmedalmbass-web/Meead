@@ -1,3 +1,4 @@
+
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -32,14 +33,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getReturnPage() {
     const params = new URLSearchParams(window.location.search);
-    const requested = params.get("return");
 
-    // لا نسمح بإعادة التوجيه إلى روابط خارجية.
-    if (requested === "my-bookings.html") {
-      return "my-bookings.html";
-    }
-
-    return "";
+    return params.get("return") === "my-bookings.html"
+      ? "my-bookings.html"
+      : "";
   }
 
   function setStatus(text) {
@@ -285,10 +282,12 @@ document.addEventListener("DOMContentLoaded", () => {
   updateNavigation();
   protectProviderDashboard();
 
-  // فتح نافذة الدخول تلقائيًا عند العودة من صفحة الحجوزات.
   const params = new URLSearchParams(window.location.search);
+  const requiresAuthentication = params.get("auth") === "required";
 
-  if (params.get("auth") === "required" && !auth.isLoggedIn()) {
+  if (requiresAuthentication) {
+    // نمسح الجلسة القديمة عند العودة بسبب رفض الخادم لها.
+    auth.logout();
     openModal("login");
   }
 });
