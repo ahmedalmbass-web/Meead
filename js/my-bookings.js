@@ -1,3 +1,4 @@
+
 /* Meead - Customer Bookings Page */
 "use strict";
 
@@ -13,31 +14,43 @@ document.addEventListener("DOMContentLoaded", async () => {
   const emptyAction = document.getElementById("bookingsEmptyAction");
   const customerName = document.getElementById("bookingsCustomerName");
 
-  if (!statusElement || !listElement || !refreshButton) {
+  if (!statusElement || !listElement || !refreshButton || !emptyAction) {
     console.error("Meead: عناصر صفحة الحجوزات غير مكتملة.");
     return;
   }
 
   const auth = window.MeeadAuth;
 
+  function goToLogin() {
+    window.location.replace(
+      "index.html?auth=required&return=my-bookings.html"
+    );
+  }
+
   if (!auth || !auth.isLoggedIn() || !auth.getToken()) {
-    window.location.replace("index.html?auth=required&return=my-bookings.html");
+    goToLogin();
     return;
   }
 
-  let currentBookings = [];
+  const user = auth.getUser();
+  const role = String(user?.role || "").toLowerCase();
+
+  if (role !== "customer") {
+    if (role === "provider") {
+      window.location.replace("provider-dashboard.html");
+    } else {
+      goToLogin();
+    }
+    return;
+  }
+
   let loading = false;
 
   function createElement(tag, text = "", className = "") {
     const node = document.createElement(tag);
 
-    if (text !== "") {
-      node.textContent = text;
-    }
-
-    if (className) {
-      node.className = className;
-    }
+    if (text !== "") node.textContent = text;
+    if (className) node.className = className;
 
     return node;
   }
@@ -45,9 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   function formatPrice(amount, currency) {
     const value = Number(amount);
 
-    if (!Number.isFinite(value)) {
-      return "السعر غير محدد";
-    }
+    if (!Number.isFinite(value)) return "السعر غير محدد";
 
     const currencies = {
       YER: "ر.ي",
@@ -63,9 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const parsed = new Date(`${date}T00:00:00`);
 
-    if (Number.isNaN(parsed.getTime())) {
-      return date;
-    }
+    if (Number.isNaN(parsed.getTime())) return date;
 
     return parsed.toLocaleDateString("ar", {
       year: "numeric",
@@ -76,22 +85,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function statusDetails(status) {
     const statuses = {
-      pending: {
-        label: "بانتظار التأكيد",
-        className: "pending"
-      },
-      confirmed: {
-        label: "تم تأكيد الحجز",
-        className: "confirmed"
-      },
-      cancelled: {
-        label: "تم إلغاء الحجز",
-        className: "cancelled"
-      },
-      completed: {
-        label: "مكتمل",
-        className: "completed"
-      }
+      pending: { label: "بانتظار التأكيد", className: "pending" },
+      confirmed: { label: "تم تأكيد الحجز", className: "confirmed" },
+      cancelled: { label: "تم إلغاء الحجز", className: "cancelled" },
+      completed: { label: "مكتمل", className: "completed" }
     };
 
     return statuses[status] || {
@@ -101,17 +98,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function getCustomerName() {
-    const user = auth.getUser?.();
+    const currentUser = auth.getUser();
 
-    if (!user) return "حجوزاتك في ميعاد";
-
-    const name =
-      user.name ||
-      user.full_name ||
-      user.username ||
-      user.email;
-
-    return name || "حجوزاتك في ميعاد";
+    return (
+      currentUser?.name ||
+      currentUser?.full_name ||
+      currentUser?.username ||
+      currentUser?.email ||
+      "حجوزاتك في ميعاد"
+    );
   }
 
   function showMessage(message, type = "info") {
@@ -129,8 +124,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   function createInfoRow(label, value) {
     const row = createElement("div", "", "booking-info-row");
 
-    row.appendChild(createElement("span", label, "booking-info-label"));
-    row.appendChild(createElement("strong", value || "غير محدد", "booking-info-value"));
+    row.append(
+      createElement("span", label, "booking-info-label"),
+      createElement("strong", value || "غير محدد", "booking-info-value")
+    );
 
     return row;
   }
@@ -138,11 +135,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   function createReviewForm(booking) {
     const wrapper = createElement("div", "", "booking-review-box");
 
-    wrapper.appendChild(
-      createElement("h4", "كيف كانت تجربتك؟")
-    );
-
-    wrapper.appendChild(
+    wrapper.append(
+      createElement("h4", "كيف كانت تجربتك؟"),
       createElement("p", "شاركنا رأيك في الخدمة التي حصلت عليها.")
     );
 
@@ -150,12 +144,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.className = "booking-review-form";
 
     const ratingLabel = createElement("label", "تقييمك");
-    ratingLabel.htmlFor = `reviewRating-${booking.id}`;
-
     const rating = document.createElement("select");
+
     rating.id = `reviewRating-${booking.id}`;
     rating.name = "rating";
     rating.required = true;
+    ratingLabel.htmlFor = rating.id;
 
     [
       ["", "اختر عدد النجوم"],
@@ -173,6 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const commentLabel = createElement("label", "تعليقك (اختياري)");
     const comment = document.createElement("textarea");
+
     comment.name = "comment";
     comment.rows = 3;
     comment.maxLength = 1000;
@@ -224,14 +219,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const data = await response.json();
 
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
-            window.location.replace(
-              "index.html?auth=required&return=my-bookings.html"
-            );
-            return;
-          }
+        if (response.status === 401 || response.status === 403) {
+          auth.logout();
+          goToLogin();
+          return;
+        }
 
+        if (!response.ok) {
           throw new Error(data.message || "تعذر إرسال التقييم.");
         }
 
@@ -249,26 +243,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     wrapper.appendChild(form);
-
     return wrapper;
   }
 
   function renderBooking(booking) {
     const card = createElement("article", "", "customer-booking-card");
-
     const header = createElement("div", "", "customer-booking-card-header");
-
     const titleArea = createElement("div", "", "booking-title-area");
 
-    titleArea.appendChild(
+    titleArea.append(
       createElement(
         "h3",
         booking.business_name || "نشاط في ميعاد",
         "booking-business-name"
-      )
-    );
-
-    titleArea.appendChild(
+      ),
       createElement(
         "p",
         booking.category || "خدمات متنوعة",
@@ -292,10 +280,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       createInfoRow("الخدمة", booking.service_name),
       createInfoRow("التاريخ", formatDate(booking.appointment_date)),
       createInfoRow("الوقت", booking.start_time),
-      createInfoRow(
-        "السعر",
-        formatPrice(booking.price, booking.currency)
-      )
+      createInfoRow("السعر", formatPrice(booking.price, booking.currency))
     );
 
     card.appendChild(details);
@@ -312,10 +297,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (booking.customer_notes) {
       const notes = createElement("div", "", "booking-customer-notes");
-
-      notes.appendChild(createElement("strong", "ملاحظاتك"));
-      notes.appendChild(createElement("p", booking.customer_notes));
-
+      notes.append(
+        createElement("strong", "ملاحظاتك"),
+        createElement("p", booking.customer_notes)
+      );
       card.appendChild(notes);
     }
 
@@ -373,9 +358,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const data = await response.json();
 
       if (response.status === 401 || response.status === 403) {
-        window.location.replace(
-          "index.html?auth=required&return=my-bookings.html"
-        );
+        auth.logout();
+        goToLogin();
         return;
       }
 
@@ -383,11 +367,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error(data.message || "تعذر تحميل الحجوزات.");
       }
 
-      currentBookings = Array.isArray(data.bookings)
+      const bookings = Array.isArray(data.bookings)
         ? data.bookings
         : [];
 
-      renderBookings(currentBookings);
+      renderBookings(bookings);
     } catch (error) {
       console.error("Meead bookings error:", error);
       listElement.replaceChildren();
@@ -404,17 +388,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  customerName.textContent = getCustomerName();
+  if (customerName) {
+    customerName.textContent = getCustomerName();
+  }
 
   refreshButton.addEventListener("click", loadBookings);
 
   window.addEventListener("meead:auth-change", () => {
+    const updatedUser = auth.getUser();
+    const updatedRole = String(updatedUser?.role || "").toLowerCase();
+
     if (!auth.isLoggedIn() || !auth.getToken()) {
-      window.location.replace("index.html?auth=required&return=my-bookings.html");
+      goToLogin();
       return;
     }
 
-    customerName.textContent = getCustomerName();
+    if (updatedRole !== "customer") {
+      window.location.replace(
+        updatedRole === "provider"
+          ? "provider-dashboard.html"
+          : "index.html"
+      );
+      return;
+    }
+
+    if (customerName) {
+      customerName.textContent = getCustomerName();
+    }
+
     loadBookings();
   });
 
