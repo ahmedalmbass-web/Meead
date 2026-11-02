@@ -20,6 +20,22 @@ function response(statusCode, data) {
   };
 }
 
+function getYemenDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Aden",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const values = {};
+  for (const part of parts) {
+    if (part.type !== "literal") values[part.type] = part.value;
+  }
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function validTime(value) {
   return (
     typeof value === "string" &&
@@ -59,10 +75,7 @@ function validatePeriods(periods) {
   );
 
   for (let i = 1; i < normalized.length; i++) {
-    if (
-      normalized[i].start_time <
-      normalized[i - 1].end_time
-    ) {
+    if (normalized[i].start_time < normalized[i - 1].end_time) {
       return "توجد فترات عمل متداخلة. عدّل الأوقات أولًا.";
     }
   }
@@ -75,8 +88,8 @@ function validateWeek(days) {
     return "يجب إرسال بيانات أيام الأسبوع السبعة.";
   }
 
-  const normalizedDays = [];
-  const seenWeekdays = new Set();
+  const normalized = [];
+  const seen = new Set();
 
   for (const day of days) {
     if (
@@ -88,11 +101,11 @@ function validateWeek(days) {
       return "أحد أيام الأسبوع غير صالح.";
     }
 
-    if (seenWeekdays.has(day.weekday)) {
+    if (seen.has(day.weekday)) {
       return "يوجد يوم مكرر في بيانات الأسبوع.";
     }
 
-    seenWeekdays.add(day.weekday);
+    seen.add(day.weekday);
 
     const periods = validatePeriods(day.periods);
 
@@ -100,24 +113,28 @@ function validateWeek(days) {
       return `اليوم ${day.weekday}: ${periods}`;
     }
 
-    normalizedDays.push({
+    normalized.push({
       weekday: day.weekday,
       periods,
     });
   }
 
-  normalizedDays.sort((a, b) => a.weekday - b.weekday);
+  normalized.sort((a, b) => a.weekday - b.weekday);
 
   for (let i = 0; i < 7; i++) {
-    if (normalizedDays[i].weekday !== i) {
+    if (normalized[i].weekday !== i) {
       return "بيانات أيام الأسبوع غير مكتملة.";
     }
   }
 
-  return normalizedDays;
+  return normalized;
 }
 
-function containsBooking(periods, booking) {
+function getWeekday(date) {
+  return new Date(`${date}T00:00:00Z`).getUTCDay();
+}
+
+function bookingFitsPeriods(booking, periods) {
   return periods.some(
     (period) =>
       period.start_time <= booking.start_time &&
@@ -125,27 +142,27 @@ function containsBooking(periods, booking) {
   );
 }
 
-async function checkBookings(transaction, providerId, weekdays) {
+async function getFutureBookings(tx, providerId, weekdays, today) {
   const placeholders = weekdays.map(() => "?").join(",");
 
-  const result = await transaction.execute({
+  const result = await tx.execute({
     sql: `
       SELECT appointment_date, start_time, end_time
       FROM bookings
       WHERE provider_id = ?
+        AND appointment_date >= ?
         AND status IN ('pending', 'confirmed')
-        AND appointment_date >= date('now')
         AND CAST(strftime('%w', appointment_date) AS INTEGER)
             IN (${placeholders})
     `,
-    args: [providerId, ...weekdays],
+    args: [providerId, today, ...weekdays],
   });
 
   return result.rows;
 }
 
-async function replaceDay(transaction, providerId, weekday, periods) {
-  await transaction.execute({
+async function replaceDay(tx, providerId, weekday, periods) {
+  await tx.execute({
     sql: `
       UPDATE availability
       SET is_active = 0
@@ -156,7 +173,7 @@ async function replaceDay(transaction, providerId, weekday, periods) {
   });
 
   for (const period of periods) {
-    await transaction.execute({
+    await tx.execute({
       sql: `
         INSERT INTO availability
           (provider_id, weekday, start_time, end_time, is_active)
@@ -174,14 +191,14 @@ async function replaceDay(transaction, providerId, weekday, periods) {
   }
 }
 
-async function saveLegacyPeriod(
-  transaction,
+async function addLegacyPeriod(
+  tx,
   providerId,
   weekday,
   startTime,
   endTime
 ) {
-  const overlap = await transaction.execute({
+  const overlap = await tx.execute({
     sql: `
       SELECT id
       FROM availability
@@ -195,11 +212,9 @@ async function saveLegacyPeriod(
     args: [providerId, weekday, endTime, startTime],
   });
 
-  if (overlap.rows.length) {
-    return false;
-  }
+  if (overlap.rows.length) return false;
 
-  await transaction.execute({
+  await tx.execute({
     sql: `
       INSERT INTO availability
         (provider_id, weekday, start_time, end_time, is_active)
@@ -215,11 +230,7 @@ async function saveLegacyPeriod(
 
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 204,
-      headers,
-      body: "",
-    };
+    return { statusCode: 204, headers, body: "" };
   }
 
   if (!["GET", "POST"].includes(event.httpMethod)) {
@@ -236,7 +247,7 @@ exports.handler = async (event) => {
     });
   }
 
-  let transaction;
+  let tx = null;
 
   try {
     const db = getDb();
@@ -268,7 +279,6 @@ exports.handler = async (event) => {
     }
 
     const params = event.queryStringParameters || {};
-
     let body = {};
 
     if (event.httpMethod === "POST") {
@@ -297,8 +307,8 @@ exports.handler = async (event) => {
       sql: `
         SELECT id
         FROM providers
-        WHERE id = ?
-          AND owner_user_id = ?
+        WHERE id = ? AND owner_user_id = ?
+        LIMIT 1
       `,
       args: [providerId, userId],
     });
@@ -327,8 +337,9 @@ exports.handler = async (event) => {
     }
 
     let changes = [];
+    let action = body.action || "";
 
-    if (body.action === "replace_week") {
+    if (action === "replace_week") {
       const days = validateWeek(body.days);
 
       if (typeof days === "string") {
@@ -352,7 +363,7 @@ exports.handler = async (event) => {
         });
       }
 
-      if (body.action === "replace_day") {
+      if (action === "replace_day") {
         const periods = validatePeriods(body.periods);
 
         if (typeof periods === "string") {
@@ -360,7 +371,7 @@ exports.handler = async (event) => {
         }
 
         changes = [{ weekday, periods }];
-      } else if (body.action === "disable") {
+      } else if (action === "disable") {
         changes = [{ weekday, periods: [] }];
       } else {
         const startTime = body.start_time;
@@ -385,42 +396,41 @@ exports.handler = async (event) => {
       }
     }
 
-    transaction = await db.transaction("write");
+    tx = await db.transaction("write");
 
+    const today = getYemenDate();
     const weekdays = [...new Set(
       changes.map((change) => change.weekday)
     )];
 
-    const bookings = await checkBookings(
-      transaction,
+    const bookings = await getFutureBookings(
+      tx,
       providerId,
-      weekdays
+      weekdays,
+      today
     );
 
     for (const change of changes) {
-      const affected = bookings.filter((booking) => {
-        const weekday = new Date(
-          `${booking.appointment_date}T00:00:00Z`
-        ).getUTCDay();
-
-        return weekday === change.weekday;
-      });
+      const affected = bookings.filter(
+        (booking) =>
+          getWeekday(booking.appointment_date) === change.weekday
+      );
 
       for (const booking of affected) {
-        const allowed = change.legacy
+        const fits = change.legacy
           ? (
               change.start_time <= booking.start_time &&
               change.end_time >= booking.end_time
             )
-          : containsBooking(change.periods, booking);
+          : bookingFitsPeriods(booking, change.periods);
 
-        if (!allowed) {
-          await transaction.rollback();
-          transaction = null;
+        if (!fits) {
+          await tx.rollback();
+          tx = null;
 
           return response(409, {
             message:
-              "لا يمكن تعديل ساعات العمل؛ توجد حجوزات مستقبلية معلّقة أو مؤكدة ضمن هذه الفترة. عالج الحجوزات أولًا.",
+              "لا يمكن تعديل ساعات العمل؛ توجد حجوزات مستقبلية معلّقة أو مؤكدة خارج الفترات الجديدة. عالج الحجوزات أولًا.",
           });
         }
       }
@@ -428,8 +438,8 @@ exports.handler = async (event) => {
 
     for (const change of changes) {
       if (change.legacy) {
-        const saved = await saveLegacyPeriod(
-          transaction,
+        const saved = await addLegacyPeriod(
+          tx,
           providerId,
           change.weekday,
           change.start_time,
@@ -437,8 +447,8 @@ exports.handler = async (event) => {
         );
 
         if (!saved) {
-          await transaction.rollback();
-          transaction = null;
+          await tx.rollback();
+          tx = null;
 
           return response(409, {
             message:
@@ -447,7 +457,7 @@ exports.handler = async (event) => {
         }
       } else {
         await replaceDay(
-          transaction,
+          tx,
           providerId,
           change.weekday,
           change.periods
@@ -455,8 +465,8 @@ exports.handler = async (event) => {
       }
     }
 
-    await transaction.commit();
-    transaction = null;
+    await tx.commit();
+    tx = null;
 
     return response(200, {
       message: "تم تحديث ساعات العمل بنجاح.",
@@ -464,9 +474,9 @@ exports.handler = async (event) => {
     });
 
   } catch (error) {
-    if (transaction) {
+    if (tx) {
       try {
-        await transaction.rollback();
+        await tx.rollback();
       } catch (rollbackError) {
         console.error(
           "Availability rollback error:",
