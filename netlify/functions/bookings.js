@@ -50,6 +50,15 @@ function getYemenDate() {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+function getYemenTime() {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Aden",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+}
+
 function getEndTime(startTime, duration) {
   const [hours, minutes] = startTime.split(":").map(Number);
 
@@ -169,11 +178,19 @@ exports.handler = async (event) => {
       });
     }
 
-    if (date < getYemenDate()) {
-      return response(400, {
-        message: "لا يمكن الحجز في تاريخ سابق",
-      });
-    }
+    const today = getYemenDate();
+
+if (date < today) {
+  return response(400, {
+    message: "لا يمكن الحجز في تاريخ سابق",
+  });
+}
+
+if (date === today && startTime <= getYemenTime()) {
+  return response(400, {
+    message: "لا يمكن الحجز في وقت مضى، اختر وقتًا قادمًا",
+  });
+}
 
     tx = await db.transaction("write");
 
