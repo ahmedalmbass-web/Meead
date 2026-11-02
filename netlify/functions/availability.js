@@ -411,29 +411,30 @@ exports.handler = async (event) => {
     );
 
     for (const change of changes) {
-      const affected = bookings.filter(
-        (booking) =>
-          getWeekday(booking.appointment_date) === change.weekday
-      );
+  // إضافة فترة جديدة لا تلغي الفترات القديمة
+  if (change.legacy) continue;
 
-      for (const booking of affected) {
-        const fits = change.legacy
-          ? (
-              change.start_time <= booking.start_time &&
-              change.end_time >= booking.end_time
-            )
-          : bookingFitsPeriods(booking, change.periods);
+  const affected = bookings.filter(
+    (booking) =>
+      getWeekday(booking.appointment_date) === change.weekday
+  );
 
-        if (!fits) {
-          await tx.rollback();
-          tx = null;
+  for (const booking of affected) {
+    const fits = bookingFitsPeriods(
+      booking,
+      change.periods
+    );
 
-          return response(409, {
-            message:
-              "لا يمكن تعديل ساعات العمل؛ توجد حجوزات مستقبلية معلّقة أو مؤكدة خارج الفترات الجديدة. عالج الحجوزات أولًا.",
-          });
-        }
-      }
+    if (!fits) {
+      await tx.rollback();
+      tx = null;
+
+      return response(409, {
+        message:
+          "لا يمكن تعديل ساعات العمل؛ توجد حجوزات مستقبلية معلّقة أو مؤكدة خارج الفترات الجديدة. عالج الحجوزات أولًا.",
+      });
+    }
+  }
     }
 
     for (const change of changes) {
