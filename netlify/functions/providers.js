@@ -89,51 +89,55 @@ exports.handler = async (event) => {
     const db = getDb();
 
     const result = await db.execute({
-      sql: `
-        SELECT
-          p.id,
-          p.business_name,
-          p.category,
-          p.city,
-          p.address,
-          p.description,
-          p.phone,
-          p.image_url,
-          p.created_at,
-
-          (
-            SELECT GROUP_CONCAT(s.name, '، ')
-            FROM services s
-            WHERE s.provider_id = p.id
-              AND s.is_active = 1
-          ) AS services,
-
-          COALESCE((
-            SELECT ROUND(AVG(r.rating), 1)
-            FROM reviews r
-            WHERE r.provider_id = p.id
-          ), 0) AS average_rating,
-
-          (
-            SELECT COUNT(*)
-            FROM reviews r
-            WHERE r.provider_id = p.id
-          ) AS review_count,
-
-          (
-            SELECT COUNT(*)
-            FROM bookings b
-            WHERE b.provider_id = p.id
-              AND b.status IN ('confirmed', 'completed')
-          ) AS booking_count
-
-        FROM providers p
-        WHERE ${conditions.join(" AND ")}
-        ORDER BY ${orderBy}
-        LIMIT 50
-      `,
-      args,
-    });
+  sql: `
+    WITH service_data AS (
+      SELECT
+        provider_id,
+        GROUP_CONCAT(name, '، ') AS services
+      FROM services
+      WHERE is_active = 1
+      GROUP BY provider_id
+    ),
+    review_data AS (
+      SELECT
+        provider_id,
+        ROUND(AVG(rating), 1) AS average_rating,
+        COUNT(*) AS review_count
+      FROM reviews
+      GROUP BY provider_id
+    ),
+    booking_data AS (
+      SELECT
+        provider_id,
+        COUNT(*) AS booking_count
+      FROM bookings
+      WHERE status IN ('confirmed', 'completed')
+      GROUP BY provider_id
+    )
+    SELECT
+      p.id,
+      p.business_name,
+      p.category,
+      p.city,
+      p.address,
+      p.description,
+      p.phone,
+      p.image_url,
+      p.created_at,
+      COALESCE(sd.services, '') AS services,
+      COALESCE(rd.average_rating, 0) AS average_rating,
+      COALESCE(rd.review_count, 0) AS review_count,
+      COALESCE(bd.booking_count, 0) AS booking_count
+    FROM providers p
+    LEFT JOIN service_data sd ON sd.provider_id = p.id
+    LEFT JOIN review_data rd ON rd.provider_id = p.id
+    LEFT JOIN booking_data bd ON bd.provider_id = p.id
+    WHERE ${conditions.join(" AND ")}
+    ORDER BY ${orderBy}
+    LIMIT 50
+  `,
+  args,
+});
 
     const providers = result.rows.map((row) => ({
       id: Number(row.id),
