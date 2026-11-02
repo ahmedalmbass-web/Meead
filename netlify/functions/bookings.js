@@ -284,6 +284,22 @@ if (date === today && startTime <= getYemenTime()) {
       });
     }
 
+    // إعادة التحقق من الوقت قبل حفظ الحجز
+const currentDate = getYemenDate();
+const currentTime = getYemenTime();
+
+if (
+  date < currentDate ||
+  (date === currentDate && startTime <= currentTime)
+) {
+  await tx.rollback();
+  tx = null;
+
+  return response(409, {
+    message: "انتهى وقت الموعد، اختر وقتًا قادمًا",
+  });
+}
+
     const inserted = await tx.execute({
       sql: `
         INSERT INTO bookings
