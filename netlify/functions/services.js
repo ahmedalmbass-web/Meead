@@ -1,4 +1,7 @@
 
+
+"use strict";
+
 const { getDb } = require("../lib/db");
 const { verifyToken } = require("../lib/auth");
 
@@ -16,6 +19,25 @@ function response(statusCode, data) {
     headers,
     body: JSON.stringify(data),
   };
+}
+
+function getYemenDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Aden",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const values = {};
+
+  for (const part of parts) {
+    if (part.type !== "literal") {
+      values[part.type] = part.value;
+    }
+  }
+
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function validServiceData(body) {
@@ -51,14 +73,8 @@ function validServiceData(body) {
   };
 }
 
-async function getProviderAccount(db, token, providerId) {
-  const userId = Number(token.sub);
-
-  if (!Number.isSafeInteger(userId) || userId < 1) {
-    return false;
-  }
-
-  const account = await db.execute({
+async function getProviderAccount(executor, userId, providerId) {
+  const account = await executor.execute({
     sql: "SELECT id, role FROM users WHERE id = ? LIMIT 1",
     args: [userId],
   });
@@ -67,7 +83,7 @@ async function getProviderAccount(db, token, providerId) {
     return false;
   }
 
-  const ownedProvider = await db.execute({
+  const ownedProvider = await executor.execute({
     sql: `SELECT id FROM providers
           WHERE id = ? AND owner_user_id = ?
           LIMIT 1`,
@@ -101,14 +117,13 @@ exports.handler = async (event) => {
     });
   }
 
+  let tx = null;
+
   try {
     const db = getDb();
     const params = event.queryStringParameters || {};
 
-    // ==========================================
-    // GET: عرض خدمات العملاء أو خدمات مقدم النشاط
-    // ==========================================
-
+    // GET: عرض الخدمات
     if (event.httpMethod === "GET") {
       const providerId = Number(params.providerId);
 
@@ -118,7 +133,6 @@ exports.handler = async (event) => {
         });
       }
 
-      // عرض الإدارة يتطلب تسجيل الدخول والتحقق من الملكية.
       if (params.manage === "1") {
         const token = verifyToken(event);
 
@@ -128,9 +142,17 @@ exports.handler = async (event) => {
           });
         }
 
+        const userId = Number(token.sub);
+
+        if (!Number.isSafeInteger(userId) || userId < 1) {
+          return response(401, {
+            message: "بيانات تسجيل الدخول غير صالحة",
+          });
+        }
+
         const allowed = await getProviderAccount(
           db,
-          token,
+          userId,
           providerId
         );
 
@@ -154,7 +176,6 @@ exports.handler = async (event) => {
         });
       }
 
-      // العرض العام للعملاء: الخدمات النشطة للنشاط المنشور فقط.
       const result = await db.execute({
         sql: `SELECT s.id, s.provider_id, s.name, s.description,
                      s.duration_minutes, s.price, s.currency,
@@ -173,15 +194,20 @@ exports.handler = async (event) => {
       });
     }
 
-    // ==========================================
-    // POST: إضافة أو تعديل أو تفعيل أو تعطيل خدمة
-    // ==========================================
-
+    // POST: إدارة الخدمات
     const token = verifyToken(event);
 
     if (!token) {
       return response(401, {
         message: "سجّل الدخول أولًا",
+      });
+    }
+
+    const userId = Number(token.sub);
+
+    if (!Number.isSafeInteger(userId) || userId < 1) {
+      return response(401, {
+        message: "بيانات تسجيل الدخول غير صالحة",
       });
     }
 
@@ -204,22 +230,24 @@ exports.handler = async (event) => {
       });
     }
 
+    tx = await db.transaction("write");
+
     const allowed = await getProviderAccount(
-      db,
-      token,
+      tx,
+      userId,
       providerId
     );
 
     if (!allowed) {
+      await tx.rollback();
+      tx = null;
+
       return response(403, {
         message: "لا تملك صلاحية إدارة هذا النشاط",
       });
     }
 
-    // ==========================================
-    // تعديل حالة الخدمة
-    // ==========================================
-
+    // تغيير حالة الخدمة
     if (action === "set_status") {
       const serviceId = Number(body.service_id);
       const isActive = Number(body.is_active);
@@ -229,23 +257,62 @@ exports.handler = async (event) => {
         serviceId < 1 ||
         ![0, 1].includes(isActive)
       ) {
+        await tx.rollback();
+        tx = null;
+
         return response(400, {
           message: "بيانات حالة الخدمة غير صالحة",
         });
       }
 
-      const result = await db.execute({
+      const serviceResult = await tx.execute({
+        sql: `SELECT id, is_active
+              FROM services
+              WHERE id = ? AND provider_id = ?
+              LIMIT 1`,
+        args: [serviceId, providerId],
+      });
+
+      if (!serviceResult.rows.length) {
+        await tx.rollback();
+        tx = null;
+
+        return response(404, {
+          message: "الخدمة غير موجودة في هذا النشاط",
+        });
+      }
+
+      if (isActive === 0) {
+        const bookings = await tx.execute({
+          sql: `SELECT id
+                FROM bookings
+                WHERE service_id = ?
+                  AND appointment_date >= ?
+                  AND status IN ('pending', 'confirmed')
+                LIMIT 1`,
+          args: [serviceId, getYemenDate()],
+        });
+
+        if (bookings.rows.length) {
+          await tx.rollback();
+          tx = null;
+
+          return response(409, {
+            message:
+              "لا يمكن تعطيل الخدمة؛ توجد حجوزات مستقبلية معلّقة أو مؤكدة. عالج الحجوزات أولًا.",
+          });
+        }
+      }
+
+      await tx.execute({
         sql: `UPDATE services
               SET is_active = ?
               WHERE id = ? AND provider_id = ?`,
         args: [isActive, serviceId, providerId],
       });
 
-      if (Number(result.rowsAffected) === 0) {
-        return response(404, {
-          message: "الخدمة غير موجودة في هذا النشاط",
-        });
-      }
+      await tx.commit();
+      tx = null;
 
       return response(200, {
         message: isActive
@@ -254,14 +321,14 @@ exports.handler = async (event) => {
       });
     }
 
-    // ==========================================
     // إضافة أو تعديل بيانات الخدمة
-    // ==========================================
-
     if (action === "create" || action === "update") {
       const serviceData = validServiceData(body);
 
       if (serviceData.error) {
+        await tx.rollback();
+        tx = null;
+
         return response(400, {
           message: serviceData.error,
         });
@@ -274,12 +341,59 @@ exports.handler = async (event) => {
           !Number.isSafeInteger(serviceId) ||
           serviceId < 1
         ) {
+          await tx.rollback();
+          tx = null;
+
           return response(400, {
             message: "معرّف الخدمة غير صالح",
           });
         }
 
-        const result = await db.execute({
+        const existingResult = await tx.execute({
+          sql: `SELECT id, duration_minutes, is_active
+                FROM services
+                WHERE id = ? AND provider_id = ?
+                LIMIT 1`,
+          args: [serviceId, providerId],
+        });
+
+        const existing = existingResult.rows[0];
+
+        if (!existing) {
+          await tx.rollback();
+          tx = null;
+
+          return response(404, {
+            message: "الخدمة غير موجودة في هذا النشاط",
+          });
+        }
+
+        const durationChanged =
+          Number(existing.duration_minutes) !== serviceData.duration;
+
+        if (durationChanged) {
+          const bookings = await tx.execute({
+            sql: `SELECT id
+                  FROM bookings
+                  WHERE service_id = ?
+                    AND appointment_date >= ?
+                    AND status IN ('pending', 'confirmed')
+                  LIMIT 1`,
+            args: [serviceId, getYemenDate()],
+          });
+
+          if (bookings.rows.length) {
+            await tx.rollback();
+            tx = null;
+
+            return response(409, {
+              message:
+                "لا يمكن تغيير مدة الخدمة؛ توجد حجوزات مستقبلية معلّقة أو مؤكدة. عالج الحجوزات أولًا.",
+            });
+          }
+        }
+
+        await tx.execute({
           sql: `UPDATE services
                 SET name = ?,
                     description = ?,
@@ -298,24 +412,25 @@ exports.handler = async (event) => {
           ],
         });
 
-        if (Number(result.rowsAffected) === 0) {
-          return response(404, {
-            message: "الخدمة غير موجودة في هذا النشاط",
-          });
-        }
+        await tx.commit();
+        tx = null;
 
         return response(200, {
           message: "تم تحديث بيانات الخدمة بنجاح",
           service: {
             id: serviceId,
             provider_id: providerId,
-            ...serviceData,
-            is_active: 1,
+            name: serviceData.name,
+            description: serviceData.description || "",
+            duration_minutes: serviceData.duration,
+            price: serviceData.price,
+            currency: serviceData.currency,
+            is_active: Number(existing.is_active),
           },
         });
       }
 
-      const result = await db.execute({
+      const result = await tx.execute({
         sql: `INSERT INTO services
               (provider_id, name, description,
                duration_minutes, price, currency)
@@ -330,21 +445,43 @@ exports.handler = async (event) => {
         ],
       });
 
+      await tx.commit();
+      tx = null;
+
       return response(201, {
         message: "تمت إضافة الخدمة بنجاح",
         service: {
           id: Number(result.lastInsertRowid),
           provider_id: providerId,
-          ...serviceData,
+          name: serviceData.name,
+          description: serviceData.description || "",
+          duration_minutes: serviceData.duration,
+          price: serviceData.price,
+          currency: serviceData.currency,
           is_active: 1,
         },
       });
     }
 
+    await tx.rollback();
+    tx = null;
+
     return response(400, {
       message: "العملية المطلوبة غير معروفة",
     });
+
   } catch (error) {
+    if (tx) {
+      try {
+        await tx.rollback();
+      } catch (rollbackError) {
+        console.error(
+          "Services rollback error:",
+          rollbackError.message
+        );
+      }
+    }
+
     console.error("Services API error:", error.message);
 
     return response(500, {
