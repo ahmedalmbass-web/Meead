@@ -302,7 +302,11 @@ let currentSort = "default";
 
 
 
+let searchRequestId = 0;
+
 async function searchProviders(query) {
+  const requestId = ++searchRequestId;
+
   results.style.display = "block";
   results.replaceChildren(
     element("p", "جارٍ البحث عن الأنشطة...", "padding:20px")
@@ -321,77 +325,23 @@ async function searchProviders(query) {
     };
 
     const categories = categoryFilters[query];
+    const url = new URL(API.providers, window.location.origin);
 
     if (categories) {
-      const uniqueProviders = new Map();
-
-      for (const category of categories) {
-        const url = new URL(API.providers, window.location.origin);
-        url.searchParams.set("category", category);
-        url.searchParams.set("sort", currentSort);
-
-        const response = await fetch(url, {
-          headers: { Accept: "application/json" }
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "تعذر إكمال البحث.");
-        }
-
-        for (const provider of data.providers || []) {
-          uniqueProviders.set(String(provider.id), provider);
-        }
-      }
-
-      const providers = [...uniqueProviders.values()];
-
-      
-      fetch("/.netlify/functions/search-log", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          search_term: query,
-          category: query,
-          results_count: providers.length
-        })
-      }).catch((error) => {
-        console.error("Meead category logging error:", error);
-      });
-
-
-      if (currentSort === "rating") {
-        providers.sort((a, b) =>
-          Number(b.average_rating || 0) - Number(a.average_rating || 0) ||
-          Number(b.review_count || 0) - Number(a.review_count || 0)
-        );
-      } else if (currentSort === "popular") {
-        providers.sort((a, b) =>
-          Number(b.booking_count || 0) - Number(a.booking_count || 0) ||
-          Number(b.average_rating || 0) - Number(a.average_rating || 0)
-        );
-      } else if (currentSort === "most_reviewed") {
-        providers.sort((a, b) =>
-          Number(b.review_count || 0) - Number(a.review_count || 0) ||
-          Number(b.average_rating || 0) - Number(a.average_rating || 0)
-        );
-      }
-
-      renderResults(providers, query);
-      return;
+      url.searchParams.set("categories", JSON.stringify(categories));
+    } else {
+      url.searchParams.set("q", query);
     }
 
-    
-    const url = new URL(API.providers, window.location.origin);
-    url.searchParams.set("q", query);
     url.searchParams.set("sort", currentSort);
 
     const response = await fetch(url, {
       headers: { Accept: "application/json" }
     });
+
     const data = await response.json();
+
+    if (requestId !== searchRequestId) return;
 
     if (!response.ok) {
       throw new Error(data.message || "تعذر إكمال البحث.");
@@ -407,6 +357,7 @@ async function searchProviders(query) {
         },
         body: JSON.stringify({
           search_term: query.trim(),
+          category: categories ? query : undefined,
           results_count: providers.length
         })
       }).catch((error) => {
@@ -417,6 +368,8 @@ async function searchProviders(query) {
     renderResults(providers, query);
 
   } catch (error) {
+    if (requestId !== searchRequestId) return;
+
     console.error("Meead search error:", error);
     renderResults(
       [],
@@ -425,7 +378,6 @@ async function searchProviders(query) {
     );
   }
 }
-
 
 
 
