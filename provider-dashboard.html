@@ -531,6 +531,45 @@
 
     .account-tabs button:hover { background: var(--gold); }
 
+        /* معرض الصور */
+    #providerGallery {
+      margin-top: 25px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .gallery-item {
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fafaf7;
+    }
+
+    .gallery-item img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+    }
+
+    .gallery-delete {
+      width: 100%;
+      border: 0;
+      padding: 8px;
+      background: #fff5f4;
+      color: var(--danger);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     @media (max-width: 600px) {
       .dashboard-header { padding: 14px 5%; }
       .dashboard-brand { font-size: 22px; }
@@ -757,6 +796,24 @@
         </div>
       </section>
 
+            <section id="providerGallery" hidden>
+        <h3>معرض صور النشاط</h3>
+        <p class="services-intro">
+          ارفع صور أعمالك الحقيقية. الصور ترفع ثقة العملاء بنشاطك، وأول صورة تصير صورة الغلاف.
+          الصيغ المسموحة: JPG وPNG وWebP.
+        </p>
+
+        <p id="galleryCount" class="dashboard-status"></p>
+
+        <input id="galleryInput" type="file"
+          accept="image/jpeg,image/png,image/webp" multiple>
+
+        <p id="galleryStatus" class="dashboard-status"
+          role="status" aria-live="polite"></p>
+
+        <div id="galleryList" class="gallery-grid"></div>
+            </section>
+
       <section id="availabilityManagement" hidden>
         <h3>ساعات عمل النشاط</h3>
         <p class="availability-intro">
@@ -851,6 +908,7 @@
 <script src="js/auth.js" defer></script>
 <script src="js/account-ui.js" defer></script>
 <script src="js/provider-dashboard.js" defer></script>
+<script src="js/provider-gallery.js" defer></script>
 
 </body>
 </html>
