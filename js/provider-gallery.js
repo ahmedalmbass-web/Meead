@@ -16,20 +16,16 @@
 
   let busy = false;
 
-  // ⚠️ عدّل هذه الدالة حسب المكان الذي يحفظ فيه js/auth.js توكن الدخول
   function getToken() {
-    const keys = ["token", "authToken", "auth_token", "meead_token", "meead_auth_token"];
-    for (const storage of [window.localStorage, window.sessionStorage]) {
-      try {
-        for (const key of keys) {
-          const value = storage.getItem(key);
-          if (value) return value;
-        }
-      } catch {
-        /* التخزين غير متاح */
-      }
+    if (window.MeeadAuth && typeof window.MeeadAuth.getToken === "function") {
+      return window.MeeadAuth.getToken() || "";
     }
-    return "";
+
+    try {
+      return localStorage.getItem("meead_token") || "";
+    } catch {
+      return "";
+    }
   }
 
   function authHeaders(extra = {}) {
