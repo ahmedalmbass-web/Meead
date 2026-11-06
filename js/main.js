@@ -12,10 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  const API = {
+    const API = {
     providers: "/.netlify/functions/providers",
     services: "/.netlify/functions/services",
-    bookings: "/.netlify/functions/bookings"
+    bookings: "/.netlify/functions/bookings",
+    gallery: "/.netlify/functions/provider-images"
   };
 
   const categorySearchTerms = {
@@ -237,10 +238,24 @@ let currentSort = "default";
       card.style.cssText =
         "background:white;border:1px solid #e9e8df;border-radius:18px;padding:20px";
 
-      card.appendChild(element(
-        "div", categoryIcons[provider.category] || "📍",
-        "font-size:30px;margin-bottom:10px"
-      ));
+            const hasCover =
+        typeof provider.image_url === "string" &&
+        provider.image_url.startsWith("/.netlify/functions/provider-images?image=");
+
+      if (hasCover) {
+        const cover = document.createElement("img");
+        cover.src = provider.image_url;
+        cover.alt = provider.business_name || "صورة النشاط";
+        cover.loading = "lazy";
+        cover.style.cssText =
+          "width:100%;height:160px;object-fit:cover;border-radius:12px;margin-bottom:12px;display:block";
+        card.appendChild(cover);
+      } else {
+        card.appendChild(element(
+          "div", categoryIcons[provider.category] || "📍",
+          "font-size:30px;margin-bottom:10px"
+        ));
+      }
       card.appendChild(element(
         "h3", provider.business_name || "نشاط في ميعاد",
         "font-size:18px;margin:0 0 8px;color:#123c32"
@@ -379,7 +394,53 @@ async function searchProviders(query) {
   }
 }
 
+  async function loadGallery(provider) {
+    try {
+      const url = new URL(API.gallery, window.location.origin);
+      url.searchParams.set("provider_id", String(provider.id));
 
+      const response = await fetch(url, {
+        headers: { Accept: "application/json" }
+      });
+      const data = await response.json();
+
+      if (!response.ok || !Array.isArray(data.images) || !data.images.length) {
+        return null;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.appendChild(element(
+        "h3", "معرض الأعمال",
+        "color:#173F35;margin-top:20px"
+      ));
+
+      const grid = document.createElement("div");
+      grid.style.cssText =
+        "display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px";
+
+      data.images.forEach((image) => {
+        const link = document.createElement("a");
+        link.href = image.url;
+        link.target = "_blank";
+        link.rel = "noopener";
+
+        const img = document.createElement("img");
+        img.src = image.url;
+        img.alt = `صورة من أعمال ${provider.business_name || "النشاط"}`;
+        img.loading = "lazy";
+        img.style.cssText =
+          "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block";
+
+        link.appendChild(img);
+        grid.appendChild(link);
+      });
+
+      wrap.appendChild(grid);
+      return wrap;
+    } catch {
+      return null;
+    }
+  }
 
 
   async function openProvider(provider) {
@@ -422,6 +483,11 @@ async function searchProviders(query) {
       detailsContent.appendChild(element(
         "p", provider.address ? `العنوان: ${provider.address}` : "العنوان غير محدد"
       ));
+
+            const gallery = await loadGallery(provider);
+
+      if (selectedProvider !== provider) return;
+      if (gallery) detailsContent.appendChild(gallery);
 
       detailsContent.appendChild(element(
         "h3", "الخدمات والأسعار",
