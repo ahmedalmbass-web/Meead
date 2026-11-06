@@ -4,12 +4,21 @@ const { getDb } = require("../lib/db");
 
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
-  "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60",
+
+  // يمنع تخزين نسخة في متصفح الزائر
+  "Cache-Control": "no-store",
+
+  // تخزين مشترك في Netlify لمدة 30 ثانية
+  "Netlify-CDN-Cache-Control":
+    "public, durable, max-age=30, stale-while-revalidate=60",
+
+  // اختلاف التخزين حسب معاملات البحث
+  "Netlify-Vary": "query=q|category|categories|city|sort",
+
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
-
 function response(statusCode, data) {
   return {
     statusCode,
