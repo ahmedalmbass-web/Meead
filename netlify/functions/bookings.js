@@ -354,6 +354,20 @@ if (
       }
     }
 
+        const msg = String(error.message || "");
+
+    if (msg.includes("BOOKING_OVERLAP")) {
+      return response(409, {
+        message: "هذا الموعد محجوز بالفعل، اختر وقتًا آخر",
+      });
+    }
+
+    if (msg.includes("SQLITE_BUSY") || msg.includes("database is locked")) {
+      return response(503, {
+        message: "الخدمة مشغولة لحظات، حاول مرة ثانية",
+      });
+    }
+
     console.error("Bookings API error:", error.message);
 
     return response(500, {
