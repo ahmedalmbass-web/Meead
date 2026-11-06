@@ -18,6 +18,14 @@ function response(statusCode, data) {
   };
 }
 
+const CATEGORIES_REQUIRING_IMAGES = [
+  "الصالونات والجمال",
+  "الحلاقة الرجالية",
+  "التصوير والمناسبات",
+];
+
+const MIN_IMAGES = 3;
+
 function validateProviderData(body) {
   const data = {
     business_name: String(body.business_name || "").trim(),
@@ -123,7 +131,7 @@ exports.handler = async (event) => {
       }
 
       const ownedProvider = await db.execute({
-        sql: `SELECT id, is_published
+                sql: `SELECT id, is_published, category
               FROM providers
               WHERE id = ? AND owner_user_id = ?
               LIMIT 1`,
@@ -199,6 +207,21 @@ exports.handler = async (event) => {
             message: "أضف خدمة نشطة واحدة على الأقل قبل نشر النشاط",
           });
         }
+
+                if (CATEGORIES_REQUIRING_IMAGES.includes(String(provider.category))) {
+          const imageCount = await db.execute({
+            sql: `SELECT COUNT(*) AS total
+                  FROM provider_images
+                  WHERE provider_id = ?`,
+            args: [providerId],
+          });
+
+          if (Number(imageCount.rows[0]?.total || 0) < MIN_IMAGES) {
+            return response(400, {
+              message: `نشاطك من نوع "${provider.category}"، ارفع ${MIN_IMAGES} صور على الأقل من أعمالك قبل النشر`,
+            });
+          }
+                }
 
         await db.execute({
           sql: `UPDATE providers
