@@ -1,4 +1,3 @@
-
 const { getDb } = require("../lib/db");
 const { verifyToken } = require("../lib/auth");
 
@@ -10,14 +9,7 @@ const headers = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-function response(statusCode, data) {
-  return {
-    statusCode,
-    headers,
-    body: JSON.stringify(data),
-  };
-}
-
+// أنواع الأنشطة التي تشترط صورًا قبل النشر (الباقي اختياري)
 const CATEGORIES_REQUIRING_IMAGES = [
   "الصالونات والجمال",
   "الحلاقة الرجالية",
@@ -25,6 +17,14 @@ const CATEGORIES_REQUIRING_IMAGES = [
 ];
 
 const MIN_IMAGES = 3;
+
+function response(statusCode, data) {
+  return {
+    statusCode,
+    headers,
+    body: JSON.stringify(data),
+  };
+}
 
 function validateProviderData(body) {
   const data = {
@@ -131,7 +131,7 @@ exports.handler = async (event) => {
       }
 
       const ownedProvider = await db.execute({
-                sql: `SELECT id, is_published, category
+        sql: `SELECT id, is_published, category
               FROM providers
               WHERE id = ? AND owner_user_id = ?
               LIMIT 1`,
@@ -208,7 +208,7 @@ exports.handler = async (event) => {
           });
         }
 
-                if (CATEGORIES_REQUIRING_IMAGES.includes(String(provider.category))) {
+        if (CATEGORIES_REQUIRING_IMAGES.includes(String(provider.category))) {
           const imageCount = await db.execute({
             sql: `SELECT COUNT(*) AS total
                   FROM provider_images
@@ -221,7 +221,7 @@ exports.handler = async (event) => {
               message: `نشاطك من نوع "${provider.category}"، ارفع ${MIN_IMAGES} صور على الأقل من أعمالك قبل النشر`,
             });
           }
-                }
+        }
 
         await db.execute({
           sql: `UPDATE providers
