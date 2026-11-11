@@ -61,6 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       error.status = response.status;
+      error.code = data.code || "";
+      error.email = data.email || "";
       throw error;
     }
 
@@ -82,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     },
 
+    // ينشئ حسابًا غير مفعّل ويرسل كود التحقق. لا توجد جلسة قبل التأكيد.
     async register(details) {
       const phone = String(details.phone || "").trim();
 
@@ -91,14 +94,26 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
 
-      const data = await requestAuth("register", {
+      return requestAuth("register", {
         ...details,
         phone
+      });
+    },
+
+    // يؤكد البريد بالكود، وإذا نجح يبدأ الجلسة
+    async verifyEmail(email, code) {
+      const data = await requestAuth("verify-email", {
+        email,
+        code
       });
 
       saveSession(data);
 
       return data.user;
+    },
+
+    async resendCode(email) {
+      return requestAuth("resend-code", { email });
     },
 
     async login(email, password) {
