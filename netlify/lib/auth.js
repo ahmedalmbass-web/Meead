@@ -1,4 +1,3 @@
-
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -16,8 +15,23 @@ async function hashPassword(password) {
   return bcrypt.hash(password, 12);
 }
 
+// hash وهمي يُستخدم عندما لا يوجد حساب بهذا البريد،
+// حتى يستغرق الرد نفس الوقت ولا يمكن معرفة الإيميلات المسجلة من سرعته
+let dummyHashPromise = null;
+
+function getDummyHash() {
+  if (!dummyHashPromise) {
+    dummyHashPromise = bcrypt.hash("meead-dummy-password", 12);
+  }
+
+  return dummyHashPromise;
+}
+
 async function verifyPassword(password, passwordHash) {
-  return bcrypt.compare(password, passwordHash);
+  const hash = passwordHash || (await getDummyHash());
+  const matches = await bcrypt.compare(password, hash);
+
+  return Boolean(passwordHash) && matches;
 }
 
 function createToken(user) {
@@ -27,7 +41,7 @@ function createToken(user) {
       role: user.role,
     },
     getJwtSecret(),
-    { expiresIn: "2h" }
+    { expiresIn: "2h", algorithm: "HS256" }
   );
 }
 
@@ -41,13 +55,16 @@ function verifyToken(event) {
   }
 
   try {
-    return jwt.verify(header.slice(7), getJwtSecret());
+    return jwt.verify(header.slice(7), getJwtSecret(), {
+      algorithms: ["HS256"],
+    });
   } catch {
     return null;
   }
 }
 
 module.exports = {
+  getJwtSecret,
   hashPassword,
   verifyPassword,
   createToken,
