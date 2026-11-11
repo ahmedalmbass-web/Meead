@@ -279,11 +279,9 @@ exports.handler = async (event) => {
 
         await db.execute({
           sql: "UPDATE providers SET image_url = ? WHERE id = ?",
-                    args: [next ? imageUrl(next.id) : null, providerId],
+          args: [next ? imageUrl(next.id) : null, providerId],
         });
-  
-
-    }
+      }
 
       return json(200, { message: "تم حذف الصورة" });
     }
