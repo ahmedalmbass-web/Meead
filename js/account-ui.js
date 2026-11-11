@@ -1,4 +1,3 @@
-
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -30,6 +29,113 @@ document.addEventListener("DOMContentLoaded", () => {
   const status = document.getElementById("accountStatus");
   const title = document.getElementById("accountTitle");
   const message = document.getElementById("accountMessage");
+
+  const panel = modal.querySelector(".account-panel");
+  const tabs = modal.querySelector(".account-tabs");
+
+  // ───────── شاشة إدخال كود التحقق (تُبنى هنا حتى لا نعدّل كل صفحة) ─────────
+
+  let pendingEmail = "";
+  let cooldownTimer = null;
+
+  const verifyForm = document.createElement("form");
+  verifyForm.id = "verifyForm";
+  verifyForm.hidden = true;
+
+  const verifyHint = document.createElement("p");
+  verifyHint.id = "verifyHint";
+
+  const verifyLabel = document.createElement("label");
+  verifyLabel.htmlFor = "verifyCode";
+  verifyLabel.textContent = "كود التحقق (6 أرقام)";
+
+  const verifyInput = document.createElement("input");
+  verifyInput.id = "verifyCode";
+  verifyInput.type = "text";
+  verifyInput.inputMode = "numeric";
+  verifyInput.maxLength = 6;
+  verifyInput.pattern = "[0-9]{6}";
+  verifyInput.autocomplete = "one-time-code";
+  verifyInput.required = true;
+  verifyInput.dir = "ltr";
+  verifyInput.style.textAlign = "center";
+  verifyInput.style.letterSpacing = "6px";
+  verifyInput.style.fontSize = "20px";
+
+  const verifySubmit = document.createElement("button");
+  verifySubmit.type = "submit";
+  verifySubmit.textContent = "تأكيد الحساب";
+
+  const resendButton = document.createElement("button");
+  resendButton.type = "button";
+  resendButton.textContent = "إعادة إرسال الكود";
+  resendButton.style.background = "#eee";
+  resendButton.style.color = "#123c32";
+
+  verifyForm.append(
+    verifyHint,
+    verifyLabel,
+    verifyInput,
+    verifySubmit,
+    resendButton
+  );
+
+  if (panel) {
+    panel.insertBefore(verifyForm, status || null);
+  }
+
+  verifyInput.addEventListener("input", () => {
+    verifyInput.value = verifyInput.value.replace(/\D/g, "").slice(0, 6);
+  });
+
+  function stopCooldown() {
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+    }
+
+    resendButton.disabled = false;
+    resendButton.textContent = "إعادة إرسال الكود";
+  }
+
+  function startCooldown(seconds) {
+    stopCooldown();
+
+    let remaining = seconds;
+    resendButton.disabled = true;
+    resendButton.textContent = `إعادة الإرسال بعد ${remaining} ثانية`;
+
+    cooldownTimer = setInterval(() => {
+      remaining -= 1;
+
+      if (remaining <= 0) {
+        stopCooldown();
+        return;
+      }
+
+      resendButton.textContent = `إعادة الإرسال بعد ${remaining} ثانية`;
+    }, 1000);
+  }
+
+  function openVerify(email, emailSent) {
+    pendingEmail = email;
+    switchMode("verify");
+
+    verifyHint.textContent = emailSent
+      ? `أرسلنا كودًا من 6 أرقام إلى ${email}. صلاحيته 10 دقائق.`
+      : `تعذر إرسال الكود إلى ${email}. اضغط إعادة الإرسال.`;
+
+    verifyInput.value = "";
+    verifyInput.focus();
+
+    if (emailSent) {
+      startCooldown(60);
+    } else {
+      stopCooldown();
+    }
+  }
+
+  // ───────── الواجهة العامة ─────────
 
   function getReturnPage() {
     const params = new URLSearchParams(window.location.search);
@@ -64,20 +170,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function switchMode(mode) {
     const registering = mode === "register";
+    const verifying = mode === "verify";
 
-    if (loginForm) loginForm.hidden = registering;
+    if (loginForm) loginForm.hidden = registering || verifying;
     if (registerForm) registerForm.hidden = !registering;
+    verifyForm.hidden = !verifying;
+    if (tabs) tabs.style.display = verifying ? "none" : "";
 
     if (title) {
-      title.textContent = registering
-        ? "إنشاء حساب جديد"
-        : "مرحبًا بك في ميعاد";
+      title.textContent = verifying
+        ? "تأكيد البريد الإلكتروني"
+        : registering
+          ? "إنشاء حساب جديد"
+          : "مرحبًا بك في ميعاد";
     }
 
     if (message) {
-      message.textContent = registering
-        ? "أنشئ حسابك للبدء في استخدام المنصة."
-        : "سجّل دخولك للمتابعة.";
+      message.textContent = verifying
+        ? "أدخل الكود الذي وصلك على بريدك لتفعيل الحساب."
+        : registering
+          ? "أنشئ حسابك للبدء في استخدام المنصة."
+          : "سجّل دخولك للمتابعة.";
     }
 
     setStatus("");
@@ -221,15 +334,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setStatus("جارٍ تسجيل الدخول...");
 
+    const email = document.getElementById("loginEmail").value.trim();
+
     try {
-      const email = document.getElementById("loginEmail").value.trim();
       const password = document.getElementById("loginPassword").value;
 
       await auth.login(email, password);
 
       finishAuthentication();
     } catch (error) {
-      setStatus(error.message || "تعذر تسجيل الدخول. حاول مجددًا.");
+      if (error.code === "EMAIL_NOT_VERIFIED") {
+        // الحساب موجود لكن البريد غير مؤكد: نرسل كودًا جديدًا ونفتح شاشة الإدخال
+        const targetEmail = error.email || email;
+
+        try {
+          await auth.resendCode(targetEmail);
+          openVerify(targetEmail, true);
+          setStatus("لحماية حسابك، يجب تأكيد بريدك الإلكتروني قبل المتابعة.");
+        } catch (resendError) {
+          openVerify(targetEmail, false);
+          setStatus(resendError.message || "تعذر إرسال الكود.");
+        }
+      } else {
+        setStatus(error.message || "تعذر تسجيل الدخول. حاول مجددًا.");
+      }
     } finally {
       if (submitButton) submitButton.disabled = false;
     }
@@ -253,17 +381,58 @@ document.addEventListener("DOMContentLoaded", () => {
         role: document.getElementById("registerRole").value
       };
 
-      await auth.register(details);
+      const result = await auth.register(details);
 
-      const redirected = finishAuthentication();
+      const emailSent = result.email_sent !== false;
 
-      if (!redirected && auth.getUser()?.role === "customer") {
-        alert("تم إنشاء حسابك بنجاح.");
+      openVerify(result.email || details.email, emailSent);
+
+      if (!emailSent && result.message) {
+        setStatus(result.message);
       }
     } catch (error) {
       setStatus(error.message || "تعذر إنشاء الحساب. حاول مجددًا.");
     } finally {
       if (submitButton) submitButton.disabled = false;
+    }
+  });
+
+  verifyForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    verifySubmit.disabled = true;
+    setStatus("جارٍ التحقق من الكود...");
+
+    try {
+      await auth.verifyEmail(pendingEmail, verifyInput.value.trim());
+
+      stopCooldown();
+
+      const redirected = finishAuthentication();
+
+      if (!redirected && auth.getUser()?.role === "customer") {
+        alert("تم تفعيل حسابك بنجاح.");
+      }
+    } catch (error) {
+      setStatus(error.message || "تعذر تأكيد الكود. حاول مجددًا.");
+    } finally {
+      verifySubmit.disabled = false;
+    }
+  });
+
+  resendButton.addEventListener("click", async () => {
+    if (!pendingEmail) return;
+
+    resendButton.disabled = true;
+    setStatus("جارٍ إرسال الكود...");
+
+    try {
+      await auth.resendCode(pendingEmail);
+      setStatus("أرسلنا كودًا جديدًا إلى بريدك.");
+      startCooldown(60);
+    } catch (error) {
+      setStatus(error.message || "تعذر إرسال الكود. حاول لاحقًا.");
+      startCooldown(30);
     }
   });
 
