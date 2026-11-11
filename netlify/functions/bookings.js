@@ -1,4 +1,3 @@
-
 "use strict";
 
 const { getDb } = require("../lib/db");
@@ -11,6 +10,9 @@ const headers = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+
+// أقصى عدد طلبات حجز معلّقة (بانتظار رد صاحب النشاط) للزبون الواحد
+const MAX_PENDING_PER_CUSTOMER = 3;
 
 function response(statusCode, data) {
   return {
@@ -180,17 +182,17 @@ exports.handler = async (event) => {
 
     const today = getYemenDate();
 
-if (date < today) {
-  return response(400, {
-    message: "لا يمكن الحجز في تاريخ سابق",
-  });
-}
+    if (date < today) {
+      return response(400, {
+        message: "لا يمكن الحجز في تاريخ سابق",
+      });
+    }
 
-if (date === today && startTime <= getYemenTime()) {
-  return response(400, {
-    message: "لا يمكن الحجز في وقت مضى، اختر وقتًا قادمًا",
-  });
-}
+    if (date === today && startTime <= getYemenTime()) {
+      return response(400, {
+        message: "لا يمكن الحجز في وقت مضى، اختر وقتًا قادمًا",
+      });
+    }
 
     tx = await db.transaction("write");
 
@@ -234,9 +236,7 @@ if (date === today && startTime <= getYemenTime()) {
       });
     }
 
-    const weekday = new Date(
-      `${date}T00:00:00Z`
-    ).getUTCDay();
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
 
     const schedule = await tx.execute({
       sql: `
@@ -280,25 +280,47 @@ if (date === today && startTime <= getYemenTime()) {
       tx = null;
 
       return response(409, {
-                message: "هذا الموعد محجوز بالفعل، اختر وقتًا آخر",
+        message: "هذا الموعد محجوز بالفعل، اختر وقتًا آخر",
+      });
+    }
+
+    const pendingCount = await tx.execute({
+      sql: `
+        SELECT COUNT(*) AS total
+        FROM bookings
+        WHERE customer_user_id = ?
+          AND status = 'pending'
+          AND appointment_date >= ?
+      `,
+      args: [userId, today],
+    });
+
+    if (
+      Number(pendingCount.rows[0]?.total || 0) >= MAX_PENDING_PER_CUSTOMER
+    ) {
+      await tx.rollback();
+      tx = null;
+
+      return response(429, {
+        message: "لديك طلبات حجز كثيرة بانتظار الرد، انتظر ردّ أصحاب الأنشطة",
       });
     }
 
     // إعادة التحقق من الوقت قبل حفظ الحجز
-const currentDate = getYemenDate();
-const currentTime = getYemenTime();
+    const currentDate = getYemenDate();
+    const currentTime = getYemenTime();
 
-if (
-  date < currentDate ||
-  (date === currentDate && startTime <= currentTime)
-) {
-  await tx.rollback();
-  tx = null;
+    if (
+      date < currentDate ||
+      (date === currentDate && startTime <= currentTime)
+    ) {
+      await tx.rollback();
+      tx = null;
 
-  return response(409, {
-    message: "انتهى وقت الموعد، اختر وقتًا قادمًا",
-  });
-}
+      return response(409, {
+        message: "انتهى وقت الموعد، اختر وقتًا قادمًا",
+      });
+    }
 
     const inserted = await tx.execute({
       sql: `
@@ -341,20 +363,16 @@ if (
         status: "pending",
       },
     });
-
   } catch (error) {
     if (tx) {
       try {
         await tx.rollback();
       } catch (rollbackError) {
-        console.error(
-          "Bookings rollback error:",
-          rollbackError.message
-        );
+        console.error("Bookings rollback error:", rollbackError.message);
       }
     }
 
-        const msg = String(error.message || "");
+    const msg = String(error.message || "");
 
     if (msg.includes("BOOKING_OVERLAP")) {
       return response(409, {
