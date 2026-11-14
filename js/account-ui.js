@@ -135,6 +135,283 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ───────── الدخول عبر Google وApple + شاشة إكمال البيانات ─────────
+
+  let currentMode = "login";
+  let socialAvailable = false;
+  let googleRendered = false;
+  let socialSignupToken = "";
+
+  const socialBox = document.createElement("div");
+  socialBox.id = "socialLogin";
+  socialBox.style.display = "none";
+
+  const googleHolder = document.createElement("div");
+  googleHolder.style.cssText =
+    "display:flex;justify-content:center;margin-top:14px;min-height:44px";
+  googleHolder.hidden = true;
+
+  const appleButton = document.createElement("button");
+  appleButton.type = "button";
+  appleButton.textContent = "المتابعة باستخدام Apple";
+  appleButton.style.cssText =
+    "width:100%;background:#000;color:#fff;border:1px solid #000;border-radius:9px;padding:11px;margin-top:10px;font-weight:700;cursor:pointer";
+  appleButton.hidden = true;
+
+  const divider = document.createElement("div");
+  divider.style.cssText =
+    "display:flex;align-items:center;gap:10px;margin:16px 0 4px;color:#75817b;font-size:13px";
+
+  const line1 = document.createElement("span");
+  line1.style.cssText = "flex:1;height:1px;background:#e8e8df";
+
+  const dividerText = document.createElement("span");
+  dividerText.textContent = "أو بالبريد الإلكتروني";
+
+  const line2 = document.createElement("span");
+  line2.style.cssText = "flex:1;height:1px;background:#e8e8df";
+
+  divider.append(line1, dividerText, line2);
+  socialBox.append(googleHolder, appleButton, divider);
+
+  if (panel && loginForm) {
+    panel.insertBefore(socialBox, loginForm);
+  }
+
+  const profileForm = document.createElement("form");
+  profileForm.id = "profileForm";
+  profileForm.hidden = true;
+
+  const profileHint = document.createElement("p");
+
+  const profileNameLabel = document.createElement("label");
+  profileNameLabel.htmlFor = "profileName";
+  profileNameLabel.textContent = "الاسم الكامل";
+
+  const profileName = document.createElement("input");
+  profileName.id = "profileName";
+  profileName.required = true;
+  profileName.minLength = 2;
+  profileName.maxLength = 100;
+  profileName.autocomplete = "name";
+
+  const profilePhoneLabel = document.createElement("label");
+  profilePhoneLabel.htmlFor = "profilePhone";
+  profilePhoneLabel.textContent = "رقم الهاتف";
+
+  const profilePhone = document.createElement("input");
+  profilePhone.id = "profilePhone";
+  profilePhone.type = "tel";
+  profilePhone.inputMode = "numeric";
+  profilePhone.autocomplete = "tel";
+  profilePhone.minLength = 9;
+  profilePhone.maxLength = 9;
+  profilePhone.pattern = "7[0-9]{8}";
+  profilePhone.placeholder = "712345678";
+  profilePhone.required = true;
+
+  const profileRoleLabel = document.createElement("label");
+  profileRoleLabel.htmlFor = "profileRole";
+  profileRoleLabel.textContent = "نوع الحساب";
+
+  const profileRole = document.createElement("select");
+  profileRole.id = "profileRole";
+  profileRole.required = true;
+
+  [
+    ["customer", "عميل — أريد حجز موعد"],
+    ["provider", "صاحب نشاط — أريد عرض خدماتي"]
+  ].forEach(([value, label]) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    profileRole.appendChild(option);
+  });
+
+  const profileSubmit = document.createElement("button");
+  profileSubmit.type = "submit";
+  profileSubmit.textContent = "إنشاء الحساب";
+
+  profileForm.append(
+    profileHint,
+    profileNameLabel,
+    profileName,
+    profilePhoneLabel,
+    profilePhone,
+    profileRoleLabel,
+    profileRole,
+    profileSubmit
+  );
+
+  if (panel) {
+    panel.insertBefore(profileForm, status || null);
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  function ensureGoogleButton() {
+    if (googleRendered || !window.google?.accounts?.id) return;
+
+    googleHolder.hidden = false;
+
+    window.google.accounts.id.renderButton(googleHolder, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "continue_with",
+      shape: "rectangular",
+      locale: "ar",
+      width: Math.min(300, Math.max(200, window.innerWidth - 110))
+    });
+
+    googleRendered = true;
+  }
+
+  function applySocialVisibility() {
+    const visible =
+      socialAvailable &&
+      (currentMode === "login" || currentMode === "register");
+
+    socialBox.style.display = visible ? "" : "none";
+
+    if (visible && !modal.hidden) ensureGoogleButton();
+  }
+
+  function openProfile(result) {
+    socialSignupToken = result.signupToken;
+
+    profileHint.textContent = `أهلًا بك! أكمل بياناتك لإنشاء حسابك بالبريد ${result.email}`;
+    profileName.value = result.name || "";
+    profilePhone.value = "";
+    profileRole.value = registerRole?.value === "provider" ? "provider" : "customer";
+
+    switchMode("profile");
+    (profileName.value ? profilePhone : profileName).focus();
+  }
+
+  async function handleSocialCredential(provider, credential, name = "") {
+    setStatus("جارٍ التحقق من حسابك...");
+
+    try {
+      const result = await auth.socialLogin(provider, credential, name);
+
+      if (result.needsProfile) {
+        openProfile(result);
+        return;
+      }
+
+      finishAuthentication();
+    } catch (error) {
+      if (error.code === "EMAIL_NOT_VERIFIED") {
+        setStatus("فعّل بريدك الإلكتروني أولًا من نموذج الدخول بالبريد.");
+        return;
+      }
+
+      setStatus(error.message || "تعذر تسجيل الدخول. حاول مجددًا.");
+    }
+  }
+
+  appleButton.addEventListener("click", async () => {
+    if (!window.AppleID?.auth) return;
+
+    try {
+      const response = await window.AppleID.auth.signIn();
+      const idToken = response?.authorization?.id_token;
+      const appleName = response?.user?.name;
+
+      const fullName = appleName
+        ? [appleName.firstName, appleName.lastName].filter(Boolean).join(" ")
+        : "";
+
+      if (idToken) {
+        await handleSocialCredential("apple", idToken, fullName);
+      }
+    } catch (error) {
+      // إغلاق المستخدم للنافذة ليس خطأ
+      if (error && error.error === "popup_closed_by_user") return;
+
+      setStatus("تعذر تسجيل الدخول عبر Apple. حاول مجددًا.");
+    }
+  });
+
+  profileForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    profileSubmit.disabled = true;
+    setStatus("جارٍ إنشاء الحساب...");
+
+    try {
+      await auth.socialSignup(socialSignupToken, {
+        name: profileName.value.trim(),
+        phone: profilePhone.value.trim(),
+        role: profileRole.value
+      });
+
+      const redirected = finishAuthentication();
+
+      if (!redirected && auth.getUser()?.role === "customer") {
+        alert("تم إنشاء حسابك بنجاح.");
+      }
+    } catch (error) {
+      setStatus(error.message || "تعذر إنشاء الحساب. حاول مجددًا.");
+    } finally {
+      profileSubmit.disabled = false;
+    }
+  });
+
+  async function setupSocial() {
+    const config = await auth.getSocialConfig();
+
+    if (config.google?.clientId) {
+      try {
+        await loadScript("https://accounts.google.com/gsi/client");
+
+        window.google.accounts.id.initialize({
+          client_id: config.google.clientId,
+          callback: (response) =>
+            handleSocialCredential("google", response.credential)
+        });
+
+        socialAvailable = true;
+      } catch (error) {
+        console.error("Meead: Google sign-in unavailable.", error);
+      }
+    }
+
+    if (config.apple?.clientId && config.apple?.redirectUri) {
+      try {
+        await loadScript(
+          "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
+        );
+
+        window.AppleID.auth.init({
+          clientId: config.apple.clientId,
+          scope: "name email",
+          redirectURI: config.apple.redirectUri,
+          usePopup: true
+        });
+
+        appleButton.hidden = false;
+        socialAvailable = true;
+      } catch (error) {
+        console.error("Meead: Apple sign-in unavailable.", error);
+      }
+    }
+
+    applySocialVisibility();
+  }
+
+  setupSocial();
+
   // ───────── الواجهة العامة ─────────
 
   function getReturnPage() {
@@ -169,30 +446,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function switchMode(mode) {
+    currentMode = mode;
+
     const registering = mode === "register";
     const verifying = mode === "verify";
+    const profiling = mode === "profile";
 
-    if (loginForm) loginForm.hidden = registering || verifying;
+    if (loginForm) loginForm.hidden = registering || verifying || profiling;
     if (registerForm) registerForm.hidden = !registering;
     verifyForm.hidden = !verifying;
-    if (tabs) tabs.style.display = verifying ? "none" : "";
+    profileForm.hidden = !profiling;
+    if (tabs) tabs.style.display = verifying || profiling ? "none" : "";
 
     if (title) {
       title.textContent = verifying
         ? "تأكيد البريد الإلكتروني"
-        : registering
-          ? "إنشاء حساب جديد"
-          : "مرحبًا بك في ميعاد";
+        : profiling
+          ? "إكمال إنشاء الحساب"
+          : registering
+            ? "إنشاء حساب جديد"
+            : "مرحبًا بك في ميعاد";
     }
 
     if (message) {
       message.textContent = verifying
         ? "أدخل الكود الذي وصلك على بريدك لتفعيل الحساب."
-        : registering
-          ? "أنشئ حسابك للبدء في استخدام المنصة."
-          : "سجّل دخولك للمتابعة.";
+        : profiling
+          ? "بقيت خطوة واحدة."
+          : registering
+            ? "أنشئ حسابك للبدء في استخدام المنصة."
+            : "سجّل دخولك للمتابعة.";
     }
 
+    applySocialVisibility();
     setStatus("");
   }
 
