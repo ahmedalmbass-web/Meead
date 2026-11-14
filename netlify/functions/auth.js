@@ -8,7 +8,10 @@ const {
   verifyPassword,
   createToken,
   verifyToken,
+  createSignupToken,
+  verifySignupToken,
 } = require("../lib/auth");
+const { SocialError, verifyIdToken } = require("../lib/social");
 const { sendVerificationEmail } = require("../lib/email");
 const { clientKey, rateLimit, clearLimit } = require("../lib/rate-limit");
 
@@ -19,6 +22,8 @@ const headers = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
+
+const SOCIAL_PROVIDERS = ["google", "apple"];
 
 const CODE_TTL_SECONDS = 600; // صلاحية الكود 10 دقائق
 const MAX_CODE_ATTEMPTS = 5; // عدد محاولات إدخال الكود الواحد
@@ -89,6 +94,44 @@ function publicUser(row) {
     phone: row.phone,
     role: row.role,
   };
+}
+
+function socialErrorResponse(error) {
+  if (!(error instanceof SocialError)) return null;
+
+  if (error.code === "not_configured") {
+    return response(503, { message: "طريقة الدخول هذه غير مفعّلة حاليًا" });
+  }
+
+  if (error.code === "network") {
+    console.error("Social provider error:", error.message);
+    return response(502, { message: "تعذر الاتصال بالخدمة، حاول لاحقًا" });
+  }
+
+  return response(401, { message: "تعذر التحقق من الحساب، حاول مرة أخرى" });
+}
+
+async function findSocialUser(db, provider, subject) {
+  const result = await db.execute({
+    sql: `SELECT u.id, u.name, u.email, u.phone, u.role, u.email_verified_at
+          FROM social_identities s
+          JOIN users u ON u.id = s.user_id
+          WHERE s.provider = ? AND s.subject = ?
+          LIMIT 1`,
+    args: [provider, subject],
+  });
+
+  return result.rows[0] || null;
+}
+
+function loginResponse(row) {
+  const user = publicUser(row);
+
+  return response(200, {
+    message: "تم تسجيل الدخول بنجاح",
+    user,
+    token: createToken(user),
+  });
 }
 
 function codeHash(userId, code) {
@@ -443,6 +486,217 @@ exports.handler = async (event) => {
       });
     }
 
+    // ───────── إعدادات الدخول بـ Google وApple (معرّفات عامة فقط) ─────────
+    if (event.httpMethod === "GET" && action === "social-config") {
+      return response(200, {
+        google: process.env.GOOGLE_CLIENT_ID
+          ? { clientId: process.env.GOOGLE_CLIENT_ID }
+          : null,
+        apple:
+          process.env.APPLE_CLIENT_ID && process.env.APPLE_REDIRECT_URI
+            ? {
+                clientId: process.env.APPLE_CLIENT_ID,
+                redirectUri: process.env.APPLE_REDIRECT_URI,
+              }
+            : null,
+      });
+    }
+
+    // ───────── الدخول عبر Google أو Apple ─────────
+    if (event.httpMethod === "POST" && action === "social-login") {
+      const parsed = parseBody(event);
+      if (parsed.error) return parsed.error;
+
+      const provider = String(parsed.body.provider || "");
+
+      if (!SOCIAL_PROVIDERS.includes(provider)) {
+        return response(400, { message: "طريقة الدخول غير معروفة" });
+      }
+
+      const ipLimit = await rateLimit(db, `social:ip:${ip}`, 30, 900);
+      if (!ipLimit.allowed) return tooMany(ipLimit);
+
+      let claims;
+
+      try {
+        claims = await verifyIdToken(provider, parsed.body.credential);
+      } catch (error) {
+        const handled = socialErrorResponse(error);
+        if (handled) return handled;
+        throw error;
+      }
+
+      let row = await findSocialUser(db, provider, claims.subject);
+
+      if (!row) {
+        if (!claims.email || !claims.emailVerified) {
+          return response(400, {
+            message: "لم نتمكن من الحصول على بريد مؤكد من هذا الحساب",
+          });
+        }
+
+        const byEmail = (
+          await db.execute({
+            sql: `SELECT id, name, email, phone, role, email_verified_at
+                  FROM users WHERE email = ? LIMIT 1`,
+            args: [claims.email],
+          })
+        ).rows[0];
+
+        if (byEmail) {
+          // الحساب موجود بنفس البريد: نربط الهوية به (البريد مؤكد من Google/Apple)
+          await db.execute({
+            sql: `INSERT OR IGNORE INTO social_identities
+                    (provider, subject, user_id)
+                  VALUES (?, ?, ?)`,
+            args: [provider, claims.subject, Number(byEmail.id)],
+          });
+
+          row = byEmail;
+        }
+      }
+
+      if (row) {
+        const sameEmail =
+          claims.emailVerified &&
+          claims.email === String(row.email).toLowerCase();
+
+        if (!row.email_verified_at && sameEmail) {
+          await db.execute({
+            sql: `UPDATE users SET email_verified_at = CURRENT_TIMESTAMP
+                  WHERE id = ? AND email_verified_at IS NULL`,
+            args: [Number(row.id)],
+          });
+        } else if (!row.email_verified_at) {
+          return response(403, {
+            code: "EMAIL_NOT_VERIFIED",
+            email: row.email,
+            message: "فعّل بريدك الإلكتروني أولًا",
+          });
+        }
+
+        return loginResponse(row);
+      }
+
+      // حساب جديد: نطلب من المستخدم إكمال بياناته (الاسم والرقم ونوع الحساب)
+      const suggestedName = (
+        claims.name || String(parsed.body.name || "")
+      )
+        .trim()
+        .slice(0, 100);
+
+      return response(200, {
+        needs_profile: true,
+        email: claims.email,
+        name: suggestedName,
+        signup_token: createSignupToken({
+          provider,
+          subject: claims.subject,
+          email: claims.email,
+          name: suggestedName,
+        }),
+      });
+    }
+
+    // ───────── إكمال إنشاء حساب Google/Apple ─────────
+    if (event.httpMethod === "POST" && action === "social-signup") {
+      const parsed = parseBody(event);
+      if (parsed.error) return parsed.error;
+
+      const signup = verifySignupToken(parsed.body.signup_token);
+
+      if (
+        !signup ||
+        !SOCIAL_PROVIDERS.includes(signup.provider) ||
+        typeof signup.subject !== "string" ||
+        !signup.subject ||
+        !isValidEmail(String(signup.email || ""))
+      ) {
+        return response(400, {
+          message: "انتهت صلاحية الجلسة، أعد المحاولة من البداية",
+        });
+      }
+
+      const name = String(parsed.body.name || "").trim();
+      const phone = String(parsed.body.phone || "").trim();
+      const role = parsed.body.role === "provider" ? "provider" : "customer";
+
+      if (name.length < 2 || name.length > 100 || !/^7[0-9]{8}$/.test(phone)) {
+        return response(400, {
+          message:
+            "تحقق من الاسم. رقم الهاتف اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7.",
+        });
+      }
+
+      const ipLimit = await rateLimit(db, `social-signup:ip:${ip}`, 10, 3600);
+      if (!ipLimit.allowed) return tooMany(ipLimit);
+
+      const email = String(signup.email).toLowerCase();
+
+      // إذا أُنشئ الحساب فعلاً (ضغط مزدوج مثلاً) نكتفي بتسجيل الدخول
+      const already = await findSocialUser(db, signup.provider, signup.subject);
+      if (already) return loginResponse(already);
+
+      const taken = await db.execute({
+        sql: "SELECT id FROM users WHERE email = ? LIMIT 1",
+        args: [email],
+      });
+
+      if (taken.rows.length) {
+        return response(409, {
+          message: "هذا البريد مسجل مسبقًا، ارجع واضغط تسجيل الدخول",
+        });
+      }
+
+      // لا توجد كلمة مرور لهذا الحساب: نخزّن قيمة عشوائية لا يعرفها أحد
+      const passwordHash = await hashPassword(
+        crypto.randomBytes(32).toString("hex")
+      );
+
+      try {
+        await db.batch(
+          [
+            {
+              sql: `INSERT INTO users
+                      (name, email, password_hash, phone, role, email_verified_at)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+              args: [name, email, passwordHash, phone, role],
+            },
+            {
+              sql: `INSERT INTO social_identities (provider, subject, user_id)
+                    VALUES (?, ?, (SELECT id FROM users WHERE email = ?))`,
+              args: [signup.provider, signup.subject, email],
+            },
+          ],
+          "write"
+        );
+      } catch (error) {
+        if (String(error.message).includes("UNIQUE")) {
+          return response(409, {
+            message: "هذا الحساب مسجل مسبقًا، ارجع واضغط تسجيل الدخول",
+          });
+        }
+
+        throw error;
+      }
+
+      const created = (
+        await db.execute({
+          sql: `SELECT id, name, email, phone, role, email_verified_at
+                FROM users WHERE email = ? LIMIT 1`,
+          args: [email],
+        })
+      ).rows[0];
+
+      const user = publicUser(created);
+
+      return response(201, {
+        message: "تم إنشاء حسابك بنجاح",
+        user,
+        token: createToken(user),
+      });
+    }
+
     // ───────── بيانات الحساب الحالي ─────────
     if (event.httpMethod === "GET" && action === "me") {
       const payload = verifyToken(event);
@@ -485,6 +739,9 @@ exports.handler = async (event) => {
         "POST ?action=verify-email",
         "POST ?action=resend-code",
         "POST ?action=login",
+        "POST ?action=social-login",
+        "POST ?action=social-signup",
+        "GET ?action=social-config",
         "GET ?action=me",
       ],
     });
