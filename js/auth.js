@@ -116,6 +116,64 @@ document.addEventListener("DOMContentLoaded", () => {
       return requestAuth("resend-code", { email });
     },
 
+    // معرّفات Google وApple العامة (الأزرار لا تظهر إلا للمفعّل منها)
+    async getSocialConfig() {
+      try {
+        const response = await fetch(`${API_URL}?action=social-config`, {
+          headers: { Accept: "application/json" }
+        });
+
+        if (!response.ok) return { google: null, apple: null };
+
+        return await response.json();
+      } catch {
+        return { google: null, apple: null };
+      }
+    },
+
+    // يرسل توكن الهوية من Google/Apple للسيرفر.
+    // إذا الحساب موجود يدخل مباشرة، وإذا جديد يرجع needsProfile لإكمال البيانات.
+    async socialLogin(provider, credential, name = "") {
+      const data = await requestAuth("social-login", {
+        provider,
+        credential,
+        name
+      });
+
+      if (data.token && data.user) {
+        saveSession(data);
+        return { needsProfile: false, user: data.user };
+      }
+
+      return {
+        needsProfile: true,
+        signupToken: data.signup_token,
+        email: data.email || "",
+        name: data.name || ""
+      };
+    },
+
+    async socialSignup(signupToken, details) {
+      const phone = String(details.phone || "").trim();
+
+      if (!/^7[0-9]{8}$/.test(phone)) {
+        throw new Error(
+          "رقم الهاتف اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7."
+        );
+      }
+
+      const data = await requestAuth("social-signup", {
+        signup_token: signupToken,
+        name: details.name,
+        phone,
+        role: details.role
+      });
+
+      saveSession(data);
+
+      return data.user;
+    },
+
     async login(email, password) {
       const data = await requestAuth("login", {
         email,
