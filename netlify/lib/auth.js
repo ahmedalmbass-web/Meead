@@ -55,9 +55,42 @@ function verifyToken(event) {
   }
 
   try {
-    return jwt.verify(header.slice(7), getJwtSecret(), {
+    const payload = jwt.verify(header.slice(7), getJwtSecret(), {
       algorithms: ["HS256"],
     });
+
+    // التوكنات المؤقتة (مثل إكمال التسجيل) ليست توكن دخول
+    if (payload && payload.purpose) return null;
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+// توكن مؤقت (15 دقيقة) يحمل هوية Google/Apple التي تم التحقق منها،
+// يُستخدم فقط لإكمال إنشاء الحساب بعد أن يكتب المستخدم اسمه ورقمه
+function createSignupToken(data) {
+  return jwt.sign(
+    {
+      purpose: "social_signup",
+      provider: data.provider,
+      subject: data.subject,
+      email: data.email,
+      name: data.name || "",
+    },
+    getJwtSecret(),
+    { expiresIn: "15m", algorithm: "HS256" }
+  );
+}
+
+function verifySignupToken(token) {
+  try {
+    const payload = jwt.verify(String(token || ""), getJwtSecret(), {
+      algorithms: ["HS256"],
+    });
+
+    return payload && payload.purpose === "social_signup" ? payload : null;
   } catch {
     return null;
   }
@@ -69,4 +102,6 @@ module.exports = {
   verifyPassword,
   createToken,
   verifyToken,
+  createSignupToken,
+  verifySignupToken,
 };
