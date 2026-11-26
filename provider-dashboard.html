@@ -629,11 +629,63 @@
       جارٍ التحقق من حسابك...
     </div>
 
-    <div id="providerList"></div>
+    <!-- شريط الإحصائيات الفورية لأداء النشاط -->
+    <div class="provider-stats-grid" id="providerStatsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:20px 0;">
+      <div class="card" style="background:#fff;padding:16px;border-radius:14px;border:1px solid #e8e8df;border-top:4px solid #123c32;">
+        <span style="font-size:13px;color:#75817b;font-weight:700;">📅 مواعيد اليوم</span>
+        <strong style="display:block;font-size:26px;color:#123c32;margin-top:6px;" id="statTodayBookings">0</strong>
+      </div>
+      <div class="card" style="background:#fff;padding:16px;border-radius:14px;border:1px solid #e8e8df;border-top:4px solid #d8bd7c;">
+        <span style="font-size:13px;color:#75817b;font-weight:700;">⏳ بانتظار التأكيد والدفع</span>
+        <strong style="display:block;font-size:26px;color:#a33c36;margin-top:6px;" id="statPendingBookings">0</strong>
+      </div>
+      <div class="card" style="background:#fff;padding:16px;border-radius:14px;border:1px solid #e8e8df;border-top:4px solid #28613f;">
+        <span style="font-size:13px;color:#75817b;font-weight:700;">✅ المواعيد المؤكدة</span>
+        <strong style="display:block;font-size:26px;color:#28613f;margin-top:6px;" id="statConfirmedBookings">0</strong>
+      </div>
+      <div class="card" style="background:#fff;padding:16px;border-radius:14px;border:1px solid #e8e8df;border-top:4px solid #123c32;">
+        <span style="font-size:13px;color:#75817b;font-weight:700;">💰 إجمالي الإيرادات المقدرة</span>
+        <strong style="display:block;font-size:26px;color:#123c32;margin-top:6px;" id="statRevenue">0 ر.ي</strong>
+      </div>
+    </div>
 
-    <!-- نموذج إضافة نشاط جديد -->
-    <form id="providerForm" class="dashboard-card">
-      <h2>إضافة نشاط جديد</h2>
+    <!-- شريط التبويبات الرئيسي المنظم -->
+    <nav class="provider-dashboard-tabs" id="providerTabsNav" style="display:flex;gap:8px;border-bottom:2px solid #e8e8df;margin:20px 0 25px;overflow-x:auto;padding-bottom:2px;">
+      <button type="button" class="tab-btn active" data-target="providerBookings" style="padding:10px 18px;border:none;background:#123c32;color:#fff;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">📋 إدارة الحجوزات</button>
+      <button type="button" class="tab-btn" data-target="tabProfileSection" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">🏢 بيانات النشاط ورابط البايو</button>
+      <button type="button" class="tab-btn" data-target="serviceManagement" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">✂️ الخدمات والأسعار</button>
+      <button type="button" class="tab-btn" data-target="availabilityManagement" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">🕒 ساعات وأيام العمل</button>
+      <button type="button" class="tab-btn" data-target="paymentManagement" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">💳 حسابات وطرق الدفع (اليمن)</button>
+    </nav>
+
+    <!-- تبويب 1: الحجوزات الواردة وإشعارات الدفع -->
+    <section id="providerBookings" class="dashboard-card provider-tab-content">
+      <h2>الحجوزات الواردة وإشعارات الدفع</h2>
+      <p>راجع طلبات العملاء وطابق أرقام الحوالات والعمليات لتأكيد المواعيد.</p>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px;">
+        <div class="booking-filters" id="providerBookingFilters" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn-filter active" data-filter="all" style="padding:7px 12px;border:1px solid #123c32;background:#123c32;color:#fff;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">الكل</button>
+          <button type="button" class="btn-filter" data-filter="today" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#123c32;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">📌 مواعيد اليوم</button>
+          <button type="button" class="btn-filter" data-filter="pending" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#a33c36;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">⏳ بانتظار التأكيد والدفع</button>
+          <button type="button" class="btn-filter" data-filter="confirmed" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#28613f;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">✅ المؤكدة</button>
+          <button type="button" class="btn-filter" data-filter="completed" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#75817b;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">📜 المكتملة</button>
+        </div>
+
+        <button type="button" id="refreshProviderBookings" class="dashboard-button" style="margin:0;padding:7px 14px;font-size:13px;">↻ تحديث الحجوزات</button>
+      </div>
+
+      <p id="providerBookingsStatus" class="dashboard-status" role="status" aria-live="polite"></p>
+      <div id="providerBookingsList"></div>
+    </section>
+
+    <!-- تبويب 2: بيانات النشاط ورابط البايو -->
+    <div id="tabProfileSection" class="provider-tab-content" style="display:none;">
+      <div id="providerList"></div>
+
+      <!-- نموذج إضافة نشاط جديد -->
+      <form id="providerForm" class="dashboard-card">
+        <h2>إضافة نشاط جديد</h2>
 
       <label for="businessName">اسم النشاط</label>
       <input id="businessName" name="business_name"
@@ -729,8 +781,10 @@
           role="status" aria-live="polite"></p>
       </form>
     </section>
+    </div> <!-- نهاية تبويب بيانات النشاط ورابط البايو -->
 
-    <section id="serviceManagement" class="dashboard-card" hidden>
+    <!-- تبويب 3: إدارة خدمات النشاط -->
+    <section id="serviceManagement" class="dashboard-card provider-tab-content" style="display:none;">
       <h2>إدارة خدمات النشاط</h2>
       <p>اختر النشاط الذي تريد إدارة خدماته.</p>
 
@@ -812,37 +866,60 @@
           role="status" aria-live="polite"></p>
 
         <div id="galleryList" class="gallery-grid"></div>
-            </section>
-
-      <section id="availabilityManagement" hidden>
-        <h3>ساعات عمل النشاط</h3>
-        <p class="availability-intro">
-          فعّل أيام العمل، وأضف فترة أو أكثر لكل يوم. يمكنك مثلًا تحديد فترة صباحية وأخرى مسائية.
-        </p>
-
-        <div id="availabilityDays">
-          <p>جارٍ تجهيز أيام العمل...</p>
-        </div>
-
-        <button type="button" id="saveAvailabilityBtn"
-          class="dashboard-button">حفظ ساعات العمل</button>
-
-        <p id="availabilityStatus" class="dashboard-status"
-          role="status" aria-live="polite"></p>
       </section>
     </section>
 
-    <section id="providerBookings" class="dashboard-card" hidden>
-      <h2>الحجوزات الواردة</h2>
-      <p>راجع طلبات العملاء وأكّد المواعيد المناسبة أو ألغِ الطلبات التي لا يمكن قبولها.</p>
+    <!-- تبويب 4: ساعات وأيام عمل النشاط -->
+    <section id="availabilityManagement" class="dashboard-card provider-tab-content" style="display:none;">
+      <h2>ساعات وأيام عمل النشاط</h2>
+      <p class="availability-intro">
+        فعّل أيام العمل، وأضف فترة أو أكثر لكل يوم. يمكنك مثلًا تحديد فترة صباحية وأخرى مسائية.
+      </p>
 
-      <button type="button" id="refreshProviderBookings"
-        class="dashboard-button">تحديث الحجوزات</button>
+      <div id="availabilityDays">
+        <p>جارٍ تجهيز أيام العمل...</p>
+      </div>
 
-      <p id="providerBookingsStatus" class="dashboard-status"
+      <button type="button" id="saveAvailabilityBtn"
+        class="dashboard-button">حفظ ساعات العمل</button>
+
+      <p id="availabilityStatus" class="dashboard-status"
         role="status" aria-live="polite"></p>
+    </section>
 
-      <div id="providerBookingsList"></div>
+    <!-- تبويب 5: طرق وحسابات الدفع واستلام الحوالات (اليمن) -->
+    <section id="paymentManagement" class="dashboard-card provider-tab-content" style="display:none;">
+      <h2>💳 حسابات وطرق الدفع واستلام الحوالات (اليمن)</h2>
+      <p style="color:#666;font-size:13px;margin-bottom:18px;">
+        أدخل أرقام حساباتك ومحافظك التي يدفع إليها العملاء لتأكيد الحجز، وستظهر للعميل فور اختياره طريقة الدفع.
+      </p>
+
+      <form id="providerPaymentForm">
+        <label for="payKuraimi">حساب بنك الكريمي (حاسب / إيداع)</label>
+        <input type="text" id="payKuraimi" placeholder="مثال: رقم الحساب 1234567 - باسم عيادة د. فلان">
+
+        <label for="payJawali">محفظة جوالي (Jawali - كاك بنك)</label>
+        <input type="text" id="payJawali" placeholder="مثال: 777123456">
+
+        <label for="payOnecash">محفظة ون كاش (OneCash)</label>
+        <input type="text" id="payOnecash" placeholder="مثال: 733123456">
+
+        <label for="payFloosak">محفظة فلوسك (Floosak - بنك اليمن والكويت)</label>
+        <input type="text" id="payFloosak" placeholder="مثال: 711123456">
+
+        <label for="payTransfer">بيانات استلام الحوالات عبر الصرافين (النجم / العمقي / الامتياز)</label>
+        <textarea id="payTransfer" rows="2" placeholder="الاسم الرباعي للمستلم، رقم الهاتف، والمدينة"></textarea>
+
+        <div style="margin:16px 0;">
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:bold;">
+            <input type="checkbox" id="payCashEnabled" checked>
+            السماح للعملاء بخيار الدفع نقداً عند الحضور للنشاط
+          </label>
+        </div>
+
+        <button type="submit" id="savePaymentBtn" class="dashboard-button">حفظ بيانات الدفع</button>
+        <p id="paymentStatus" class="dashboard-status" role="status" aria-live="polite"></p>
+      </form>
     </section>
   </section>
 </main>

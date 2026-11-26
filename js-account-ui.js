@@ -534,6 +534,10 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.hidden = true;
     document.body.style.overflow = "";
     setStatus("");
+    if (window.location.search.includes("auth=required")) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
   }
 
   function switchMode(mode) {
@@ -654,6 +658,10 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.replace(returnPage);
         return true;
       }
+    }
+
+    if (window.location.search.includes("auth=required")) {
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     window.dispatchEvent(new Event("meead:auth-change"));

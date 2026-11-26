@@ -84,8 +84,30 @@ document.addEventListener("DOMContentLoaded", () => {
         <input id="meeadTime" name="start_time" type="time" required
           style="display:block;width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:9px">
         <label for="meeadNotes">ملاحظات (اختياري)</label>
-        <textarea id="meeadNotes" name="notes" maxlength="1000" rows="3"
-          style="display:block;width:100%;padding:12px;margin:7px 0 15px;border:1px solid #ddd;border-radius:9px;box-sizing:border-box"></textarea>
+        <textarea id="meeadNotes" name="notes" maxlength="1000" rows="2"
+          style="display:block;width:100%;padding:12px;margin:7px 0 12px;border:1px solid #ddd;border-radius:9px;box-sizing:border-box"></textarea>
+        
+        <!-- قسم وسيلة الدفع وتأكيد الحجز في اليمن -->
+        <div id="meeadPaymentSection" style="margin:14px 0;padding:14px;background:#fbfbf8;border:1px solid #d5ceba;border-radius:12px;">
+          <h4 style="margin:0 0 6px;color:#123c32;font-size:15px;display:flex;align-items:center;gap:6px;">
+            <span>💳</span> طريقة الدفع وتأكيد الحجز
+          </h4>
+          <p style="font-size:12px;color:#666;margin:0 0 10px;">لتأكيد حجزك، يُرجى اختيار وسيلة الدفع المناسبة وإدخال بيانات الإشعار:</p>
+          
+          <label for="meeadPaymentMethod" style="display:block;font-size:13px;font-weight:700;">وسيلة الدفع أو التحويل</label>
+          <select id="meeadPaymentMethod" name="payment_method" style="display:block;width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-radius:8px;font-size:13px;"></select>
+
+          <div id="meeadPaymentBox" style="background:#fff;border:1px dashed #d8bd7c;border-radius:8px;padding:10px;font-size:12px;line-height:1.7;color:#1b2b26;margin-bottom:10px;"></div>
+
+          <div id="meeadPaymentInputs">
+            <label for="meeadPaymentRef" style="display:block;font-size:13px;font-weight:700;">رقم العملية / رقم الحوالة</label>
+            <input id="meeadPaymentRef" type="text" placeholder="مثلاً: 83921045" style="display:block;width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;">
+
+            <label for="meeadSenderName" style="display:block;font-size:13px;font-weight:700;">اسم المحوّل (صاحب الحساب/الحوالة)</label>
+            <input id="meeadSenderName" type="text" placeholder="الاسم كما يظهر في إشعار التحويل" style="display:block;width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;">
+          </div>
+        </div>
+
         <p id="meeadBookingStatus" role="status" aria-live="polite"></p>
         <button type="submit" id="meeadSubmitBooking"
           style="width:100%;background:#173F35;color:white;border:0;border-radius:10px;padding:14px;font-weight:bold;cursor:pointer">
@@ -570,6 +592,53 @@ async function searchProviders(query) {
         serviceSelect.appendChild(option);
       });
 
+      // إعداد خيارات وحسابات الدفع في اليمن
+      const paySelect = modal.querySelector("#meeadPaymentMethod");
+      const payBox = modal.querySelector("#meeadPaymentBox");
+      const payInputs = modal.querySelector("#meeadPaymentInputs");
+      const pInfo = provider.payment_info || {};
+
+      if (paySelect && payBox && payInputs) {
+        paySelect.replaceChildren();
+        const payOptions = [];
+
+        if (pInfo.kuraimi) payOptions.push({ val: "kuraimi", text: "🏦 بنك الكريمي (حاسب / إيداع)", desc: `حساب الكريمي: <strong style="color:#123c32">${pInfo.kuraimi}</strong>` });
+        if (pInfo.jawali) payOptions.push({ val: "jawali", text: "📱 محفظة جوالي (Jawali)", desc: `رقم محفظة جوالي: <strong style="color:#123c32">${pInfo.jawali}</strong>` });
+        if (pInfo.onecash) payOptions.push({ val: "onecash", text: "📱 محفظة ون كاش (OneCash)", desc: `رقم محفظة ون كاش: <strong style="color:#123c32">${pInfo.onecash}</strong>` });
+        if (pInfo.floosak) payOptions.push({ val: "floosak", text: "📱 محفظة فلوسك (Floosak)", desc: `رقم محفظة فلوسك: <strong style="color:#123c32">${pInfo.floosak}</strong>` });
+        if (pInfo.transfer) payOptions.push({ val: "transfer", text: "🏢 حوالة صرافة (النجم / العمقي / الامتياز)", desc: `بيانات الحوالة: <strong style="color:#123c32">${pInfo.transfer}</strong>` });
+
+        if (payOptions.length === 0) {
+          payOptions.push(
+            { val: "kuraimi", text: "🏦 بنك الكريمي (حاسب)", desc: "حساب الكريمي: تواصل مع المنشأة برقم الهاتف أو واتساب لإرسال رقم الحساب." },
+            { val: "jawali", text: "📱 محفظة جوالي / ون كاش", desc: `رقم المحفظة للتواصل: <strong>${provider.phone || 'موضح في بيانات النشاط'}</strong>` },
+            { val: "transfer", text: "🏢 حوالة صرافة محلية", desc: `حوالة باسم: <strong>${provider.business_name}</strong> - ${provider.city || 'اليمن'}` }
+          );
+        }
+
+        if (pInfo.cash_enabled !== false) {
+          payOptions.push({ val: "cash", text: "💵 الدفع نقداً عند الحضور للنشاط", desc: "سيتم سداد قيمة الخدمة نقداً عند وصولك في موعدك المحدد." });
+        }
+
+        payOptions.forEach((opt) => {
+          const o = document.createElement("option");
+          o.value = opt.val;
+          o.textContent = opt.text;
+          paySelect.appendChild(o);
+        });
+
+        const updatePayDisplay = () => {
+          const selected = payOptions.find((o) => o.val === paySelect.value) || payOptions[0];
+          if (selected) {
+            payBox.innerHTML = selected.desc;
+            payInputs.style.display = selected.val === "cash" ? "none" : "block";
+          }
+        };
+
+        paySelect.onchange = updatePayDisplay;
+        updatePayDisplay();
+      }
+
       bookingForm.hidden = false;
     } catch (error) {
       detailsContent.replaceChildren(element(
@@ -603,6 +672,37 @@ async function searchProviders(query) {
     }
 
     const button = modal.querySelector("#meeadSubmitBooking");
+    const paySelect = modal.querySelector("#meeadPaymentMethod");
+    const payRefInput = modal.querySelector("#meeadPaymentRef");
+    const senderNameInput = modal.querySelector("#meeadSenderName");
+    const notesInput = modal.querySelector("#meeadNotes");
+
+    const paymentMethod = paySelect?.value || "cash";
+    const paymentRef = payRefInput?.value.trim() || "";
+    const senderName = senderNameInput?.value.trim() || "";
+    const userNotes = notesInput?.value.trim() || "";
+
+    if (paymentMethod !== "cash" && (!paymentRef || !senderName)) {
+      bookingStatus.textContent = "يرجى إدخال رقم العملية/الحوالة واسم المحول لتأكيد حجزك.";
+      return;
+    }
+
+    const payLabels = {
+      kuraimi: "بنك الكريمي",
+      jawali: "محفظة جوالي",
+      onecash: "محفظة ون كاش",
+      floosak: "محفظة فلوسك",
+      transfer: "حوالة صرافة",
+      cash: "نقداً عند الحضور"
+    };
+
+    const finalNotes = [
+      `[طريقة الدفع: ${payLabels[paymentMethod] || paymentMethod}]`,
+      paymentRef ? `[رقم العملية/الحوالة: ${paymentRef}]` : "",
+      senderName ? `[اسم المحوّل: ${senderName}]` : "",
+      userNotes ? `ملاحظات: ${userNotes}` : ""
+    ].filter(Boolean).join("\n");
+
     button.disabled = true;
     button.textContent = "جارٍ إرسال طلب الحجز...";
 
@@ -619,7 +719,7 @@ async function searchProviders(query) {
           service_id: Number(serviceSelect.value),
           appointment_date: appointmentDate,
           start_time: startTime,
-          customer_notes: modal.querySelector("#meeadNotes").value.trim()
+          customer_notes: finalNotes
         })
       });
 

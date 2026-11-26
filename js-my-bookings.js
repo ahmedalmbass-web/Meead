@@ -295,7 +295,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     }
 
-    if (booking.customer_notes) {
+    if (booking.customer_notes && booking.customer_notes.includes("[طريقة الدفع:")) {
+      const payCard = createElement("div", "", "booking-payment-summary");
+      payCard.style.cssText = "background:#fcfbf7;border:1px solid #d8bd7c;border-radius:10px;padding:12px;margin:12px 0;font-size:13px;";
+
+      const isPending = booking.status === "pending";
+      const payHeader = createElement("div", "", "payment-summary-header");
+      payHeader.style.cssText = "font-weight:bold;color:#123c32;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;";
+      payHeader.innerHTML = `<span>💳 بيانات وسداد الحجز</span><span style="font-size:12px;font-weight:bold;color:${isPending ? '#a33c36' : '#28613f'};">${isPending ? '⏳ بانتظار مراجعة وتأكيد الحوالة' : '✅ تم التحقق وتأكيد الحجز'}</span>`;
+
+      const payBody = createElement("div", booking.customer_notes, "payment-summary-body");
+      payBody.style.cssText = "white-space:pre-line;color:#333;line-height:1.6;";
+
+      payCard.append(payHeader, payBody);
+      card.appendChild(payCard);
+    } else if (booking.customer_notes) {
       const notes = createElement("div", "", "booking-customer-notes");
       notes.append(
         createElement("strong", "ملاحظاتك"),
@@ -502,21 +516,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   const passSubmitBtn = document.getElementById("passSubmitBtn");
 
   if (editProfileBtn && profileModal) {
-    editProfileBtn.addEventListener("click", () => {
+    function openProfile() {
       const u = auth.getUser();
       if (profName) profName.value = u?.name || "";
       if (profPhone) profPhone.value = u?.phone || "";
       if (profStatus) profStatus.textContent = "";
       if (passStatus) passStatus.textContent = "";
-      profileModal.hidden = false;
-    });
+      profileModal.style.display = "flex";
+      document.body.style.overflow = "hidden";
+    }
 
-    closeProfileModal?.addEventListener("click", () => {
-      profileModal.hidden = true;
-    });
+    function closeProfile() {
+      profileModal.style.display = "none";
+      document.body.style.overflow = "";
+    }
 
+    editProfileBtn.addEventListener("click", openProfile);
+    closeProfileModal?.addEventListener("click", closeProfile);
     profileModal.addEventListener("click", (e) => {
-      if (e.target === profileModal) profileModal.hidden = true;
+      if (e.target === profileModal) closeProfile();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && profileModal.style.display === "flex") {
+        closeProfile();
+      }
     });
 
     updateProfileForm?.addEventListener("submit", async (e) => {
