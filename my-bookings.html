@@ -43,12 +43,13 @@
         <p>كل مواعيدك في مكان واحد، تابع حالة حجزك وشاركنا رأيك بعد انتهاء موعدك.</p>
       </div>
 
-      <div class="bookings-account-card" id="bookingsAccountInfo">
+      <div class="bookings-account-card" id="bookingsAccountInfo" style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;">
         <div class="bookings-account-icon" aria-hidden="true">✦</div>
         <div>
           <strong id="bookingsCustomerName">حجوزاتك في ميعاد</strong>
           <p>يمكنك متابعة مواعيدك وتفاصيل كل حجز من هنا.</p>
         </div>
+        <button type="button" id="editProfileBtn" class="btn" style="background:#fff;border:1px solid #d5ceba;color:#123c32;margin-inline-start:auto;font-size:13px;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:700;">⚙️ إعدادات الحساب</button>
       </div>
 
       <div class="customer-bookings-toolbar">
@@ -82,6 +83,40 @@
       <p>موعدك يبدأ من هنا.</p>
     </div>
   </footer>
+
+  <!-- نافذة تعديل بيانات الحساب وكلمة المرور -->
+  <div id="profileModal" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:18px;max-width:480px;width:100%;padding:24px;box-sizing:border-box;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:1px solid #e9e8df;padding-bottom:12px;">
+        <h3 style="margin:0;color:#123c32;font-size:19px;">إعدادات الحساب الشخصي</h3>
+        <button type="button" id="closeProfileModal" style="background:#eee;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:bold;">✕</button>
+      </div>
+
+      <form id="updateProfileForm" style="margin-bottom:24px;">
+        <h4 style="margin:0 0 10px;color:#123c32;font-size:15px;">البيانات الأساسية</h4>
+        <label for="profName" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">الاسم</label>
+        <input type="text" id="profName" required style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+
+        <label for="profPhone" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">رقم الهاتف (يمني: يبدأ بـ 7 و9 أرقام)</label>
+        <input type="tel" id="profPhone" required pattern="^7[0-9]{8}$" dir="ltr" style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;text-align:right;">
+
+        <p id="profStatus" style="font-size:13px;margin:6px 0;"></p>
+        <button type="submit" id="profSubmitBtn" style="width:100%;background:#123c32;color:#fff;border:none;border-radius:8px;padding:11px;font-weight:bold;cursor:pointer;">حفظ البيانات</button>
+      </form>
+
+      <form id="changePasswordForm" style="border-top:1px solid #e9e8df;padding-top:18px;">
+        <h4 style="margin:0 0 10px;color:#123c32;font-size:15px;">تغيير كلمة المرور</h4>
+        <label for="curPass" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">كلمة المرور الحالية</label>
+        <input type="password" id="curPass" required style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+
+        <label for="newPass" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">كلمة المرور الجديدة (8 أحرف فأكثر)</label>
+        <input type="password" id="newPass" required minlength="8" style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+
+        <p id="passStatus" style="font-size:13px;margin:6px 0;"></p>
+        <button type="submit" id="passSubmitBtn" style="width:100%;background:#d8bd7c;color:#1b2b26;border:none;border-radius:8px;padding:11px;font-weight:bold;cursor:pointer;">تحديث كلمة المرور</button>
+      </form>
+    </div>
+  </div>
 
   <script src="js/auth.js" defer></script>
   <script src="js/my-bookings.js" defer></script>

@@ -238,7 +238,10 @@
             <h2 class="section-title">إدارة المستخدمين</h2>
       <div class="card">
         <p>عرض حسابات المستخدمين المسجلة في منصة ميعاد.</p>
-        <button id="loadUsersBtn" type="button">عرض المستخدمين</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+          <button id="loadUsersBtn" type="button">عرض المستخدمين</button>
+          <input type="text" id="filterUsersInput" placeholder="🔍 فلترة المستخدمين بالاسم، البريد، أو الهاتف..." style="padding:9px 12px;border:1px solid #d5ceba;border-radius:8px;font-size:13px;width:100%;max-width:340px;display:none;">
+        </div>
         <p id="usersMessage" role="status" aria-live="polite"></p>
         <div id="usersList"></div>
       </div>
@@ -272,7 +275,10 @@
       <h2 class="section-title">إدارة الأنشطة التجارية</h2>
       <div class="card">
         <p>عرض الأنشطة التجارية المسجلة في منصة ميعاد.</p>
-        <button id="loadProvidersBtn" type="button">عرض الأنشطة التجارية</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+          <button id="loadProvidersBtn" type="button">عرض الأنشطة التجارية</button>
+          <input type="text" id="filterProvidersInput" placeholder="🔍 فلترة الأنشطة بالاسم، المدينة، أو التصنيف..." style="padding:9px 12px;border:1px solid #d5ceba;border-radius:8px;font-size:13px;width:100%;max-width:340px;display:none;">
+        </div>
         <p id="providersMessage" role="status" aria-live="polite"></p>
         <div id="providersList"></div>
       </div>
@@ -281,7 +287,10 @@
       <h2 class="section-title">إدارة الحجوزات</h2>
       <div class="card">
         <p>عرض حجوزات العملاء ومواعيدهم وحالة كل حجز.</p>
-        <button id="loadBookingsBtn" type="button">عرض الحجوزات</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+          <button id="loadBookingsBtn" type="button">عرض الحجوزات</button>
+          <input type="text" id="filterBookingsInput" placeholder="🔍 فلترة الحجوزات بالعميل، النشاط، أو التاريخ..." style="padding:9px 12px;border:1px solid #d5ceba;border-radius:8px;font-size:13px;width:100%;max-width:340px;display:none;">
+        </div>
         <p id="bookingsMessage" role="status" aria-live="polite"></p>
         <div id="bookingsList"></div>
       </div>
@@ -627,6 +636,18 @@ if (!response.ok) {
         usersList.appendChild(table);
         usersMessage.textContent =
           `تم تحميل ${data.users.length} حسابًا (الحد الأقصى 200).`;
+
+        const filterUsersInput = document.getElementById("filterUsersInput");
+        if (filterUsersInput) {
+          filterUsersInput.style.display = "inline-block";
+          filterUsersInput.value = "";
+          filterUsersInput.oninput = () => {
+            const q = filterUsersInput.value.trim().toLowerCase();
+            tbody.querySelectorAll("tr").forEach(tr => {
+              tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+            });
+          };
+        }
       } catch (error) {
         usersMessage.textContent =
           error.message || "حدث خطأ أثناء تحميل المستخدمين.";
@@ -734,6 +755,18 @@ if (!response.ok) {
         providersList.appendChild(table);
         providersMessage.textContent =
           `تم تحميل ${data.providers.length} نشاطًا تجاريًا (الحد الأقصى 200).`;
+
+        const filterProvidersInput = document.getElementById("filterProvidersInput");
+        if (filterProvidersInput) {
+          filterProvidersInput.style.display = "inline-block";
+          filterProvidersInput.value = "";
+          filterProvidersInput.oninput = () => {
+            const q = filterProvidersInput.value.trim().toLowerCase();
+            tbody.querySelectorAll("tr").forEach(tr => {
+              tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+            });
+          };
+        }
       } catch (error) {
         providersMessage.textContent =
           error.message || "حدث خطأ أثناء تحميل الأنشطة التجارية.";
@@ -864,6 +897,18 @@ if (!response.ok) {
 
         bookingsMessage.textContent =
           `تم تحميل ${data.bookings.length} حجزًا (الحد الأقصى 200).`;
+
+        const filterBookingsInput = document.getElementById("filterBookingsInput");
+        if (filterBookingsInput) {
+          filterBookingsInput.style.display = "inline-block";
+          filterBookingsInput.value = "";
+          filterBookingsInput.oninput = () => {
+            const q = filterBookingsInput.value.trim().toLowerCase();
+            tbody.querySelectorAll("tr").forEach(tr => {
+              tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+            });
+          };
+        }
       } catch (error) {
         bookingsMessage.textContent =
           error.message || "حدث خطأ أثناء تحميل الحجوزات.";
