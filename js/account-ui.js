@@ -84,8 +84,108 @@ document.addEventListener("DOMContentLoaded", () => {
     panel.insertBefore(verifyForm, status || null);
   }
 
-  verifyInput.addEventListener("input", () => {
-    verifyInput.value = verifyInput.value.replace(/\D/g, "").slice(0, 6);
+  // ───────── شاشات استعادة كلمة المرور (طلب الكود + تعيين كلمة المرور) ─────────
+  let pendingResetEmail = "";
+
+  const forgotForm = document.createElement("form");
+  forgotForm.id = "forgotForm";
+  forgotForm.hidden = true;
+
+  const forgotLabel = document.createElement("label");
+  forgotLabel.htmlFor = "forgotEmail";
+  forgotLabel.textContent = "البريد الإلكتروني المسجل";
+
+  const forgotInput = document.createElement("input");
+  forgotInput.id = "forgotEmail";
+  forgotInput.type = "email";
+  forgotInput.autocomplete = "email";
+  forgotInput.required = true;
+  forgotInput.placeholder = "name@example.com";
+
+  const forgotSubmit = document.createElement("button");
+  forgotSubmit.type = "submit";
+  forgotSubmit.textContent = "إرسال رمز الاستعادة";
+
+  const backFromForgot = document.createElement("button");
+  backFromForgot.type = "button";
+  backFromForgot.className = "btn-auth-back";
+  backFromForgot.innerHTML = "<span>←</span> <span>العودة لتسجيل الدخول</span>";
+
+  forgotForm.append(forgotLabel, forgotInput, forgotSubmit, backFromForgot);
+
+  const resetPasswordForm = document.createElement("form");
+  resetPasswordForm.id = "resetPasswordForm";
+  resetPasswordForm.hidden = true;
+
+  const resetCodeLabel = document.createElement("label");
+  resetCodeLabel.htmlFor = "resetCodeInput";
+  resetCodeLabel.textContent = "كود الاستعادة (6 أرقام)";
+
+  const resetCodeInput = document.createElement("input");
+  resetCodeInput.id = "resetCodeInput";
+  resetCodeInput.type = "text";
+  resetCodeInput.inputMode = "numeric";
+  resetCodeInput.maxLength = 6;
+  resetCodeInput.pattern = "[0-9]{6}";
+  resetCodeInput.required = true;
+  resetCodeInput.dir = "ltr";
+  resetCodeInput.style.textAlign = "center";
+  resetCodeInput.style.letterSpacing = "6px";
+  resetCodeInput.style.fontSize = "20px";
+
+  const resetPassLabel = document.createElement("label");
+  resetPassLabel.htmlFor = "resetNewPass";
+  resetPassLabel.textContent = "كلمة المرور الجديدة";
+
+  const resetPassInput = document.createElement("input");
+  resetPassInput.id = "resetNewPass";
+  resetPassInput.type = "password";
+  resetPassInput.required = true;
+  resetPassInput.minLength = 8;
+  resetPassInput.autocomplete = "new-password";
+
+  const resetSubmit = document.createElement("button");
+  resetSubmit.type = "submit";
+  resetSubmit.textContent = "حفظ كلمة المرور الجديدة";
+
+  const backFromReset = document.createElement("button");
+  backFromReset.type = "button";
+  backFromReset.className = "btn-auth-back";
+  backFromReset.innerHTML = "<span>←</span> <span>العودة لتسجيل الدخول</span>";
+
+  resetPasswordForm.append(resetCodeLabel, resetCodeInput, resetPassLabel, resetPassInput, resetSubmit, backFromReset);
+
+  if (panel) {
+    panel.insertBefore(forgotForm, status || null);
+    panel.insertBefore(resetPasswordForm, status || null);
+  }
+
+  // إضافة / ربط رابط "نسيت كلمة المرور؟" أسفل حقل كلمة المرور مباشرة
+  let forgotBtn = document.getElementById("forgotPasswordBtn");
+  if (!forgotBtn) {
+    const wrap = document.createElement("div");
+    wrap.className = "forgot-pass-container";
+    forgotBtn = document.createElement("button");
+    forgotBtn.type = "button";
+    forgotBtn.id = "forgotPasswordBtn";
+    forgotBtn.className = "forgot-password-link";
+    forgotBtn.textContent = "نسيت كلمة المرور؟";
+    wrap.appendChild(forgotBtn);
+
+    if (loginForm) {
+      const loginSubmitBtn = loginForm.querySelector("button[type='submit']");
+      if (loginSubmitBtn) {
+        loginForm.insertBefore(wrap, loginSubmitBtn);
+      } else {
+        loginForm.appendChild(wrap);
+      }
+    }
+  } else {
+    forgotBtn.className = "forgot-password-link";
+  }
+
+  resetCodeInput.addEventListener("input", () => {
+    resetCodeInput.value = resetCodeInput.value.replace(/\D/g, "").slice(0, 6);
   });
 
   function stopCooldown() {
@@ -422,8 +522,11 @@ document.addEventListener("DOMContentLoaded", () => {
       : "";
   }
 
-  function setStatus(text) {
-    if (status) status.textContent = text;
+  function setStatus(text, type = "") {
+    if (status) {
+      status.textContent = text;
+      status.className = type;
+    }
   }
 
   function openModal(mode = "login") {
@@ -443,6 +546,10 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.hidden = true;
     document.body.style.overflow = "";
     setStatus("");
+    if (window.location.search.includes("auth=required")) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
   }
 
   function switchMode(mode) {
@@ -451,21 +558,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const registering = mode === "register";
     const verifying = mode === "verify";
     const profiling = mode === "profile";
+    const forgotting = mode === "forgot";
+    const resetting = mode === "reset";
 
-    if (loginForm) loginForm.hidden = registering || verifying || profiling;
+    if (loginForm) loginForm.hidden = registering || verifying || profiling || forgotting || resetting;
     if (registerForm) registerForm.hidden = !registering;
     verifyForm.hidden = !verifying;
     profileForm.hidden = !profiling;
-    if (tabs) tabs.style.display = verifying || profiling ? "none" : "";
+    forgotForm.hidden = !forgotting;
+    resetPasswordForm.hidden = !resetting;
+
+    if (tabs) tabs.style.display = verifying || profiling || forgotting || resetting ? "none" : "";
 
     if (title) {
       title.textContent = verifying
         ? "تأكيد البريد الإلكتروني"
         : profiling
           ? "إكمال إنشاء الحساب"
-          : registering
-            ? "إنشاء حساب جديد"
-            : "مرحبًا بك في ميعاد";
+          : forgotting
+            ? "استعادة كلمة المرور"
+            : resetting
+              ? "تعيين كلمة المرور الجديدة"
+              : registering
+                ? "إنشاء حساب جديد"
+                : "مرحبًا بك في ميعاد";
     }
 
     if (message) {
@@ -473,9 +589,13 @@ document.addEventListener("DOMContentLoaded", () => {
         ? "أدخل الكود الذي وصلك على بريدك لتفعيل الحساب."
         : profiling
           ? "بقيت خطوة واحدة."
-          : registering
-            ? "أنشئ حسابك للبدء في استخدام المنصة."
-            : "سجّل دخولك للمتابعة.";
+          : forgotting
+            ? "أدخل بريدك الإلكتروني المسجل لنرسل لك رمز الاستعادة."
+            : resetting
+              ? "أدخل الرمز المكون من 6 أرقام مع كلمة المرور الجديدة."
+              : registering
+                ? "أنشئ حسابك للبدء في استخدام المنصة."
+                : "سجّل دخولك للمتابعة.";
     }
 
     applySocialVisibility();
@@ -552,6 +672,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    if (window.location.search.includes("auth=required")) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     window.dispatchEvent(new Event("meead:auth-change"));
     return false;
   }
@@ -597,6 +721,77 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     switchMode("register");
+  });
+
+  // أحداث استعادة كلمة المرور
+  forgotBtn.addEventListener("click", () => {
+    switchMode("forgot");
+    forgotInput.value = document.getElementById("loginEmail")?.value || "";
+    forgotInput.focus();
+  });
+
+  backFromForgot.addEventListener("click", () => {
+    switchMode("login");
+  });
+
+  backFromReset.addEventListener("click", () => {
+    switchMode("login");
+  });
+
+  forgotForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const email = forgotInput.value.trim();
+    if (!email) return;
+
+    forgotSubmit.disabled = true;
+    forgotSubmit.textContent = "جارٍ إرسال الرمز...";
+    setStatus("");
+
+    try {
+      const res = await auth.forgotPassword(email);
+      pendingResetEmail = email;
+      switchMode("reset");
+      setStatus(res.message || "أرسلنا رمز الاستعادة إلى بريدك.", "success");
+      resetCodeInput.focus();
+    } catch (err) {
+      setStatus(err.message || "تعذر إرسال الرمز.");
+    } finally {
+      forgotSubmit.disabled = false;
+      forgotSubmit.textContent = "إرسال رمز الاستعادة";
+    }
+  });
+
+  resetPasswordForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const code = resetCodeInput.value.trim();
+    const newPassword = resetPassInput.value;
+
+    if (!pendingResetEmail) {
+      setStatus("يرجى إدخال بريدك الإلكتروني أولاً.");
+      switchMode("forgot");
+      return;
+    }
+
+    resetSubmit.disabled = true;
+    resetSubmit.textContent = "جارٍ حفظ كلمة المرور...";
+    setStatus("");
+
+    try {
+      const res = await auth.resetPassword(pendingResetEmail, code, newPassword);
+      const emailForLogin = pendingResetEmail;
+      switchMode("login");
+      const loginEmailInput = document.getElementById("loginEmail");
+      if (loginEmailInput) loginEmailInput.value = emailForLogin;
+      setStatus(res.message || "تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.", "success");
+      resetPasswordForm.reset();
+      pendingResetEmail = "";
+      document.getElementById("loginPassword")?.focus();
+    } catch (err) {
+      setStatus(err.message || "تعذر إعادة تعيين كلمة المرور.");
+    } finally {
+      resetSubmit.disabled = false;
+      resetSubmit.textContent = "حفظ كلمة المرور الجديدة";
+    }
   });
 
   closeBtn?.addEventListener("click", closeModal);

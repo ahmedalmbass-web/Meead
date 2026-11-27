@@ -295,13 +295,93 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     }
 
-    if (booking.customer_notes) {
+    if (booking.customer_notes && booking.customer_notes.includes("[طريقة الدفع:")) {
+      const payCard = createElement("div", "", "booking-payment-summary");
+      payCard.style.cssText = "background:#fcfbf7;border:1px solid #d8bd7c;border-radius:10px;padding:12px;margin:12px 0;font-size:13px;";
+
+      const isPending = booking.status === "pending";
+      const payHeader = createElement("div", "", "payment-summary-header");
+      payHeader.style.cssText = "font-weight:bold;color:#123c32;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;";
+      payHeader.innerHTML = `<span>💳 بيانات وسداد الحجز</span><span style="font-size:12px;font-weight:bold;color:${isPending ? '#a33c36' : '#28613f'};">${isPending ? '⏳ بانتظار مراجعة وتأكيد الحوالة' : '✅ تم التحقق وتأكيد الحجز'}</span>`;
+
+      const payBody = createElement("div", booking.customer_notes, "payment-summary-body");
+      payBody.style.cssText = "white-space:pre-line;color:#333;line-height:1.6;";
+
+      payCard.append(payHeader, payBody);
+      card.appendChild(payCard);
+    } else if (booking.customer_notes) {
       const notes = createElement("div", "", "booking-customer-notes");
       notes.append(
         createElement("strong", "ملاحظاتك"),
         createElement("p", booking.customer_notes)
       );
       card.appendChild(notes);
+    }
+
+    // شريط الإجراءات: التواصل مع النشاط + زر إلغاء الموعد
+    const actionsRow = createElement("div", "", "booking-card-actions");
+    actionsRow.style.cssText = "display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #e9e8df;align-items:center;";
+
+    if (booking.provider_phone) {
+      const cleanPhone = String(booking.provider_phone).replace(/\D/g, "");
+      const waLink = document.createElement("a");
+      waLink.href = `https://wa.me/967${cleanPhone}?text=${encodeURIComponent(`مرحباً ${booking.business_name}، أنا العميل بخصوص موعدي المحجوز بتاريخ ${booking.appointment_date} (${booking.service_name}).`)}`;
+      waLink.target = "_blank";
+      waLink.rel = "noopener noreferrer";
+      waLink.style.cssText = "background:#25d366;color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:transform .2s,box-shadow .2s;box-shadow:0 3px 10px rgba(37,211,102,.2);";
+      waLink.innerHTML = "<span>💬</span> مراسلة واتساب";
+      actionsRow.appendChild(waLink);
+
+      const callLink = document.createElement("a");
+      callLink.href = `tel:${booking.provider_phone}`;
+      callLink.style.cssText = "background:#f0eee4;color:#123c32;border:1px solid #d5ceba;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:transform .2s,border-color .2s;";
+      callLink.innerHTML = "<span>📞</span> اتصال";
+      actionsRow.appendChild(callLink);
+    }
+
+    // زر إلغاء الموعد للعميل للحجوزات المعلقة أو المؤكدة
+    if (["pending", "confirmed"].includes(booking.status)) {
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "btn-cancel-booking";
+      cancelBtn.textContent = "إلغاء الموعد";
+
+      cancelBtn.addEventListener("click", async () => {
+        if (!confirm(`هل أنت متأكد من رغبتك في إلغاء موعدك لدى "${booking.business_name}"؟`)) {
+          return;
+        }
+
+        cancelBtn.disabled = true;
+        cancelBtn.textContent = "جارٍ الإلغاء...";
+
+        try {
+          const res = await fetch(`${API.bookings}?action=cancel`, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${auth.getToken()}`
+            },
+            body: JSON.stringify({ booking_id: booking.id })
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "تعذر إلغاء الموعد.");
+
+          alert("تم إلغاء الموعد بنجاح.");
+          await loadBookings();
+        } catch (err) {
+          alert(err.message || "حدث خطأ أثناء محاولة إلغاء الموعد.");
+          cancelBtn.disabled = false;
+          cancelBtn.textContent = "إلغاء الموعد";
+        }
+      });
+
+      actionsRow.appendChild(cancelBtn);
+    }
+
+    if (actionsRow.children.length > 0) {
+      card.appendChild(actionsRow);
     }
 
     if (booking.status === "completed") {
@@ -418,6 +498,139 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     loadBookings();
   });
+
+  // ── إدارة نافذة إعدادات الملف الشخصي ──
+  const editProfileBtn = document.getElementById("editProfileBtn");
+  const profileModal = document.getElementById("profileModal");
+  const closeProfileModal = document.getElementById("closeProfileModal");
+  const updateProfileForm = document.getElementById("updateProfileForm");
+  const changePasswordForm = document.getElementById("changePasswordForm");
+  const profName = document.getElementById("profName");
+  const profPhone = document.getElementById("profPhone");
+  const profStatus = document.getElementById("profStatus");
+  const profSubmitBtn = document.getElementById("profSubmitBtn");
+  const curPass = document.getElementById("curPass");
+  const newPass = document.getElementById("newPass");
+  const passStatus = document.getElementById("passStatus");
+  const passSubmitBtn = document.getElementById("passSubmitBtn");
+
+  if (editProfileBtn && profileModal) {
+    function openProfile() {
+      const u = auth.getUser();
+      if (profName) profName.value = u?.name || "";
+      if (profPhone) profPhone.value = u?.phone || "";
+      if (profStatus) {
+        profStatus.textContent = "";
+        profStatus.className = "profile-status-msg";
+        profStatus.hidden = true;
+      }
+      if (passStatus) {
+        passStatus.textContent = "";
+        passStatus.className = "profile-status-msg";
+        passStatus.hidden = true;
+      }
+      if (curPass) curPass.value = "";
+      if (newPass) newPass.value = "";
+
+      profileModal.style.display = "flex";
+      document.body.style.overflow = "hidden";
+
+      // تحديث البيانات من الخادم في الخلفية لضمان الدقة
+      if (typeof auth.refreshUser === "function") {
+        auth.refreshUser().then((fresh) => {
+          if (fresh && profileModal.style.display === "flex") {
+            if (profName && document.activeElement !== profName) {
+              profName.value = fresh.name || "";
+            }
+            if (profPhone && document.activeElement !== profPhone) {
+              profPhone.value = fresh.phone || "";
+            }
+          }
+        }).catch(() => {});
+      }
+    }
+
+    function closeProfile() {
+      profileModal.style.display = "none";
+      document.body.style.overflow = "";
+      if (profStatus) {
+        profStatus.textContent = "";
+        profStatus.hidden = true;
+      }
+      if (passStatus) {
+        passStatus.textContent = "";
+        passStatus.hidden = true;
+      }
+    }
+
+    editProfileBtn.addEventListener("click", openProfile);
+    closeProfileModal?.addEventListener("click", closeProfile);
+
+    // ربط كافة أزرار الإلغاء
+    profileModal.querySelectorAll(".cancel-profile-btn").forEach((cancelBtn) => {
+      cancelBtn.addEventListener("click", closeProfile);
+    });
+
+    profileModal.addEventListener("click", (e) => {
+      if (e.target === profileModal) closeProfile();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && profileModal.style.display === "flex") {
+        closeProfile();
+      }
+    });
+
+    updateProfileForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = profName.value.trim();
+      const phone = profPhone.value.trim();
+      profSubmitBtn.disabled = true;
+      profSubmitBtn.textContent = "جارٍ الحفظ...";
+      profStatus.textContent = "";
+      profStatus.hidden = true;
+
+      try {
+        await auth.updateProfile(name, phone);
+        profStatus.className = "profile-status-msg success";
+        profStatus.textContent = "تم تحديث البيانات بنجاح!";
+        profStatus.hidden = false;
+        if (customerName) customerName.textContent = getCustomerName();
+      } catch (err) {
+        profStatus.className = "profile-status-msg error";
+        profStatus.textContent = err.message || "تعذر حفظ البيانات.";
+        profStatus.hidden = false;
+      } finally {
+        profSubmitBtn.disabled = false;
+        profSubmitBtn.textContent = "حفظ البيانات";
+      }
+    });
+
+    changePasswordForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const currentPassword = curPass.value;
+      const newPassword = newPass.value;
+      passSubmitBtn.disabled = true;
+      passSubmitBtn.textContent = "جارٍ التحديث...";
+      passStatus.textContent = "";
+      passStatus.hidden = true;
+
+      try {
+        const res = await auth.changePassword(currentPassword, newPassword);
+        passStatus.className = "profile-status-msg success";
+        passStatus.textContent = res.message || "تم تغيير كلمة المرور بنجاح!";
+        passStatus.hidden = false;
+        changePasswordForm.reset();
+      } catch (err) {
+        passStatus.className = "profile-status-msg error";
+        passStatus.textContent = err.message || "تعذر تغيير كلمة المرور.";
+        passStatus.hidden = false;
+      } finally {
+        passSubmitBtn.disabled = false;
+        passSubmitBtn.textContent = "تحديث كلمة المرور";
+      }
+    });
+  }
 
   await loadBookings();
 });

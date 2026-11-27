@@ -185,6 +185,34 @@ document.addEventListener("DOMContentLoaded", () => {
       return data.user;
     },
 
+    async forgotPassword(email) {
+      return requestAuth("forgot-password", { email });
+    },
+
+    async resetPassword(email, code, new_password) {
+      return requestAuth("reset-password", {
+        email,
+        code,
+        new_password
+      });
+    },
+
+    async updateProfile(name, phone) {
+      const data = await requestAuth("update-profile", { name, phone });
+      if (data.user) {
+        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+        window.dispatchEvent(new Event("meead:auth-change"));
+      }
+      return data;
+    },
+
+    async changePassword(current_password, new_password) {
+      return requestAuth("change-password", {
+        current_password,
+        new_password
+      });
+    },
+
     async refreshUser() {
       if (!localStorage.getItem(TOKEN_KEY)) {
         clearSession();
