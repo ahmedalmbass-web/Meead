@@ -57,4 +57,54 @@ async function sendVerificationEmail(to, code) {
   }
 }
 
-module.exports = { sendVerificationEmail };
+async function sendPasswordResetEmail(to, code) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM;
+
+  if (!apiKey || !from) {
+    if (process.env.EMAIL_DEV_MODE === "true") {
+      console.log(`[DEV ONLY] Password reset code for ${to}: ${code}`);
+      return;
+    }
+
+    throw new Error("Email service is not configured");
+  }
+
+  const subject = "رمز استعادة كلمة المرور في ميعاد";
+
+  const text =
+    `رمز استعادة كلمة المرور الخاص بك في ميعاد: ${code}\n` +
+    "صالح لمدة 15 دقيقة. إذا لم تطلب استعادة كلمة المرور فتجاهل هذه الرسالة.";
+
+  const html = `
+    <div dir="rtl" style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:20px;color:#1b2b26">
+      <h2 style="color:#123c32;margin:0 0 12px">ميعاد</h2>
+      <p>طلب استعادة كلمة المرور لحسابك في منصة ميعاد:</p>
+      <p style="font-size:32px;font-weight:bold;letter-spacing:8px;background:#f7f6f0;border-radius:10px;padding:14px;text-align:center;margin:16px 0;color:#123c32">${code}</p>
+      <p style="color:#75817b;font-size:13px">الرمز صالح لمدة 15 دقيقة. لا تشارك هذا الرمز مع أي شخص.</p>
+    </div>`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from, to: [to], subject, html, text }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new Error(`Email provider error ${response.status}: ${detail.slice(0, 200)}`);
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail };
