@@ -81,6 +81,9 @@ exports.handler = async (event) => {
 
     const db = getDb();
 
+    // التأكد من وجود عمود payment_info تلقائياً
+    await db.execute("ALTER TABLE providers ADD COLUMN payment_info TEXT;").catch(() => {});
+
     const account = await db.execute({
       sql: "SELECT id, role FROM users WHERE id = ? LIMIT 1",
       args: [userId],
@@ -97,7 +100,7 @@ exports.handler = async (event) => {
     if (event.httpMethod === "GET") {
       const result = await db.execute({
         sql: `SELECT id, business_name, category, city, address,
-                     description, phone, image_url, is_published
+                     description, phone, image_url, is_published, payment_info
               FROM providers
               WHERE owner_user_id = ?
               ORDER BY id DESC`,
@@ -122,8 +125,8 @@ exports.handler = async (event) => {
       return response(400, { message: "بيانات الطلب غير صالحة" });
     }
 
-    // التحقق من معرّف النشاط عند التعديل أو النشر
-    if (body.action === "update" || body.action === "publish") {
+    // التحقق من معرّف النشاط عند التعديل أو النشر أو حفظ بيانات الدفع
+    if (body.action === "update" || body.action === "publish" || body.action === "save-payment-info") {
       const providerId = Number(body.provider_id);
 
       if (!Number.isSafeInteger(providerId) || providerId < 1) {
@@ -143,6 +146,20 @@ exports.handler = async (event) => {
       if (!provider) {
         return response(404, {
           message: "النشاط غير موجود أو لا تملكه",
+        });
+      }
+
+      // حفظ بيانات وطرق الدفع المحلية (اليمن)
+      if (body.action === "save-payment-info") {
+        const paymentInfoStr = JSON.stringify(body.payment_info || {});
+        await db.execute({
+          sql: "UPDATE providers SET payment_info = ? WHERE id = ? AND owner_user_id = ?",
+          args: [paymentInfoStr, providerId, Number(user.id)],
+        });
+
+        return response(200, {
+          message: "تم حفظ بيانات وحسابات الدفع بنجاح",
+          payment_info: body.payment_info,
         });
       }
 

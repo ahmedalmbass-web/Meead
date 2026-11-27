@@ -93,6 +93,12 @@ exports.handler = async (event) => {
     const conditions = ["p.is_published = 1"];
     const args = [];
 
+    const providerId = params.id ? Number(params.id) : null;
+    if (providerId && Number.isSafeInteger(providerId)) {
+      conditions.push("p.id = ?");
+      args.push(providerId);
+    }
+
     if (q) {
       conditions.push(`(
         p.business_name LIKE ? OR
@@ -141,6 +147,7 @@ exports.handler = async (event) => {
     }
 
     const db = getDb();
+    await db.execute("ALTER TABLE providers ADD COLUMN payment_info TEXT;").catch(() => {});
 
     const result = await db.execute({
       sql: `
@@ -178,6 +185,7 @@ exports.handler = async (event) => {
           p.phone,
           p.image_url,
           p.created_at,
+          p.payment_info,
           COALESCE(sd.services, '') AS services,
           COALESCE(rd.average_rating, 0) AS average_rating,
           COALESCE(rd.review_count, 0) AS review_count,
@@ -204,6 +212,7 @@ exports.handler = async (event) => {
       image_url: row.image_url,
       services: row.services || "",
       created_at: row.created_at,
+      payment_info: (() => { try { return row.payment_info ? JSON.parse(row.payment_info) : null; } catch { return null; } })(),
       average_rating: Number(row.average_rating || 0),
       review_count: Number(row.review_count || 0),
       booking_count: Number(row.booking_count || 0),

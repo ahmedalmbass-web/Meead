@@ -12,7 +12,7 @@ const {
   verifySignupToken,
 } = require("../lib/auth");
 const { SocialError, verifyIdToken } = require("../lib/social");
-const { sendVerificationEmail } = require("../lib/email");
+const { sendVerificationEmail, sendPasswordResetEmail } = require("../lib/email");
 const { clientKey, rateLimit, clearLimit } = require("../lib/rate-limit");
 
 const headers = {
@@ -161,6 +161,29 @@ async function issueCode(db, userId) {
       },
       {
         sql: `INSERT INTO email_verifications (user_id, code_hash, expires_at)
+              VALUES (?, ?, ?)`,
+        args: [userId, codeHash(userId, code), expiresAt],
+      },
+    ],
+    "write"
+  );
+
+  return code;
+}
+
+// ينشئ كود استعادة كلمة المرور (صالح 15 دقيقة)
+async function issueResetCode(db, userId) {
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+  const expiresAt = Math.floor(Date.now() / 1000) + 900;
+
+  await db.batch(
+    [
+      {
+        sql: "DELETE FROM password_resets WHERE user_id = ?",
+        args: [userId],
+      },
+      {
+        sql: `INSERT INTO password_resets (user_id, code_hash, expires_at)
               VALUES (?, ?, ?)`,
         args: [userId, codeHash(userId, code), expiresAt],
       },
@@ -730,6 +753,222 @@ exports.handler = async (event) => {
       }
 
       return response(200, { user: publicUser(row) });
+    }
+
+    // ───────── طلب استعادة كلمة المرور (إرسال كود) ─────────
+    if (event.httpMethod === "POST" && action === "forgot-password") {
+      const parsed = parseBody(event);
+      if (parsed.error) return parsed.error;
+
+      const email = String(parsed.body.email || "").trim().toLowerCase();
+
+      const generic = () =>
+        response(200, {
+          message: "إذا كان هذا البريد مسجلاً لدينا، فقد أرسلنا رمز استعادة كلمة المرور.",
+        });
+
+      if (!isValidEmail(email)) return generic();
+
+      const ipLimit = await rateLimit(db, `forgot:ip:${ip}`, 10, 3600);
+      if (!ipLimit.allowed) return tooMany(ipLimit);
+
+      const mailLimit = await checkMailLimit(db, email);
+      if (!mailLimit.allowed) return tooMany(mailLimit);
+
+      const user = (
+        await db.execute({
+          sql: "SELECT id, email_verified_at FROM users WHERE email = ? LIMIT 1",
+          args: [email],
+        })
+      ).rows[0];
+
+      if (user && user.email_verified_at) {
+        const code = await issueResetCode(db, Number(user.id));
+        try {
+          await sendPasswordResetEmail(email, code);
+        } catch (err) {
+          console.error("Password reset email error:", err.message);
+        }
+      }
+
+      return generic();
+    }
+
+    // ───────── تعيين كلمة المرور الجديدة باستخدام الكود ─────────
+    if (event.httpMethod === "POST" && action === "reset-password") {
+      const parsed = parseBody(event);
+      if (parsed.error) return parsed.error;
+
+      const email = String(parsed.body.email || "").trim().toLowerCase();
+      const code = String(parsed.body.code || "").trim();
+      const newPassword = parsed.body.new_password;
+
+      if (!isValidEmail(email) || !/^\d{6}$/.test(code)) {
+        return response(400, { message: "الرمز غير صحيح أو منتهي الصلاحية" });
+      }
+
+      if (
+        typeof newPassword !== "string" ||
+        newPassword.length < 8 ||
+        passwordTooLong(newPassword)
+      ) {
+        return response(400, { message: "كلمة المرور يجب أن لا تقل عن 8 أحرف" });
+      }
+
+      const ipLimit = await rateLimit(db, `reset:ip:${ip}`, 20, 900);
+      if (!ipLimit.allowed) return tooMany(ipLimit);
+
+      const user = (
+        await db.execute({
+          sql: "SELECT id, email_verified_at FROM users WHERE email = ? LIMIT 1",
+          args: [email],
+        })
+      ).rows[0];
+
+      if (!user) {
+        return response(400, { message: "الرمز غير صحيح أو منتهي الصلاحية" });
+      }
+
+      const record = (
+        await db.execute({
+          sql: `SELECT id, code_hash, expires_at
+                FROM password_resets
+                WHERE user_id = ?
+                ORDER BY id DESC LIMIT 1`,
+          args: [Number(user.id)],
+        })
+      ).rows[0];
+
+      const now = Math.floor(Date.now() / 1000);
+
+      if (!record || Number(record.expires_at) < now) {
+        return response(400, { message: "الرمز غير صحيح أو منتهي الصلاحية" });
+      }
+
+      const bump = await db.execute({
+        sql: `UPDATE password_resets
+              SET attempts = attempts + 1
+              WHERE id = ? AND attempts < 5`,
+        args: [Number(record.id)],
+      });
+
+      if (bump.rowsAffected === 0) {
+        return response(429, { message: "تجاوزت عدد المحاولات، اطلب رمزاً جديداً" });
+      }
+
+      if (!safeEqualHex(record.code_hash, codeHash(Number(user.id), code))) {
+        return response(400, { message: "الرمز غير صحيح" });
+      }
+
+      const passwordHash = await hashPassword(newPassword);
+
+      await db.batch(
+        [
+          {
+            sql: "UPDATE users SET password_hash = ? WHERE id = ?",
+            args: [passwordHash, Number(user.id)],
+          },
+          {
+            sql: "DELETE FROM password_resets WHERE user_id = ?",
+            args: [Number(user.id)],
+          },
+        ],
+        "write"
+      );
+
+      return response(200, {
+        message: "تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.",
+      });
+    }
+
+    // ───────── تحديث الملف الشخصي (الاسم ورقم الهاتف) ─────────
+    if (event.httpMethod === "POST" && action === "update-profile") {
+      const payload = verifyToken(event);
+      if (!payload || !Number.isSafeInteger(Number(payload.sub))) {
+        return response(401, { message: "يلزم تسجيل الدخول مجددًا" });
+      }
+
+      const parsed = parseBody(event);
+      if (parsed.error) return parsed.error;
+
+      const name = String(parsed.body.name || "").trim();
+      const phone = String(parsed.body.phone || "").trim();
+
+      if (name.length < 2 || name.length > 100) {
+        return response(400, { message: "الاسم يجب أن يكون بين حرفين و100 حرف" });
+      }
+
+      if (!/^7[0-9]{8}$/.test(phone)) {
+        return response(400, {
+          message: "رقم الهاتف اليمني يجب أن يتكون من 9 أرقام ويبدأ بالرقم 7",
+        });
+      }
+
+      const userId = Number(payload.sub);
+
+      await db.execute({
+        sql: "UPDATE users SET name = ?, phone = ? WHERE id = ?",
+        args: [name, phone, userId],
+      });
+
+      const updated = (
+        await db.execute({
+          sql: "SELECT id, name, email, phone, role FROM users WHERE id = ? LIMIT 1",
+          args: [userId],
+        })
+      ).rows[0];
+
+      return response(200, {
+        message: "تم تحديث البيانات بنجاح",
+        user: publicUser(updated),
+      });
+    }
+
+    // ───────── تغيير كلمة المرور للمستخدم المسجل ─────────
+    if (event.httpMethod === "POST" && action === "change-password") {
+      const payload = verifyToken(event);
+      if (!payload || !Number.isSafeInteger(Number(payload.sub))) {
+        return response(401, { message: "يلزم تسجيل الدخول مجددًا" });
+      }
+
+      const parsed = parseBody(event);
+      if (parsed.error) return parsed.error;
+
+      const currentPassword = parsed.body.current_password;
+      const newPassword = parsed.body.new_password;
+
+      if (
+        typeof currentPassword !== "string" ||
+        typeof newPassword !== "string" ||
+        newPassword.length < 8 ||
+        passwordTooLong(newPassword)
+      ) {
+        return response(400, {
+          message: "تحقق من كلمة المرور الحالية، ويجب أن لا تقل الجديدة عن 8 أحرف",
+        });
+      }
+
+      const userId = Number(payload.sub);
+
+      const user = (
+        await db.execute({
+          sql: "SELECT password_hash FROM users WHERE id = ? LIMIT 1",
+          args: [userId],
+        })
+      ).rows[0];
+
+      if (!user || !(await verifyPassword(currentPassword, user.password_hash))) {
+        return response(400, { message: "كلمة المرور الحالية غير صحيحة" });
+      }
+
+      const newHash = await hashPassword(newPassword);
+
+      await db.execute({
+        sql: "UPDATE users SET password_hash = ? WHERE id = ?",
+        args: [newHash, userId],
+      });
+
+      return response(200, { message: "تم تغيير كلمة المرور بنجاح" });
     }
 
     return response(404, {

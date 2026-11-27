@@ -125,6 +125,9 @@ exports.handler = async (event) => {
             b.status,
             b.customer_notes,
             p.business_name,
+            p.phone AS provider_phone,
+            p.city AS provider_city,
+            p.address AS provider_address,
             s.name AS service_name,
             s.price,
             s.currency,
@@ -157,6 +160,41 @@ exports.handler = async (event) => {
     } catch {
       return response(400, {
         message: "بيانات الطلب غير صالحة",
+      });
+    }
+
+    const action = event.queryStringParameters?.action;
+
+    // ── إلغاء الحجز بواسطة العميل ──
+    if (action === "cancel") {
+      const bookingId = Number(body.booking_id);
+      if (!Number.isSafeInteger(bookingId) || bookingId < 1) {
+        return response(400, { message: "معرّف الحجز غير صالح" });
+      }
+
+      const existing = await db.execute({
+        sql: `SELECT id, status, appointment_date, start_time FROM bookings WHERE id = ? AND customer_user_id = ? LIMIT 1`,
+        args: [bookingId, userId],
+      });
+
+      const booking = existing.rows[0];
+      if (!booking) {
+        return response(404, { message: "الحجز غير موجود أو لا يخص حسابك" });
+      }
+
+      if (!["pending", "confirmed"].includes(booking.status)) {
+        return response(400, { message: "لا يمكن إلغاء حجز ملغي أو مكتمل مسبقاً" });
+      }
+
+      await db.execute({
+        sql: `UPDATE bookings SET status = 'cancelled' WHERE id = ? AND customer_user_id = ?`,
+        args: [bookingId, userId],
+      });
+
+      return response(200, {
+        message: "تم إلغاء الموعد بنجاح",
+        booking_id: bookingId,
+        status: "cancelled",
       });
     }
 
