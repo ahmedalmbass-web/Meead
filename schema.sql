@@ -68,12 +68,13 @@ CREATE INDEX IF NOT EXISTS idx_providers_category ON providers(category);
 CREATE INDEX IF NOT EXISTS idx_providers_city ON providers(city);
 CREATE INDEX IF NOT EXISTS idx_providers_published ON providers(is_published);
 
--- 6. جدول معرض صور المنشأة (Netlify Blobs)
+-- 6. جدول معرض صور المنشأة (Netlify Blobs / Base64 Fallback)
 CREATE TABLE IF NOT EXISTS provider_images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
-    blob_key TEXT NOT NULL,
+    blob_key TEXT,
     content_type TEXT NOT NULL,
+    image_data TEXT,
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
