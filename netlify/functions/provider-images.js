@@ -9,8 +9,7 @@ const MAX_IMAGES = 12;
 const MAX_BYTES = 4 * 1024 * 1024; // الحجم بعد فك التشفير
 const API_PATH = "/.netlify/functions/provider-images";
 
-// ⚠️ غيّر اسم هذا العمود إذا كان في جدول providers باسم مختلف
-// (العمود الذي يربط النشاط بحساب صاحبه)
+// العمود الذي يربط النشاط بحساب صاحبه
 const OWNER_COLUMN = "owner_user_id";
 
 const baseHeaders = {
@@ -60,6 +59,39 @@ function toPositiveInt(value) {
   return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
+let tableEnsured = false;
+async function ensureTable(db) {
+  if (tableEnsured) return;
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS provider_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+        blob_key TEXT,
+        content_type TEXT NOT NULL,
+        image_data TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    // التأكد من وجود عمود image_data في حال كان الجدول منشأ سابقاً بدونه
+    await db.execute("ALTER TABLE provider_images ADD COLUMN image_data TEXT;").catch(() => {});
+    tableEnsured = true;
+  } catch (err) {
+    console.warn("ensureTable error (non-fatal):", err.message);
+  }
+}
+
+function getSafeStore(event) {
+  try {
+    connectLambda(event);
+    return getStore("provider-images");
+  } catch (err) {
+    console.warn("Netlify Blobs init failed (using database fallback):", err.message);
+    return null;
+  }
+}
+
 // يرجع النشاط إذا كان المستخدم الحالي هو صاحبه، وإلا null
 async function getOwnedProvider(db, providerId, token) {
   if (!token) return null;
@@ -82,11 +114,10 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers: baseHeaders, body: "" };
   }
 
-  connectLambda(event);
-
   try {
     const db = getDb();
-    const store = getStore("provider-images");
+    await ensureTable(db);
+    const store = getSafeStore(event);
     const params = event.queryStringParameters || {};
 
     // ───────── عرض صورة واحدة ─────────
@@ -96,25 +127,49 @@ exports.handler = async (event) => {
 
       const row = (
         await db.execute({
-          sql: "SELECT blob_key, content_type FROM provider_images WHERE id = ? LIMIT 1",
+          sql: "SELECT blob_key, content_type, image_data FROM provider_images WHERE id = ? LIMIT 1",
           args: [imageId],
         })
       ).rows[0];
 
       if (!row) return json(404, { message: "الصورة غير موجودة" });
 
-      const data = await store.get(String(row.blob_key), { type: "arrayBuffer" });
-      if (!data) return json(404, { message: "الصورة غير موجودة" });
+      let imageBuffer = null;
+
+      // 1. محاولة جلب الصورة من Netlify Blobs أولاً
+      if (store && row.blob_key) {
+        try {
+          const data = await store.get(String(row.blob_key), { type: "arrayBuffer" });
+          if (data) {
+            imageBuffer = Buffer.from(data);
+          }
+        } catch (blobErr) {
+          console.warn("Blobs store get failed, falling back to image_data:", blobErr.message);
+        }
+      }
+
+      // 2. استخدام التخزين الاحتياطي المباشر من قاعدة البيانات (image_data base64)
+      if (!imageBuffer && row.image_data) {
+        try {
+          imageBuffer = Buffer.from(String(row.image_data), "base64");
+        } catch (bufErr) {
+          console.warn("Failed to decode image_data base64:", bufErr.message);
+        }
+      }
+
+      if (!imageBuffer) {
+        return json(404, { message: "الصورة غير موجودة" });
+      }
 
       return {
         statusCode: 200,
         headers: {
           ...baseHeaders,
-          "Content-Type": String(row.content_type),
+          "Content-Type": String(row.content_type || "image/jpeg"),
           "Cache-Control": "public, max-age=31536000, immutable",
           "X-Content-Type-Options": "nosniff",
         },
-        body: Buffer.from(data).toString("base64"),
+        body: imageBuffer.toString("base64"),
         isBase64Encoded: true,
       };
     }
@@ -126,7 +181,7 @@ exports.handler = async (event) => {
 
       const provider = (
         await db.execute({
-          sql: "SELECT id, is_published FROM providers WHERE id = ? LIMIT 1",
+          sql: "SELECT id, is_published, image_url FROM providers WHERE id = ? LIMIT 1",
           args: [providerId],
         })
       ).rows[0];
@@ -141,7 +196,7 @@ exports.handler = async (event) => {
 
       const rows = (
         await db.execute({
-          sql: `SELECT id FROM provider_images
+          sql: `SELECT id, content_type, sort_order FROM provider_images
                 WHERE provider_id = ?
                 ORDER BY sort_order ASC, id ASC`,
           args: [providerId],
@@ -149,7 +204,11 @@ exports.handler = async (event) => {
       ).rows;
 
       return json(200, {
-        images: rows.map((r) => ({ id: Number(r.id), url: imageUrl(r.id) })),
+        images: rows.map((r, idx) => ({
+          id: Number(r.id),
+          url: imageUrl(r.id),
+          is_cover: provider.image_url === imageUrl(r.id) || (!provider.image_url && idx === 0),
+        })),
         count: rows.length,
       });
     }
@@ -198,30 +257,46 @@ exports.handler = async (event) => {
         return json(400, { message: "الصيغة المسموحة: JPG أو PNG أو WebP" });
       }
 
-      const blobKey = crypto.randomUUID();
-      const arrayBuffer = buf.buffer.slice(
-        buf.byteOffset,
-        buf.byteOffset + buf.byteLength
-      );
+      let blobKey = crypto.randomUUID();
+      let blobStored = false;
 
-      await store.set(blobKey, arrayBuffer);
+      // محاولة الحفظ في Netlify Blobs إذا كان متاحاً
+      if (store) {
+        try {
+          const arrayBuffer = buf.buffer.slice(
+            buf.byteOffset,
+            buf.byteOffset + buf.byteLength
+          );
+          await store.set(blobKey, arrayBuffer);
+          blobStored = true;
+        } catch (blobErr) {
+          console.warn("Netlify Blobs store.set failed, using DB image_data fallback:", blobErr.message);
+          blobKey = null;
+        }
+      } else {
+        blobKey = null;
+      }
 
       let insertedId;
       try {
+        // الحفظ المزدوج: حفظ المفتاح ونسخة base64 في image_data للضمان التام 100%
         const inserted = await db.execute({
           sql: `INSERT INTO provider_images
-                  (provider_id, blob_key, content_type, sort_order)
-                VALUES (?, ?, ?, ?)`,
-          args: [providerId, blobKey, contentType, Number(countRow.c)],
+                  (provider_id, blob_key, content_type, image_data, sort_order)
+                VALUES (?, ?, ?, ?, ?)`,
+          args: [providerId, blobKey, contentType, body.image_base64, Number(countRow.c)],
         });
         insertedId = Number(inserted.lastInsertRowid);
       } catch (error) {
-        await store.delete(blobKey).catch(() => {});
+        if (blobStored && store && blobKey) {
+          await store.delete(blobKey).catch(() => {});
+        }
         throw error;
       }
 
-      // أول صورة تصير صورة الغلاف تلقائيًا
-      if (!provider.image_url) {
+      // التعيين التلقائي لصورة الغلاف عند أول رفع
+      const currentCover = provider.image_url ? String(provider.image_url).trim() : "";
+      if (!currentCover || Number(countRow.c) === 0) {
         await db.execute({
           sql: "UPDATE providers SET image_url = ? WHERE id = ?",
           args: [imageUrl(insertedId), providerId],
@@ -229,8 +304,8 @@ exports.handler = async (event) => {
       }
 
       return json(201, {
-        message: "تم رفع الصورة",
-        image: { id: insertedId, url: imageUrl(insertedId) },
+        message: "تم رفع الصورة بنجاح",
+        image: { id: insertedId, url: imageUrl(insertedId), is_cover: !currentCover || Number(countRow.c) === 0 },
       });
     }
 
@@ -256,7 +331,10 @@ exports.handler = async (event) => {
         sql: "DELETE FROM provider_images WHERE id = ?",
         args: [imageId],
       });
-      await store.delete(String(row.blob_key)).catch(() => {});
+
+      if (store && row.blob_key) {
+        await store.delete(String(row.blob_key)).catch(() => {});
+      }
 
       // إذا كانت هي الغلاف، نستبدلها بأول صورة متبقية (أو نفرّغ الغلاف)
       const providerId = Number(row.provider_id);

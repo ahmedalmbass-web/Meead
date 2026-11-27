@@ -201,22 +201,59 @@ exports.handler = async (event) => {
       args,
     });
 
-    const providers = result.rows.map((row) => ({
-      id: Number(row.id),
-      business_name: row.business_name,
-      category: row.category,
-      city: row.city,
-      address: row.address,
-      description: row.description,
-      phone: row.phone,
-      image_url: row.image_url,
-      services: row.services || "",
-      created_at: row.created_at,
-      payment_info: (() => { try { return row.payment_info ? JSON.parse(row.payment_info) : null; } catch { return null; } })(),
-      average_rating: Number(row.average_rating || 0),
-      review_count: Number(row.review_count || 0),
-      booking_count: Number(row.booking_count || 0),
-    }));
+    const providerIds = result.rows.map((r) => Number(r.id));
+    const servicesByProvider = {};
+
+    if (providerIds.length > 0) {
+      try {
+        const placeholders = providerIds.map(() => "?").join(", ");
+        const servicesResult = await db.execute({
+          sql: `SELECT id, provider_id, name, duration_minutes, price, currency
+                FROM services
+                WHERE is_active = 1 AND provider_id IN (${placeholders})
+                ORDER BY id ASC`,
+          args: providerIds,
+        });
+
+        for (const s of servicesResult.rows) {
+          const pid = Number(s.provider_id);
+          if (!servicesByProvider[pid]) {
+            servicesByProvider[pid] = [];
+          }
+          if (servicesByProvider[pid].length < 3) {
+            servicesByProvider[pid].push({
+              name: String(s.name || ""),
+              duration_minutes: Number(s.duration_minutes || 0),
+              price: Number(s.price || 0),
+              currency: String(s.currency || "YER"),
+            });
+          }
+        }
+      } catch (svcErr) {
+        console.warn("Error fetching services_preview:", svcErr.message);
+      }
+    }
+
+    const providers = result.rows.map((row) => {
+      const pid = Number(row.id);
+      return {
+        id: pid,
+        business_name: row.business_name,
+        category: row.category,
+        city: row.city,
+        address: row.address,
+        description: row.description,
+        phone: row.phone,
+        image_url: row.image_url,
+        services: row.services || "",
+        services_preview: servicesByProvider[pid] || [],
+        created_at: row.created_at,
+        payment_info: (() => { try { return row.payment_info ? JSON.parse(row.payment_info) : null; } catch { return null; } })(),
+        average_rating: Number(row.average_rating || 0),
+        review_count: Number(row.review_count || 0),
+        booking_count: Number(row.booking_count || 0),
+      };
+    });
 
     return response(200, {
       providers,
