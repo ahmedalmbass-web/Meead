@@ -3,25 +3,28 @@ MEEAD | Premium Arabic Booking Platform
 RTL - Responsive - Mobile First
 ========================================= */
 
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Alexandria:wght@400;500;600;700;800&display=swap');
+
 :root {
---green: #153d32;
---green-dark: #102e26;
+--green: #123c32;
+--green-dark: #0b2822;
 --green-light: #e9f0eb;
---gold: #d8bb80;
+--gold: #d8bd7c;
 --gold-light: #ead8ad;
 --cream: #f8f7f2;
 --white: #ffffff;
---ink: #202b25;
+--ink: #1b2b26;
 --muted: #778078;
 --border: #e7e8df;
 --radius: 20px;
+--radius-btn: 10px;
 --shadow: 0 16px 48px rgba(24, 52, 40, 0.08);
 --container: 1160px;
 }
 
-- {
+* {
   box-sizing: border-box;
-  }
+}
 
 html {
 scroll-behavior: smooth;
@@ -30,11 +33,12 @@ scroll-padding-top: 90px;
 
 body {
 margin: 0;
-font-family: "Alexandria", Tahoma, Arial, sans-serif;
+font-family: "Cairo", "Alexandria", Tahoma, Arial, sans-serif;
 background: var(--cream);
 color: var(--ink);
 line-height: 1.8;
 -webkit-font-smoothing: antialiased;
+direction: rtl;
 }
 
 body,
@@ -42,7 +46,7 @@ button,
 input,
 select,
 textarea {
-font-family: "Alexandria", Tahoma, Arial, sans-serif;
+font-family: "Cairo", "Alexandria", Tahoma, Arial, sans-serif;
 }
 
 a {
@@ -165,50 +169,89 @@ white-space: nowrap;
 /* =============== BUTTONS =============== */
 
 .btn {
-min-height: 49px;
+min-height: 46px;
 display: inline-flex;
 align-items: center;
 justify-content: center;
-gap: 12px;
-padding: 12px 22px;
+gap: 10px;
+padding: 11px 22px;
 border: 1px solid transparent;
-border-radius: 12px;
-font-size: 12px;
+border-radius: 10px;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-size: 13.5px;
 font-weight: 700;
-transition:
-transform 0.25s ease,
-box-shadow 0.25s ease,
-background 0.25s ease;
+cursor: pointer;
+text-decoration: none;
+transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
 .btn:hover {
 transform: translateY(-2px);
 }
 
+.btn-primary,
 .btn-dark {
-color: white;
+color: #ffffff !important;
 background: var(--green);
-box-shadow: 0 7px 18px rgba(21, 61, 50, 0.13);
+box-shadow: 0 6px 18px rgba(18, 60, 50, 0.18);
+border-color: var(--green);
 }
 
+.btn-primary:hover,
 .btn-dark:hover {
-background: #204f41;
-box-shadow: 0 10px 24px rgba(21, 61, 50, 0.2);
+background: var(--green-dark);
+border-color: var(--green-dark);
+box-shadow: 0 10px 24px rgba(18, 60, 50, 0.28);
+color: #ffffff !important;
 }
 
 .btn-gold {
-color: var(--green-dark);
+color: #1b2b26 !important;
 background: var(--gold);
-box-shadow: 0 8px 22px rgba(216, 187, 128, 0.16);
+border-color: var(--gold);
+box-shadow: 0 6px 20px rgba(216, 189, 124, 0.25);
 }
 
 .btn-gold:hover {
-background: var(--gold-light);
-box-shadow: 0 12px 28px rgba(216, 187, 128, 0.24);
+background: #e2c888;
+border-color: #e2c888;
+box-shadow: 0 10px 28px rgba(216, 189, 124, 0.35);
+color: #123c32 !important;
+}
+
+.btn-outline {
+background: #ffffff;
+color: var(--green);
+border: 1px solid #d5ceba;
+box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+.btn-outline:hover {
+background: #faf8f2;
+border-color: var(--gold);
+color: var(--green-dark);
+box-shadow: 0 6px 18px rgba(216, 189, 124, 0.2);
+}
+
+.btn-glass {
+color: #ffffff !important;
+background: rgba(255, 255, 255, 0.08);
+border: 1px solid rgba(216, 189, 124, 0.45);
+backdrop-filter: blur(8px);
+}
+
+.btn-glass:hover {
+background: rgba(255, 255, 255, 0.16);
+border-color: var(--gold);
+color: #ffffff !important;
+box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
 }
 
 .nav-cta {
-min-height: 43px;
+min-height: 42px;
+padding: 9px 18px;
+border-radius: 10px;
+}
 padding: 10px 16px;
 }
 
@@ -1562,14 +1605,80 @@ outline-offset: 2px;
 #account form button[type="submit"] {
 width: 100%;
 min-height: 46px;
-margin-top: 20px;
+margin-top: 16px;
 border: 0;
-border-radius: 11px;
+border-radius: 10px;
 background: #123c32;
 color: #fff;
 font: inherit;
 font-weight: 700;
 cursor: pointer;
+transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+box-shadow: 0 4px 14px rgba(18, 60, 50, 0.18);
+}
+
+#account form button[type="submit"]:hover {
+background: #0b2822;
+transform: translateY(-2px);
+box-shadow: 0 8px 20px rgba(18, 60, 50, 0.28);
+}
+
+/* Prominent, stylish Forgot Password link */
+.forgot-pass-container {
+display: flex;
+justify-content: flex-start;
+margin: 6px 0 14px;
+}
+
+.forgot-password-link {
+display: inline-flex;
+align-items: center;
+gap: 5px;
+background: none;
+border: none;
+padding: 4px 0;
+color: #123c32;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-size: 13.5px;
+font-weight: 700;
+cursor: pointer;
+text-decoration: underline;
+text-underline-offset: 4px;
+text-decoration-color: #d8bd7c;
+transition: all 0.2s ease;
+text-align: right;
+}
+
+.forgot-password-link:hover {
+color: #a58b51;
+text-decoration-color: #123c32;
+transform: translateX(-3px);
+}
+
+.btn-auth-back {
+width: 100%;
+min-height: 44px;
+margin-top: 10px;
+border: 1px solid #d5ceba;
+border-radius: 10px;
+background: #f1efe8;
+color: #123c32;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-weight: 700;
+font-size: 13.5px;
+cursor: pointer;
+transition: all 0.25s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+}
+
+.btn-auth-back:hover {
+background: #e5e2d6;
+border-color: #d8bd7c;
+transform: translateY(-1px);
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 #account #accountStatus {
@@ -1577,6 +1686,282 @@ margin: 14px 0 0;
 color: #123c32;
 font-size: 14px;
 overflow-wrap: anywhere;
+padding: 0;
+border-radius: 8px;
+}
+
+#account #accountStatus.success {
+color: #155724;
+background: #e8f5e9;
+padding: 10px 14px;
+border: 1px solid #c8e6c9;
+}
+
+#account #accountStatus.error {
+color: #721c24;
+background: #f8d7da;
+padding: 10px 14px;
+border: 1px solid #f5c6cb;
+}
+
+/* ===== نافذة إعدادات الحساب الشخصي الفاخرة (my-bookings.html) ===== */
+.profile-modal-backdrop {
+position: fixed;
+inset: 0;
+background: rgba(11, 40, 34, 0.72);
+z-index: 9999;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 18px;
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+overflow-y: auto;
+animation: meeadFadeIn 0.25s ease;
+}
+
+@keyframes meeadFadeIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+
+.profile-modal-card {
+position: relative;
+width: 100%;
+max-width: 500px;
+max-height: calc(100vh - 40px);
+overflow-y: auto;
+padding: 28px 24px;
+background: #ffffff;
+border: 1px solid #e9e4d4;
+border-radius: 20px;
+box-shadow: 0 25px 60px rgba(11, 40, 34, 0.28);
+color: #1b2b26;
+direction: rtl;
+animation: meeadModalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes meeadModalSlideIn {
+from {
+opacity: 0;
+transform: translateY(16px) scale(0.98);
+}
+to {
+opacity: 1;
+transform: translateY(0) scale(1);
+}
+}
+
+.profile-modal-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding-bottom: 16px;
+margin-bottom: 20px;
+border-bottom: 1px solid #f0eee6;
+}
+
+.profile-modal-title {
+display: flex;
+align-items: center;
+gap: 10px;
+margin: 0;
+color: #123c32;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-size: 19px;
+font-weight: 800;
+}
+
+.profile-modal-title .gold-accent {
+color: #d8bd7c;
+font-size: 20px;
+}
+
+.profile-modal-close {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 36px;
+height: 36px;
+border: 1px solid #e5e2d6;
+border-radius: 10px;
+background: #f7f6f0;
+color: #123c32;
+font-size: 16px;
+font-weight: 700;
+cursor: pointer;
+transition: all 0.25s ease;
+}
+
+.profile-modal-close:hover {
+background: #eae7dc;
+border-color: #d8bd7c;
+color: #a58b51;
+transform: scale(1.05);
+}
+
+.profile-section-card {
+background: #fcfbf8;
+border: 1px solid #edebe1;
+border-radius: 12px;
+padding: 18px;
+margin-bottom: 18px;
+}
+
+.profile-section-title {
+display: flex;
+align-items: center;
+gap: 8px;
+margin: 0 0 12px;
+color: #123c32;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-size: 15px;
+font-weight: 800;
+}
+
+.profile-modal-card label {
+display: block;
+font-size: 13.5px;
+font-weight: 700;
+color: #123c32;
+margin-bottom: 6px;
+}
+
+.profile-modal-card input {
+display: block;
+width: 100%;
+min-height: 44px;
+padding: 10px 14px;
+border: 1px solid #d5ceba;
+border-radius: 10px;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-size: 14px;
+background: #ffffff;
+color: #1b2b26;
+box-sizing: border-box;
+margin-bottom: 12px;
+transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-modal-card input:focus {
+outline: none;
+border-color: #d8bd7c;
+box-shadow: 0 0 0 3px rgba(216, 189, 124, 0.25);
+}
+
+.profile-form-actions {
+display: flex;
+gap: 10px;
+margin-top: 14px;
+align-items: center;
+}
+
+.btn-save-profile {
+flex: 1;
+min-height: 44px;
+border: 0;
+border-radius: 10px;
+background: #123c32;
+color: #ffffff;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-weight: 700;
+font-size: 14px;
+cursor: pointer;
+transition: all 0.25s ease;
+box-shadow: 0 4px 14px rgba(18, 60, 50, 0.18);
+}
+
+.btn-save-profile:hover {
+background: #0b2822;
+box-shadow: 0 6px 18px rgba(18, 60, 50, 0.28);
+transform: translateY(-2px);
+}
+
+.btn-save-password {
+flex: 1;
+min-height: 44px;
+border: 0;
+border-radius: 10px;
+background: #d8bd7c;
+color: #1b2b26;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-weight: 800;
+font-size: 14px;
+cursor: pointer;
+transition: all 0.25s ease;
+box-shadow: 0 4px 14px rgba(216, 189, 124, 0.25);
+}
+
+.btn-save-password:hover {
+background: #e2c888;
+box-shadow: 0 6px 18px rgba(216, 189, 124, 0.35);
+transform: translateY(-2px);
+}
+
+.btn-cancel-modal {
+padding: 10px 18px;
+min-height: 44px;
+border: 1px solid #d5ceba;
+border-radius: 10px;
+background: #f1efe8;
+color: #123c32;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-weight: 700;
+font-size: 13.5px;
+cursor: pointer;
+transition: all 0.25s ease;
+}
+
+.btn-cancel-modal:hover {
+background: #e5e2d6;
+border-color: #d8bd7c;
+transform: translateY(-1px);
+}
+
+.profile-status-msg {
+font-size: 13px;
+font-weight: 600;
+margin: 6px 0 10px;
+padding: 8px 12px;
+border-radius: 8px;
+}
+
+.profile-status-msg.success {
+color: #155724;
+background: #e8f5e9;
+border: 1px solid #c8e6c9;
+}
+
+.profile-status-msg.error {
+color: #721c24;
+background: #f8d7da;
+border: 1px solid #f5c6cb;
+}
+
+.btn-profile-settings {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+background: #ffffff;
+border: 1px solid #d5ceba;
+color: #123c32;
+font-size: 13.5px;
+font-family: "Cairo", "Alexandria", sans-serif;
+font-weight: 700;
+padding: 9px 18px;
+border-radius: 10px;
+cursor: pointer;
+transition: all 0.25s ease;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+margin-inline-start: auto;
+}
+
+.btn-profile-settings:hover {
+background: #faf8f2;
+border-color: #d8bd7c;
+color: #123c32;
+transform: translateY(-2px);
+box-shadow: 0 6px 16px rgba(216, 189, 124, 0.25);
 }
 
 @media (max-width: 480px) {
@@ -2264,25 +2649,188 @@ font-size: 12px;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid var(--forest, #173f35);
-  border-radius: 12px;
-  background: transparent;
-  color: var(--forest, #173f35);
-  font: inherit;
+  min-height: 42px;
+  padding: 8px 18px;
+  border: 1px solid #d5ceba;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #123c32;
+  font-family: "Cairo", "Alexandria", sans-serif;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .bookings-refresh-btn:hover {
-  background: var(--forest, #173f35);
-  color: #fff;
+  background: #123c32;
+  border-color: #123c32;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(18, 60, 50, 0.2);
 }
 
 .bookings-refresh-btn:disabled {
   opacity: 0.6;
   cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-cancel-booking {
+  background: #ffffff;
+  color: #a33c36;
+  border: 1px solid rgba(163, 60, 54, 0.35);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-family: "Cairo", "Alexandria", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin-inline-start: auto;
+}
+
+.btn-cancel-booking:hover {
+  background: #fdf3f2;
+  border-color: #a33c36;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(163, 60, 54, 0.15);
+}
+
+.booking-review-submit {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 10px;
+  background: #123c32;
+  color: #ffffff;
+  font-family: "Cairo", "Alexandria", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(18, 60, 50, 0.2);
+}
+
+.booking-review-submit:hover {
+  background: #0b2822;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(18, 60, 50, 0.28);
+}
+
+/* Dashboard Standard Buttons and Tabs */
+.dashboard-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #123c32;
+  color: #ffffff;
+  padding: 11px 20px;
+  margin-top: 15px;
+  cursor: pointer;
+  font-family: "Cairo", "Alexandria", sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 14px rgba(18, 60, 50, 0.18);
+}
+
+.dashboard-button:hover {
+  background: #0b2822;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(18, 60, 50, 0.28);
+}
+
+.dashboard-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+
+.tab-btn {
+  padding: 11px 20px;
+  border: none;
+  background: #e8e8df;
+  color: #123c32;
+  font-family: "Cairo", "Alexandria", sans-serif;
+  font-weight: 800;
+  font-size: 13.5px;
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.tab-btn:hover {
+  background: #dfded4;
+  color: #0b2822;
+}
+
+.tab-btn.active {
+  background: #123c32 !important;
+  color: #ffffff !important;
+  box-shadow: 0 -2px 10px rgba(18, 60, 50, 0.12);
+}
+
+.btn-filter {
+  padding: 8px 14px;
+  border: 1px solid #d5ceba;
+  background: #ffffff;
+  color: #123c32;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: "Cairo", "Alexandria", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.btn-filter:hover {
+  border-color: #d8bd7c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(216, 189, 124, 0.2);
+}
+
+.btn-filter.active {
+  border-color: #123c32 !important;
+  background: #123c32 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(18, 60, 50, 0.2);
+}
+
+.edit-provider-cancel,
+.service-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid #d5ceba;
+  border-radius: 10px;
+  padding: 11px 20px;
+  margin-top: 15px;
+  background: #f1efe8;
+  color: #123c32;
+  cursor: pointer;
+  font-family: "Cairo", "Alexandria", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.25s ease;
+}
+
+.edit-provider-cancel:hover,
+.service-cancel-btn:hover {
+  background: #e5e2d6;
+  border-color: #d8bd7c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .my-bookings-status {
