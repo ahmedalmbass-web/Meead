@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#173F35">
+  <meta name="theme-color" content="#123c32">
 
   <title>حجوزاتي | ميعاد</title>
   <meta name="description" content="تابع مواعيدك وحجوزاتك وتقييماتك في منصة ميعاد.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Alexandria:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -49,7 +49,10 @@
           <strong id="bookingsCustomerName">حجوزاتك في ميعاد</strong>
           <p>يمكنك متابعة مواعيدك وتفاصيل كل حجز من هنا.</p>
         </div>
-        <button type="button" id="editProfileBtn" class="btn" style="background:#fff;border:1px solid #d5ceba;color:#123c32;margin-inline-start:auto;font-size:13px;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:700;">⚙️ إعدادات الحساب</button>
+        <button type="button" id="editProfileBtn" class="btn-profile-settings" aria-label="إعدادات الحساب">
+          <span aria-hidden="true">⚙️</span>
+          <span>إعدادات الحساب</span>
+        </button>
       </div>
 
       <div class="customer-bookings-toolbar">
@@ -60,7 +63,7 @@
 
         <button type="button" id="refreshMyBookings" class="bookings-refresh-btn">
           <span aria-hidden="true">↻</span>
-          تحديث
+          <span>تحديث</span>
         </button>
       </div>
 
@@ -71,7 +74,7 @@
       <div id="myBookingsList" class="my-bookings-list"></div>
 
       <div class="bookings-empty-action" id="bookingsEmptyAction" hidden>
-        <a href="index.html#categories">استكشف الأنشطة واحجز موعدك</a>
+        <a href="index.html#categories" class="btn btn-gold">استكشف الأنشطة واحجز موعدك</a>
       </div>
 
     </section>
@@ -84,41 +87,115 @@
     </div>
   </footer>
 
-  <!-- نافذة تعديل بيانات الحساب وكلمة المرور (مخفية افتراضياً ولا تفتح إلا بالنقر على زر إعدادات الحساب) -->
-  <div id="profileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);">
-    <div style="background:#fff;border-radius:18px;max-width:480px;width:100%;padding:24px;box-sizing:border-box;max-height:90vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.25);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:1px solid #e9e8df;padding-bottom:12px;">
-        <h3 style="margin:0;color:#123c32;font-size:19px;">إعدادات الحساب الشخصي</h3>
-        <button type="button" id="closeProfileModal" style="background:#eee;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:bold;color:#123c32;">إغلاق ✕</button>
+  <!-- نافذة تعديل بيانات الحساب وكلمة المرور الفاخرة -->
+  <div id="profileModal" class="profile-modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+    <div class="profile-modal-card">
+      <div class="profile-modal-header">
+        <h3 id="profileModalTitle" class="profile-modal-title">
+          <span class="gold-accent" aria-hidden="true">✦</span>
+          <span>إعدادات الحساب الشخصي</span>
+        </h3>
+        <button type="button" id="closeProfileModal" class="profile-modal-close" aria-label="إغلاق النافذة">✕</button>
       </div>
 
-      <form id="updateProfileForm" style="margin-bottom:24px;">
-        <h4 style="margin:0 0 10px;color:#123c32;font-size:15px;">البيانات الأساسية</h4>
-        <label for="profName" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">الاسم</label>
-        <input type="text" id="profName" required style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+      <!-- قسم تعديل البيانات الأساسية -->
+      <form id="updateProfileForm" class="profile-section-card">
+        <h4 class="profile-section-title">
+          <span aria-hidden="true">👤</span>
+          <span>البيانات الأساسية</span>
+        </h4>
 
-        <label for="profPhone" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">رقم الهاتف (يمني: يبدأ بـ 7 و9 أرقام)</label>
-        <input type="tel" id="profPhone" required pattern="^7[0-9]{8}$" dir="ltr" style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;text-align:right;">
+        <label for="profName">الاسم الكامل</label>
+        <input type="text" id="profName" name="name" required placeholder="أدخل اسمك الكريم" autocomplete="name" maxlength="100">
 
-        <p id="profStatus" style="font-size:13px;margin:6px 0;"></p>
-        <button type="submit" id="profSubmitBtn" style="width:100%;background:#123c32;color:#fff;border:none;border-radius:8px;padding:11px;font-weight:bold;cursor:pointer;">حفظ البيانات</button>
+        <label for="profPhone">رقم الهاتف (يمني: 9 أرقام تبدأ بـ 7)</label>
+        <input type="tel" id="profPhone" name="phone" required pattern="^7[0-9]{8}$" maxlength="9" placeholder="7XXXXXXXX" dir="ltr" style="text-align:right;">
+
+        <p id="profStatus" class="profile-status-msg" role="status" aria-live="polite" hidden></p>
+
+        <div class="profile-form-actions">
+          <button type="submit" id="profSubmitBtn" class="btn-save-profile">حفظ البيانات</button>
+          <button type="button" class="btn-cancel-modal cancel-profile-btn" id="cancelProfileBtn">إلغاء</button>
+        </div>
       </form>
 
-      <form id="changePasswordForm" style="border-top:1px solid #e9e8df;padding-top:18px;">
-        <h4 style="margin:0 0 10px;color:#123c32;font-size:15px;">تغيير كلمة المرور</h4>
-        <label for="curPass" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">كلمة المرور الحالية</label>
-        <input type="password" id="curPass" required style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+      <!-- قسم تغيير كلمة المرور -->
+      <form id="changePasswordForm" class="profile-section-card">
+        <h4 class="profile-section-title">
+          <span aria-hidden="true">🔒</span>
+          <span>تغيير كلمة المرور</span>
+        </h4>
 
-        <label for="newPass" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">كلمة المرور الجديدة (8 أحرف فأكثر)</label>
-        <input type="password" id="newPass" required minlength="8" style="width:100%;padding:10px;border:1px solid #d5ceba;border-radius:8px;margin-bottom:12px;box-sizing:border-box;">
+        <label for="curPass">كلمة المرور الحالية</label>
+        <input type="password" id="curPass" name="current_password" required placeholder="••••••••" autocomplete="current-password">
 
-        <p id="passStatus" style="font-size:13px;margin:6px 0;"></p>
-        <button type="submit" id="passSubmitBtn" style="width:100%;background:#d8bd7c;color:#1b2b26;border:none;border-radius:8px;padding:11px;font-weight:bold;cursor:pointer;">تحديث كلمة المرور</button>
+        <label for="newPass">كلمة المرور الجديدة (8 أحرف فأكثر)</label>
+        <input type="password" id="newPass" name="new_password" required minlength="8" placeholder="••••••••" autocomplete="new-password">
+
+        <p id="passStatus" class="profile-status-msg" role="status" aria-live="polite" hidden></p>
+
+        <div class="profile-form-actions">
+          <button type="submit" id="passSubmitBtn" class="btn-save-password">تحديث كلمة المرور</button>
+          <button type="button" class="btn-cancel-modal cancel-profile-btn" id="cancelPassBtn">إلغاء</button>
+        </div>
       </form>
     </div>
   </div>
 
+  <!-- نافذة تسجيل الدخول والحساب -->
+  <section id="account" hidden role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+    <div class="account-panel">
+      <button type="button" id="closeAccount" aria-label="إغلاق">✕</button>
+      <h2 id="accountTitle">مرحبًا بك في ميعاد</h2>
+      <p id="accountMessage">سجّل دخولك لمتابعة حجوزاتك.</p>
+
+      <div class="account-tabs">
+        <button type="button" id="showLogin">تسجيل الدخول</button>
+        <button type="button" id="showRegister">إنشاء حساب</button>
+      </div>
+
+      <form id="loginForm">
+        <label for="loginEmail">البريد الإلكتروني</label>
+        <input id="loginEmail" name="email" type="email" autocomplete="email" required>
+
+        <label for="loginPassword">كلمة المرور</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+
+        <div class="forgot-pass-container">
+          <button type="button" id="forgotPasswordBtn" class="forgot-password-link">نسيت كلمة المرور؟</button>
+        </div>
+
+        <button type="submit">دخول</button>
+      </form>
+
+      <form id="registerForm" hidden>
+        <label for="registerName">الاسم الكامل</label>
+        <input id="registerName" name="name" autocomplete="name" required maxlength="100">
+
+        <label for="registerEmail">البريد الإلكتروني</label>
+        <input id="registerEmail" name="email" type="email" autocomplete="email" required>
+
+        <label for="registerPhone">رقم الهاتف</label>
+        <input id="registerPhone" name="phone" type="tel" autocomplete="tel" required pattern="^7[0-9]{8}$" maxlength="9" placeholder="712345678">
+
+        <label for="registerPassword">كلمة المرور (8 أحرف على الأقل)</label>
+        <input id="registerPassword" name="password" type="password" autocomplete="new-password" required minlength="8">
+
+        <label for="registerRole">نوع الحساب</label>
+        <select id="registerRole" name="role" required>
+          <option value="customer" selected>عميل — أريد حجز موعد</option>
+          <option value="provider">صاحب نشاط — أريد عرض خدماتي</option>
+        </select>
+
+        <button type="submit">إنشاء الحساب</button>
+      </form>
+
+      <p id="accountStatus" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
   <script src="js/auth.js" defer></script>
+  <script src="js/account-ui.js" defer></script>
   <script src="js/my-bookings.js" defer></script>
 
 </body>

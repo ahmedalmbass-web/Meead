@@ -68,11 +68,32 @@
       color: white;
       text-decoration: none;
       background: transparent;
-      border: 1px solid #ffffff35;
+      border: 1px solid rgba(216, 189, 124, 0.35);
       border-radius: 10px;
-      padding: 8px 13px;
+      padding: 8px 14px;
       cursor: pointer;
       font-size: 13px;
+      font-family: inherit;
+      font-weight: 700;
+      transition: all .25s ease;
+    }
+
+    .dashboard-nav a:hover,
+    .dashboard-nav button:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--gold);
+      transform: translateY(-1px);
+    }
+
+    .dashboard-nav button#logoutBtn {
+      border-color: #f8717140;
+      color: #fca5a5;
+    }
+
+    .dashboard-nav button#logoutBtn:hover {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: #ef4444;
+      color: #fecaca;
     }
 
     .dashboard-intro { padding: 32px 5% 10px; }
@@ -140,10 +161,19 @@
       border-radius: 10px;
       background: var(--green);
       color: white;
-      padding: 11px 18px;
+      padding: 11px 20px;
       margin-top: 15px;
       cursor: pointer;
       font-weight: 800;
+      font-family: inherit;
+      transition: transform .25s ease, background .25s ease, box-shadow .25s ease;
+      box-shadow: 0 4px 14px rgba(18, 60, 50, 0.18);
+    }
+
+    .dashboard-button:hover {
+      background: #0b2822;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(18, 60, 50, 0.28);
     }
 
     .dashboard-button:disabled {
@@ -198,12 +228,20 @@
     .edit-provider-cancel {
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 11px 18px;
+      padding: 11px 20px;
       margin-top: 15px;
       background: #f5f5f1;
       color: var(--ink);
       cursor: pointer;
       font-weight: 700;
+      font-family: inherit;
+      transition: all .25s ease;
+    }
+
+    .edit-provider-cancel:hover {
+      background: #e7e7df;
+      border-color: var(--gold);
+      transform: translateY(-1px);
     }
 
     /* قائمة الخدمات */
@@ -345,9 +383,19 @@
       background: #f5f5f1;
       color: var(--ink);
       border-radius: 10px;
-      padding: 11px 18px;
+      padding: 11px 20px;
       margin-top: 15px;
       cursor: pointer;
+      font-weight: 700;
+      font-family: inherit;
+      transition: all .25s ease;
+    }
+
+    .service-cancel-btn:hover {
+      background: #e7e7df;
+      border-color: var(--gold);
+      transform: translateY(-1px);
+    }
       font-weight: 700;
     }
 
@@ -651,11 +699,12 @@
 
     <!-- شريط التبويبات الرئيسي المنظم -->
     <nav class="provider-dashboard-tabs" id="providerTabsNav" style="display:flex;gap:8px;border-bottom:2px solid #e8e8df;margin:20px 0 25px;overflow-x:auto;padding-bottom:2px;">
-      <button type="button" class="tab-btn active" data-target="providerBookings" style="padding:10px 18px;border:none;background:#123c32;color:#fff;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">📋 إدارة الحجوزات</button>
-      <button type="button" class="tab-btn" data-target="tabProfileSection" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">🏢 بيانات النشاط ورابط البايو</button>
-      <button type="button" class="tab-btn" data-target="serviceManagement" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">✂️ الخدمات والأسعار</button>
-      <button type="button" class="tab-btn" data-target="availabilityManagement" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">🕒 ساعات وأيام العمل</button>
-      <button type="button" class="tab-btn" data-target="paymentManagement" style="padding:10px 18px;border:none;background:#e8e8df;color:#123c32;font-weight:bold;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;">💳 حسابات وطرق الدفع (اليمن)</button>
+      <button type="button" class="tab-btn active" data-target="providerBookings">📋 إدارة الحجوزات</button>
+      <button type="button" class="tab-btn" data-target="tabProfileSection">🏢 بيانات النشاط ورابط البايو</button>
+      <button type="button" class="tab-btn" data-target="serviceManagement">✂️ الخدمات والأسعار</button>
+      <button type="button" class="tab-btn" data-target="galleryTabSection">🖼️ معرض صور النشاط</button>
+      <button type="button" class="tab-btn" data-target="availabilityManagement">🕒 ساعات وأيام العمل</button>
+      <button type="button" class="tab-btn" data-target="paymentManagement">💳 حسابات وطرق الدفع (اليمن)</button>
     </nav>
 
     <!-- تبويب 1: الحجوزات الواردة وإشعارات الدفع -->
@@ -664,15 +713,15 @@
       <p>راجع طلبات العملاء وطابق أرقام الحوالات والعمليات لتأكيد المواعيد.</p>
 
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px;">
-        <div class="booking-filters" id="providerBookingFilters" style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button type="button" class="btn-filter active" data-filter="all" style="padding:7px 12px;border:1px solid #123c32;background:#123c32;color:#fff;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">الكل</button>
-          <button type="button" class="btn-filter" data-filter="today" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#123c32;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">📌 مواعيد اليوم</button>
-          <button type="button" class="btn-filter" data-filter="pending" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#a33c36;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">⏳ بانتظار التأكيد والدفع</button>
-          <button type="button" class="btn-filter" data-filter="confirmed" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#28613f;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">✅ المؤكدة</button>
-          <button type="button" class="btn-filter" data-filter="completed" style="padding:7px 12px;border:1px solid #d5ceba;background:#fff;color:#75817b;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;">📜 المكتملة</button>
+        <div class="booking-filters" id="providerBookingFilters" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn-filter active" data-filter="all">الكل</button>
+          <button type="button" class="btn-filter" data-filter="today">📌 مواعيد اليوم</button>
+          <button type="button" class="btn-filter" data-filter="pending">⏳ بانتظار التأكيد والدفع</button>
+          <button type="button" class="btn-filter" data-filter="confirmed">✅ المؤكدة</button>
+          <button type="button" class="btn-filter" data-filter="completed">📜 المكتملة</button>
         </div>
 
-        <button type="button" id="refreshProviderBookings" class="dashboard-button" style="margin:0;padding:7px 14px;font-size:13px;">↻ تحديث الحجوزات</button>
+        <button type="button" id="refreshProviderBookings" class="dashboard-button" style="margin:0;padding:8px 16px;font-size:13px;">↻ تحديث الحجوزات</button>
       </div>
 
       <p id="providerBookingsStatus" class="dashboard-status" role="status" aria-live="polite"></p>
@@ -849,18 +898,26 @@
           <div class="service-empty">اختر نشاطًا لعرض خدماته.</div>
         </div>
       </section>
+    </section>
 
-            <section id="providerGallery" hidden>
-        <h3>معرض صور النشاط</h3>
-        <p class="services-intro">
-          ارفع صور أعمالك الحقيقية. الصور ترفع ثقة العملاء بنشاطك، وأول صورة تصير صورة الغلاف.
-          الصيغ المسموحة: JPG وPNG وWebP.
-        </p>
+    <!-- تبويب: معرض صور النشاط -->
+    <section id="galleryTabSection" class="dashboard-card provider-tab-content" style="display:none;">
+      <h2>🖼️ معرض صور النشاط</h2>
+      <p class="services-intro">
+        ارفع صور أعمالك وخدماتك الحقيقية. تظهر الصور للعملاء في نافذة الحجز، وترفع ثقتهم بنشاطك، وتصبح أول صورة هي صورة الغلاف الرئيسية.
+        الصيغ المسموحة: JPG وPNG وWebP (الحد الأقصى 12 صورة).
+      </p>
 
-        <p id="galleryCount" class="dashboard-status"></p>
+      <section id="providerGallery">
+        <p id="galleryCount" class="dashboard-status" style="font-weight:bold;margin:10px 0;"></p>
 
-        <input id="galleryInput" type="file"
-          accept="image/jpeg,image/png,image/webp" multiple>
+        <div style="background:#fcfbf7;border:2px dashed #d8bd7c;border-radius:14px;padding:24px;text-align:center;margin:16px 0;">
+          <label for="galleryInput" style="display:block;margin-bottom:10px;font-weight:bold;color:#123c32;cursor:pointer;font-size:15px;">
+            📷 اضغط هنا لاختيار صور من جهازك لرفعها
+          </label>
+          <input id="galleryInput" type="file"
+            accept="image/jpeg,image/png,image/webp" multiple style="display:inline-block;max-width:320px;cursor:pointer;">
+        </div>
 
         <p id="galleryStatus" class="dashboard-status"
           role="status" aria-live="polite"></p>
@@ -945,6 +1002,10 @@
       <label for="loginPassword">كلمة المرور</label>
       <input id="loginPassword" name="password" type="password"
         autocomplete="current-password" required>
+
+      <div class="forgot-pass-container">
+        <button type="button" id="forgotPasswordBtn" class="forgot-password-link">نسيت كلمة المرور؟</button>
+      </div>
 
       <button type="submit">دخول</button>
     </form>
